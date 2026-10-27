@@ -132,7 +132,7 @@ final class FansPrefsPane: PrefsPaneViewController {
         case .installed: return L("fan.helper.state.installed")
         case .running:
             if let err = helperInfo.error { return L("fan.helper.state.noAnswer", err) }
-            var text = L("fan.helper.state.running", helperInfo.build ?? 0)
+            var text = L("fan.helper.state.running")
             if helperInfo.supported == false { text += "\n" + L("fan.cap.unsupportedHardware") }
             if let build = helperInfo.build, build != FanHelperConstants.helperBuild { text += "\n" + L("fan.helper.outdated") }
             return text
