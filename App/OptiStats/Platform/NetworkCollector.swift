@@ -64,9 +64,9 @@ final class NetworkCollector: BaseCollector {
         let typeMap: [String: NetworkKind] = [
             kSCNetworkInterfaceTypeIEEE80211 as String: .wifi,
             kSCNetworkInterfaceTypeEthernet as String: .ethernet,
-            kSCNetworkInterfaceTypeBridge as String: .bridge,
+            "Bridge": .bridge,
             kSCNetworkInterfaceTypePPP as String: .vpn,
-            kSCNetworkInterfaceTypeVPN as String: .vpn,
+            "VPN": .vpn,
             kSCNetworkInterfaceTypeL2TP as String: .vpn,
             kSCNetworkInterfaceTypeIPSec as String: .vpn,
             kSCNetworkInterfaceTypeWWAN as String: .cellular
