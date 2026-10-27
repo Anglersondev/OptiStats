@@ -24,6 +24,10 @@ final class AppEnvironment {
     var onPreferencesApplied: (() -> Void)?
     /// Abre a janela com todos os processos (ligada pelo AppDelegate).
     var openProcessBrowser: (() -> Void)?
+    /// Ações do menu "…" dos painéis (ligadas pelo AppDelegate).
+    var openPreferences: (() -> Void)?
+    var openMaintenance: (() -> Void)?
+    var openAbout: (() -> Void)?
 
     init(platform: PlatformServices) {
         self.platform = platform
