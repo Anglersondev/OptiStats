@@ -328,7 +328,7 @@ final class FanControlManager {
             let report = Self.performTest(client: client)
             DispatchQueue.main.async {
                 guard let self else { return }
-                if report.passed { s.markValidated(true) }
+                if report.passed { s.markValidated(true); s.markUnsupported(false) } else { s.markUnsupported(true) }
                 self.setBusy(false)
                 done(report)
             }
