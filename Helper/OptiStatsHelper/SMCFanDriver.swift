@@ -92,8 +92,9 @@ final class SMCFanDriver {
             return failAndRestore(Failure(code: .writeFailed, message: "escrita do alvo recusada: \(smc.lastError ?? "?")"))
         }
 
-        // 3) leitura de volta: modo == 1 e alvo confere. O SMC pode levar alguns ms para refletir a escrita:
-        //    tenta algumas vezes antes de declarar falha e registra os valores lidos para diagnóstico.
+        // 3) leitura de volta do ALVO (obrigatória). Como no Stats, o modo não é exigido: no M4 o valor lido do modo pode
+        //    divergir de 1 mesmo com o controle funcionando (o "automático" aqui é 3). Quem decide se a ventoinha girou
+        //    de verdade é o teste de efeito no app (RPM real subindo). O modo é reafirmado e registrado para diagnóstico.
         var modeNow: UInt8?
         var targetNow: Double?
         var confirmed = false
@@ -101,16 +102,15 @@ final class SMCFanDriver {
             usleep(attempt == 0 ? 150_000 : 100_000)
             modeNow = smc.read(modeKey(fan))?.bytes.first
             targetNow = smc.read(FanSMCKeys.target(fan))?.number
-            if modeNow == 1, SMCFanTargetEncoding.matches(readBack: targetNow, requested: rpm) { confirmed = true; break }
-            // O sistema pode ter devolvido o modo para automático: reafirma o manual e o alvo e lê de novo.
-            if modeNow != 1, let current = smc.read(modeKey(fan)) {
-                _ = writeMode(modeKey(fan), current, to: 1)
-                _ = writeWithRetry(FanSMCKeys.target(fan), bytes: payload, size: target.size)
-            }
+            if SMCFanTargetEncoding.matches(readBack: targetNow, requested: rpm) { confirmed = true; break }
+            _ = writeWithRetry(FanSMCKeys.target(fan), bytes: payload, size: target.size)
         }
         guard confirmed else {
-            let detail = "modo=\(modeNow.map(String.init) ?? "?") (chave \(modeKey(fan)), esperado 1), alvo lido=\(targetNow.map { String(format: "%.1f", $0) } ?? "?") pedido=\(Int(rpm)) tipo=\(target.type) Ftst=\(smc.read(FanSMCKeys.unlockKey)?.bytes.first.map(String.init) ?? "?") ftstEngaged=\(ftstEngaged)"
-            return failAndRestore(Failure(code: .verifyFailed, message: "leitura de volta não confere: \(detail)"))
+            let detail = "alvo lido=\(targetNow.map { String(format: "%.1f", $0) } ?? "?") pedido=\(Int(rpm)) tipo=\(target.type) modo=\(modeNow.map(String.init) ?? "?") (chave \(modeKey(fan))) Ftst=\(smc.read(FanSMCKeys.unlockKey)?.bytes.first.map(String.init) ?? "?")"
+            return failAndRestore(Failure(code: .verifyFailed, message: "leitura de volta do alvo não confere: \(detail)"))
+        }
+        if modeNow != 1 {
+            HelperLog.write("aviso: alvo \(Int(rpm)) aceito na ventoinha \(fan), mas o modo lê \(modeNow.map(String.init) ?? "?"); validação pelo RPM real")
         }
         return .success(())
     }
@@ -127,11 +127,11 @@ final class SMCFanDriver {
         guard let current = smc.read(key) else { return Failure(code: .unlockFailed, message: "não foi possível ler \(key)") }
         if current.bytes.first == 1 { return nil }
         // Tentativa direta (funciona em chips recentes sem Ftst).
-        // Em M1–M4 a escrita direta pode ser aceita e ignorada (o thermalmonitord devolve o modo para 0): só vale se a leitura confirmar.
+        // Como no Stats: escrita direta aceita pelo SMC = pronto (o efeito real é validado pelo RPM, não pela leitura do modo).
         if writeMode(key, current, to: 1) {
-            usleep(150_000)
-            if smc.read(key)?.bytes.first == 1 { return nil }
-            HelperLog.write("modo \(key) aceito mas lido de volta como \(smc.read(key)?.bytes.first.map(String.init) ?? "?"); usando o caminho Ftst")
+            let back = smc.read(key)?.bytes.first
+            if back != 1 { HelperLog.write("modo \(key): escrita aceita, leitura \(back.map(String.init) ?? "?")") }
+            return nil
         }
 
         // Caminho Ftst (M1–M4): pedir ao thermalmonitord que ceda o controle e repetir a escrita do modo.
@@ -162,10 +162,7 @@ final class SMCFanDriver {
         let key = modeKey(fan)
         for _ in 0..<attempts {
             if shouldAbort() { return false }
-            if let current = smc.read(key), writeMode(key, current, to: 1) {
-                usleep(100_000)
-                if smc.read(key)?.bytes.first == 1 { return true }   // só conta se o modo realmente ficou em manual
-            }
+            if let current = smc.read(key), writeMode(key, current, to: 1) { return true }
             usleep(100_000)
         }
         return false
@@ -181,33 +178,34 @@ final class SMCFanDriver {
 
     // MARK: Restauração
 
-    /// Devolve o controle ao macOS: modo 0 e alvo 0 nas ventoinhas que estão em manual, depois Ftst = 0.
+    /// Devolve o controle ao macOS SOMENTE nas ventoinhas que este helper pôs em manual (e desliga o Ftst só se foi ele que ligou).
+    /// Não mexe em ventoinhas controladas por outro app (Stats, Macs Fan Control...). O modo "automático" de fábrica pode ser 3;
+    /// aqui escrevemos 0 como o Stats, e qualquer valor diferente de 1 conta como devolvido.
     /// true somente se a leitura de volta confirmar. Se falhar, `restorePending` fica ativo para nova tentativa.
     @discardableResult
     func restoreAutomatic() -> Bool {
         guard isSupportedArchitecture else { restorePending = false; manualFans.removeAll(); return true }
+        guard isManualActive else { return true }   // nada nosso para devolver
         guard smc.open() else { restorePending = isManualActive; return !restorePending }
         var ok = true
-        let count = fanCount() ?? 0
-        for i in 0..<count {
+        for i in manualFans.sorted() {
             let key = modeKey(i)
-            guard let mode = smc.read(key) else { continue }
-            if mode.bytes.first == 1 {   // 1 = manual (como o Stats); 0/3 já são automáticos
+            if let mode = smc.read(key), mode.bytes.first == 1 {
                 if !writeWithRetry(key, bytes: { var b = mode.bytes; b[0] = 0; return b }(), size: mode.size) { ok = false }
-                // Como no Stats (setFanMode automático): zerar o alvo.
-                if let tg = smc.read(FanSMCKeys.target(i)),
-                   let zero = SMCFanTargetEncoding.encode(type: tg.type, rpm: 0, size: tg.size) {
-                    _ = writeWithRetry(FanSMCKeys.target(i), bytes: zero, size: tg.size)
-                }
+            }
+            // Como no Stats (setFanMode automático): zerar o alvo.
+            if let tg = smc.read(FanSMCKeys.target(i)),
+               let zero = SMCFanTargetEncoding.encode(type: tg.type, rpm: 0, size: tg.size) {
+                _ = writeWithRetry(FanSMCKeys.target(i), bytes: zero, size: tg.size)
             }
         }
-        if let ftst = smc.read(FanSMCKeys.unlockKey), ftst.size > 0, (ftst.bytes.first ?? 0) != 0 {
+        if ftstEngaged, let ftst = smc.read(FanSMCKeys.unlockKey), ftst.size > 0, (ftst.bytes.first ?? 0) != 0 {
             var off = ftst.bytes; off[0] = 0
             if !writeWithRetry(FanSMCKeys.unlockKey, bytes: off, size: ftst.size) { ok = false }
         }
-        // Confirmação por leitura de volta.
-        for i in 0..<count where smc.read(modeKey(i))?.bytes.first == 1 { ok = false }
-        if let ftst = smc.read(FanSMCKeys.unlockKey), (ftst.bytes.first ?? 0) != 0 { ok = false }
+        // Confirmação por leitura de volta (só do que é nosso).
+        for i in manualFans where smc.read(modeKey(i))?.bytes.first == 1 { ok = false }
+        if ftstEngaged, let ftst = smc.read(FanSMCKeys.unlockKey), (ftst.bytes.first ?? 0) != 0 { ok = false }
         if ok { manualFans.removeAll(); ftstEngaged = false }
         restorePending = !ok
         if !ok { HelperLog.write("restauração não confirmada; nova tentativa em breve") }
