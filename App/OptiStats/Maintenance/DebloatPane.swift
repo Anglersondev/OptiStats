@@ -29,6 +29,8 @@ final class DebloatPane: PrefsPaneViewController {
     private var expanded = Set<String>()
     private var search = ""
     private var showAll = false
+    private enum StateFilter: Int { case all, pending, done }
+    private var stateFilter: StateFilter = .all
     private var allowSystem = false
     private var notice: String?
     private var lastShown = 0
@@ -125,6 +127,16 @@ final class DebloatPane: PrefsPaneViewController {
             self?.showAll = on
             self?.refreshList()
         })
+        let all = entries.values.filter { $0.domain != nil }
+        let doneCount = all.filter { $0.state == .disabled }.count
+        let pendingCount = all.filter { $0.state == .enabled }.count
+        addNote(L("debloat.summary", doneCount, pendingCount, all.count), color: doneCount > 0 ? Theme.good : Theme.secondaryText)
+        let filterLabels = [L("debloat.filter.all"), L("debloat.filter.pending", pendingCount), L("debloat.filter.done", doneCount)]
+        let filterPopup = popup(filterLabels, selected: stateFilter.rawValue) { [weak self] i in
+            self?.stateFilter = StateFilter(rawValue: i) ?? .all
+            self?.refreshList()
+        }
+        stack.addArrangedSubview(NSStackView.horizontal([NSTextField.label(L("debloat.filter.label"), font: Theme.body(11), color: Theme.secondaryText), filterPopup], spacing: 8))
         stack.addArrangedSubview(checkbox(L("debloat.allowSystem"), isOn: allowSystem) { [weak self] on in
             guard let self else { return }
             self.allowSystem = on
@@ -180,7 +192,7 @@ final class DebloatPane: PrefsPaneViewController {
         let q = search.trimmingCharacters(in: .whitespaces).lowercased()
         var shown = 0
         for sec in cat.sections {
-            let rows = sec.items.compactMap { entries[$0.label] }.filter { (showAll || $0.domain != nil) && matches($0, q) }
+            let rows = sec.items.compactMap { entries[$0.label] }.filter { (showAll || $0.domain != nil) && matches($0, q) && passesStateFilter($0) }
             if rows.isEmpty { continue }
             shown += rows.count
             let open = !q.isEmpty || expanded.contains(sec.title)
@@ -201,6 +213,20 @@ final class DebloatPane: PrefsPaneViewController {
         updateApply(shown: shown)
     }
 
+    private func passesStateFilter(_ e: DebloatEntry) -> Bool {
+        switch stateFilter {
+        case .all: return true
+        case .pending: return e.state == .enabled
+        case .done: return e.state == .disabled
+        }
+    }
+
+    /// Contagens só dos itens presentes neste Mac.
+    private func stateCounts(_ rows: [DebloatEntry]) -> (done: Int, pending: Int) {
+        let present = rows.filter { $0.domain != nil }
+        return (present.filter { $0.state == .disabled }.count, present.filter { $0.state == .enabled }.count)
+    }
+
     private func indent(_ v: NSView, _ left: CGFloat) -> NSStackView {
         let s = NSStackView.vertical([v], spacing: 0)
         s.edgeInsets = NSEdgeInsets(top: 0, left: left, bottom: 0, right: 0)
@@ -210,6 +236,9 @@ final class DebloatPane: PrefsPaneViewController {
     private func addSectionHeader(_ list: NSStackView, _ sec: UpstreamSection, rows: [DebloatEntry], open: Bool) {
         let nSel = rows.filter { selected.contains($0.item.label) }.count
         var title = (open ? "▾ " : "▸ ") + (sec.title.isEmpty ? "—" : sec.title) + "  (\(rows.count))"
+        let c = stateCounts(rows)
+        if c.done > 0 { title += "  ·  " + L("debloat.header.done", c.done) }
+        if c.pending > 0 { title += "  ·  " + L("debloat.header.pending", c.pending) }
         if nSel > 0 { title += "  ·  " + L("debloat.selected", nSel) }
         let b = NSButton(title: title, target: nil, action: nil)
         b.isBordered = false
@@ -230,7 +259,7 @@ final class DebloatPane: PrefsPaneViewController {
         let item = e.item
         let box = NSButton(checkboxWithTitle: item.label, target: nil, action: nil)
         box.translatesAutoresizingMaskIntoConstraints = false
-        box.state = selected.contains(item.label) ? .on : .off
+        box.state = (selected.contains(item.label) || e.state == .disabled) ? .on : .off
         box.isEnabled = isSelectable(e)
         let t = ActionTarget { [weak self] c in
             guard let self else { return }
@@ -243,7 +272,7 @@ final class DebloatPane: PrefsPaneViewController {
         let stateText: String
         switch e.state {
         case .enabled: stateText = L("debloat.state.active")
-        case .disabled: stateText = L("debloat.state.disabled")
+        case .disabled: stateText = "✓ " + L("debloat.state.disabled")
         case .unknown: stateText = e.domain == nil ? L("debloat.state.absent") : "?"
         }
         var infoText = stateText + " · " + L("debloat.risk.\(item.risk.rawValue)")
@@ -285,12 +314,17 @@ final class DebloatPane: PrefsPaneViewController {
 
     private func selectPreset(_ preset: DebloatPreset) {
         guard let cat = catalog else { return }
-        var skipped = 0
-        for item in cat.presetItems(preset) {
-            guard let e = entries[item.label], e.domain != nil, e.state == .enabled else { continue }
-            if isSelectable(e) { selected.insert(item.label) } else if e.domain == .system && !allowSystem { skipped += 1 }
+        var skipped = 0, already = 0, absent = 0, toApply = 0
+        let items = cat.presetItems(preset)
+        for item in items {
+            guard let e = entries[item.label], e.domain != nil else { absent += 1; continue }
+            if e.state == .disabled { already += 1; continue }
+            guard e.state == .enabled else { continue }
+            if isSelectable(e) { selected.insert(item.label); toApply += 1 } else if e.domain == .system && !allowSystem { skipped += 1 }
         }
-        notice = skipped > 0 ? L("debloat.presetSkipped", skipped) : nil
+        var text = L("debloat.presetSummary", items.count, already, toApply, absent)
+        if skipped > 0 { text += " " + L("debloat.presetSkipped", skipped) }
+        notice = text
         rebuildSoon()
     }
 
