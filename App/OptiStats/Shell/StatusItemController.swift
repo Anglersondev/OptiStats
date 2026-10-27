@@ -10,6 +10,10 @@ final class StatusItemController: NSObject {
         let item: NSStatusItem
         var lastTitle: String?
         var lastDetail: String?
+        /// Layout empilhado: largura mínima já usada por coluna (só cresce, para o ícone não "pular") e faixas de clique.
+        var columnWidths: [CGFloat] = []
+        var columnRanges: [ClosedRange<CGFloat>] = []
+        var imageWidth: CGFloat = 0
         init(signature: String, configs: [WidgetConfig], item: NSStatusItem) {
             self.signature = signature; self.configs = configs; self.item = item
         }
@@ -57,13 +61,14 @@ final class StatusItemController: NSObject {
     }
 
     private func desiredEntries(_ prefs: Preferences) -> [(signature: String, configs: [WidgetConfig])] {
+        let layout = prefs.menuBar.layout
         if prefs.menuBar.combined {
             let kinds = prefs.visibleKinds()
             guard !kinds.isEmpty else { return [] }
-            let configs = kinds.map { WidgetConfig(kind: $0, enabled: true, label: .short, decimals: 0) }
-            return [(signature: "combined|" + kinds.map { $0.rawValue }.joined(separator: ","), configs: configs)]
+            let configs = kinds.map { WidgetConfig(kind: $0, enabled: true, label: prefs.menuBar.combinedLabel, decimals: 0) }
+            return [(signature: "combined|\(layout.rawValue)|\(prefs.menuBar.combinedLabel.rawValue)|" + kinds.map { $0.rawValue }.joined(separator: ","), configs: configs)]
         }
-        return prefs.activeWidgets().map { (signature: "\($0.kind.rawValue)|\($0.label.rawValue)|\($0.decimals)|\($0.content.rawValue)", configs: [$0]) }
+        return prefs.activeWidgets().map { (signature: "\($0.kind.rawValue)|\(layout.rawValue)|\($0.label.rawValue)|\($0.decimals)|\($0.content.rawValue)", configs: [$0]) }
     }
 
     private func rebuild(_ desired: [(signature: String, configs: [WidgetConfig])]) {
@@ -79,8 +84,8 @@ final class StatusItemController: NSObject {
             let entry = Entry(signature: d.signature, configs: d.configs, item: item)
             if let button = item.button {
                 button.font = NSFont.monospacedDigitSystemFont(ofSize: NSFont.systemFontSize, weight: .regular)
-                button.imagePosition = .imageLeft
-                if d.configs.count == 1, d.configs[0].label == .icon {
+                button.imagePosition = env.preferences.current.menuBar.layout == .stacked ? .imageOnly : .imageLeft
+                if env.preferences.current.menuBar.layout == .line, d.configs.count == 1, d.configs[0].label == .icon {
                     button.image = Self.symbol(for: d.configs[0].kind)
                 }
                 button.target = self
@@ -123,11 +128,17 @@ final class StatusItemController: NSObject {
                                   labels: labels, locale: Localizer.shared.locale)
         }
         // No modo ícone o rótulo é omitido pelo formatter; o título é só o valor.
+        let stacked = prefs.menuBar.layout == .stacked
         let title = texts.map { $0.display }.joined(separator: " ")
         let detail = texts.map { "\($0.detail): \($0.value)" }.joined(separator: ", ")
         guard let button = entry.item.button else { return }
         if force || entry.lastTitle != title {
-            button.title = title
+            if stacked {
+                button.title = ""
+                button.image = Self.stackedImage(entry: entry, texts: texts)
+            } else {
+                button.title = title
+            }
             entry.lastTitle = title
         }
         if force || entry.lastDetail != detail {
@@ -162,7 +173,15 @@ final class StatusItemController: NSObject {
             host.close()
             return
         }
-        presentPopover(for: entry, kind: entry.primaryKind)
+        presentPopover(for: entry, kind: clickedKind(in: entry))
+    }
+
+    /// Em itens empilhados/combinados, o clique abre o painel da coluna sob o cursor (os outros ficam no seletor do painel).
+    private func clickedKind(in entry: Entry) -> WidgetKind {
+        guard entry.configs.count > 1, let button = entry.item.button, let event = NSApp.currentEvent else { return entry.primaryKind }
+        let x = button.convert(event.locationInWindow, from: nil).x - max(0, (button.bounds.width - entry.imageWidth) / 2)
+        if let i = entry.columnRanges.firstIndex(where: { $0.contains(x) }), i < entry.configs.count { return entry.configs[i].kind }
+        return entry.primaryKind
     }
 
     /// Abre o painel do módulo `kind` (usa o item da barra que o mostra; senão o primeiro). Sem itens: nada.
@@ -177,8 +196,14 @@ final class StatusItemController: NSObject {
     private func presentPopover(for entry: Entry, kind: WidgetKind) {
         closePopover()
         guard let button = entry.item.button else { return }
-        let controller = PopoverRegistry.make(kind, env: env)
-        let newHost = PopoverHost(controller: controller)
+        let newHost: PopoverHost
+        if entry.configs.count > 1 {
+            let panels = entry.configs.map { (title: PrefsText.kindName($0.kind), controller: PopoverRegistry.make($0.kind, env: env)) }
+            let index = entry.configs.firstIndex { $0.kind == kind } ?? 0
+            newHost = PopoverHost(combined: CombinedPopoverContainer(panels: panels, selected: index))
+        } else {
+            newHost = PopoverHost(controller: PopoverRegistry.make(kind, env: env))
+        }
         newHost.onClose = { [weak self, weak entry, weak newHost] in
             guard let self else { return }
             if let entry { self.lastPopoverClose = (ObjectIdentifier(entry), ProcessInfo.processInfo.systemUptime) }
@@ -228,6 +253,56 @@ final class StatusItemController: NSObject {
     @objc private func menuAbout() { onOpenAbout?() }
     @objc private func menuMaintenance() { onOpenMaintenance?() }
     @objc private func menuQuit() { NSApp.terminate(nil) }
+
+    // MARK: Desenho empilhado
+
+    /// Duas linhas por coluna: rótulo pequeno em cima e valor embaixo (ou carga em cima e temperatura embaixo).
+    /// Imagem template: segue claro/escuro. Redesenhada só quando o texto muda.
+    private static func stackedImage(entry: Entry, texts: [MenuBarText]) -> NSImage {
+        let topFont = NSFont.systemFont(ofSize: 8, weight: .semibold)
+        let botFont = NSFont.monospacedDigitSystemFont(ofSize: 10.5, weight: .medium)
+        let soloFont = NSFont.monospacedDigitSystemFont(ofSize: 12, weight: .medium)
+        let gap: CGFloat = 7
+        struct Col { var top: String?; var bottom: String }
+        let cols: [Col] = texts.map { t in
+            if let l = t.lines, l.count == 2 { return Col(top: l[0], bottom: l[1]) }
+            return Col(top: t.label, bottom: t.value)
+        }
+        func width(_ s: String?, _ f: NSFont) -> CGFloat { s.map { ($0 as NSString).size(withAttributes: [.font: f]).width } ?? 0 }
+        if entry.columnWidths.count != cols.count { entry.columnWidths = Array(repeating: 0, count: cols.count) }
+        for (i, c) in cols.enumerated() {
+            let w = c.top == nil ? width(c.bottom, soloFont) : max(width(c.top, topFont), width(c.bottom, botFont))
+            entry.columnWidths[i] = max(entry.columnWidths[i], ceil(w))
+        }
+        let widths = entry.columnWidths
+        let total = widths.reduce(0, +) + gap * CGFloat(max(0, cols.count - 1))
+        var ranges: [ClosedRange<CGFloat>] = []
+        var x: CGFloat = 0
+        for w in widths { ranges.append((x - gap / 2)...(x + w + gap / 2)); x += w + gap }
+        entry.columnRanges = ranges
+        entry.imageWidth = total
+        let size = NSSize(width: max(1, total), height: 22)
+        let image = NSImage(size: size, flipped: false) { _ in
+            var x: CGFloat = 0
+            for (i, c) in cols.enumerated() {
+                let w = widths[i]
+                func draw(_ s: String, _ f: NSFont, y: CGFloat) {
+                    let sw = (s as NSString).size(withAttributes: [.font: f]).width
+                    (s as NSString).draw(at: NSPoint(x: x + (w - sw) / 2, y: y), withAttributes: [.font: f, .foregroundColor: NSColor.black])
+                }
+                if let top = c.top {
+                    draw(top, topFont, y: 12)
+                    draw(c.bottom, botFont, y: 0.5)
+                } else {
+                    draw(c.bottom, soloFont, y: 3)
+                }
+                x += w + gap
+            }
+            return true
+        }
+        image.isTemplate = true
+        return image
+    }
 
     // MARK: Mapeamentos
 

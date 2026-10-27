@@ -183,3 +183,10 @@
 "prefs.content.load" = "Load %";
 "prefs.content.temperature" = "Temperature";
 "prefs.content.both" = "Both";
+"prefs.menubar.layout" = "Style";
+"prefs.menubar.layout.line" = "One line";
+"prefs.menubar.layout.stacked" = "Stacked (two lines)";
+"prefs.menubar.layoutNote" = "Stacked draws the name small on top and the value below (load above, temperature below when both are shown). With several indicators combined, clicking one opens its panel and a switch at the top jumps to the others.";
+"prefs.menubar.combinedLabel" = "Label in compact mode";
+"prefs.menubar.combinedLabel.short" = "Short name (CPU, FAN…)";
+"prefs.menubar.combinedLabel.none" = "No name (values only)";

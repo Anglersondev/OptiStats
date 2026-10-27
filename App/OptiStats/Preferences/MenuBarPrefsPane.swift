@@ -76,6 +76,20 @@ final class MenuBarPrefsPane: PrefsPaneViewController {
             self?.rebuildSoon()
         })
         addNote(L("prefs.menubar.combinedNote"))
+        let layoutPopup = popup([L("prefs.menubar.layout.line"), L("prefs.menubar.layout.stacked")],
+                                selected: p.menuBar.layout == .stacked ? 1 : 0) { [weak self] i in
+            self?.change { $0.menuBar.layout = i == 1 ? .stacked : .line }
+        }
+        stack.addArrangedSubview(NSStackView.horizontal([NSTextField.label(L("prefs.menubar.layout"), font: Theme.body(11), color: Theme.secondaryText), layoutPopup], spacing: 8))
+        addNote(L("prefs.menubar.layoutNote"))
+        if p.menuBar.combined {
+            let styles: [LabelStyle] = [.short, .none]
+            let labelPopup = popup([L("prefs.menubar.combinedLabel.short"), L("prefs.menubar.combinedLabel.none")],
+                                   selected: styles.firstIndex(of: p.menuBar.combinedLabel) ?? 0) { [weak self] i in
+                self?.change { $0.menuBar.combinedLabel = styles[i] }
+            }
+            stack.addArrangedSubview(NSStackView.horizontal([NSTextField.label(L("prefs.menubar.combinedLabel"), font: Theme.body(11), color: Theme.secondaryText), labelPopup], spacing: 8))
+        }
         if p.menuBar.combined {
             for kind in WidgetKind.allCases {
                 let selected = p.menuBar.combinedKinds.contains(kind)
