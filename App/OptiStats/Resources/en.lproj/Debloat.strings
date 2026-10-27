@@ -164,3 +164,9 @@
 "debloat.filter.pending" = "Only what is left (%ld)";
 "debloat.filter.done" = "Already disabled (%ld)";
 "debloat.presetSummary" = "Preset has %ld items: %ld already disabled, %ld selected to apply, %ld not present on this Mac.";
+"debloat.report.absent" = "not present on this Mac";
+"debloat.report.already" = "already disabled";
+"debloat.report.apply" = "will be disabled";
+"debloat.report.system" = "system service, skipped (enable system services to include)";
+"debloat.update.addedList" = "New:";
+"debloat.update.removedList" = "Removed:";

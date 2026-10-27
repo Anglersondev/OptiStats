@@ -22,6 +22,7 @@ final class MemoryPopover: StatPopover {
     private let chart = LineChartView(height: 56)
     private let appPool = ViewPool<ProcessRowView> { ProcessRowView() }
     private let appNote = Fmt.note()
+    private let allProcessesButton = NSButton(title: L("procs.open"), target: nil, action: nil)
     private lazy var optimizer = MemoryOptimizerPanel(env: env)
     private var chartSection: NSStackView!
     private var activitySection: NSStackView!
@@ -44,12 +45,18 @@ final class MemoryPopover: StatPopover {
         body.addFullWidth(activitySection)
         chartSection = makeSection(L("mem.section.history"), [chart])
         body.addFullWidth(chartSection)
-        body.addFullWidth(makeSection(L("mem.section.top"), [appPool.stack, appNote]))
+        allProcessesButton.bezelStyle = .rounded
+        allProcessesButton.controlSize = .small
+        allProcessesButton.target = self
+        allProcessesButton.action = #selector(openAllProcesses)
+        body.addFullWidth(makeSection(L("mem.section.top"), [appPool.stack, appNote, allProcessesButton]))
         body.addFullWidth(makeSection(L("opt.section"), [optimizer]))
         chart.fixedRange = 0...100
         altRow.toolTip = L("mem.altFormulaTip")
         optimizer.onLayoutChange = { [weak self] in self?.updatePreferredSize() }
     }
+
+    @objc private func openAllProcesses() { env.openProcessBrowser?() }
 
     override func render() {
         guard let m = env.store.memory else { showEmpty(L("mem.empty")); return }
