@@ -70,8 +70,8 @@ final class StatusItemController: NSObject {
             let configs = kinds.map { WidgetConfig(kind: $0, enabled: true, label: prefs.menuBar.combinedLabel, decimals: 0) }
             return [(signature: "combined|\(layout.rawValue)|\(prefs.menuBar.combinedLabel.rawValue)|" + kinds.map { $0.rawValue }.joined(separator: ","), configs: configs)]
         }
-        // Todo indicador ligado aparece no seu próprio item; o empilhado é um item EXTRA com dois indicadores.
-        // Um indicador pode estar sozinho e também embaixo de outro (e o mesmo par não é criado duas vezes).
+        // Indicador com "empilhar" vira um item de dois indicadores (no lugar do item sozinho). O indicador de baixo
+        // continua disponível sozinho: basta ligá-lo na lista. O mesmo par não é criado duas vezes.
         var out: [(signature: String, configs: [WidgetConfig])] = []
         var pairs = Set<Set<WidgetKind>>()
         let allowed: (WidgetKind) -> Bool = { prefs.monitoringMode == .full || $0.isEssential }
@@ -80,6 +80,7 @@ final class StatusItemController: NSObject {
                 let second = prefs.menuBar.widgets.first { $0.kind == other } ?? WidgetConfig(kind: other, enabled: true)
                 let sig = "pair|\(w.kind.rawValue)|\(w.label.rawValue)|\(w.decimals)|\(w.content.rawValue)|\(other.rawValue)|\(second.label.rawValue)|\(second.decimals)|\(second.content.rawValue)"
                 out.append((signature: sig, configs: [w, second]))
+                continue   // empilhado substitui o item sozinho; o de baixo só aparece sozinho se estiver ligado na lista
             }
             out.append((signature: "\(w.kind.rawValue)|\(layout.rawValue)|\(w.label.rawValue)|\(w.decimals)|\(w.content.rawValue)", configs: [w]))
         }
