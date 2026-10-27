@@ -1,7 +1,7 @@
 import XCTest
 @testable import OptiStatsCore
 
-final class MetricsStoreTests: XCTestCase {
+final class MetricsHistoryRegressionTests: XCTestCase {
     func testPublishingPreservesRetainedSnapshotsAndBoundsHistory() {
         let store = MetricsStore(clock: ManualClock(), seriesCapacity: 4, seriesRetention: 100)
         func publish(_ t: Int) {
