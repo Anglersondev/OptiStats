@@ -21,7 +21,6 @@ final class AboutWindowController: NSObject, NSWindowDelegate {
     private func makeWindow() -> NSWindow {
         let info = Bundle.main.infoDictionary
         let version = (info?["CFBundleShortVersionString"] as? String) ?? "dev"
-        let build = (info?["CFBundleVersion"] as? String) ?? "0"
 
         let icon = NSImageView(image: NSApp.applicationIconImage ?? NSImage())
         icon.translatesAutoresizingMaskIntoConstraints = false
@@ -29,7 +28,7 @@ final class AboutWindowController: NSObject, NSWindowDelegate {
         icon.heightAnchor.constraint(equalToConstant: 64).isActive = true
 
         let name = NSTextField.label("OptiStats", font: Theme.title(22), alignment: .center)
-        let ver = NSTextField.label(L("about.version", version, build), font: Theme.body(11), color: Theme.secondaryText, alignment: .center)
+        let ver = NSTextField.label(L("about.version", version), font: Theme.body(11), color: Theme.secondaryText, alignment: .center)
         let tagline = NSTextField.label(L("about.tagline"), font: Theme.body(12), color: Theme.secondaryText, alignment: .center, lines: 0)
         tagline.preferredMaxLayoutWidth = 420
         let privacy = NSTextField.label(L("about.privacy"), font: Theme.body(11), color: Theme.secondaryText, alignment: .center, lines: 0)

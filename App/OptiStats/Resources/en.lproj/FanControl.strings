@@ -10,7 +10,7 @@
 "fan.helper.status" = "Helper status:";
 "fan.helper.state.notInstalled" = "Not installed";
 "fan.helper.state.installed" = "Installed, not running";
-"fan.helper.state.running" = "Running (build %ld, protocol %ld)";
+"fan.helper.state.running" = "Running (v1.0, internal build %ld)";
 "fan.helper.state.noAnswer" = "Running, but not answering: %@";
 "fan.helper.outdated" = "The installed helper is older than this app. Reinstall it to update.";
 "fan.helper.install" = "Install helper";
