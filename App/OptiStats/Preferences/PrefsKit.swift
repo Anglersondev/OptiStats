@@ -61,7 +61,6 @@ class PrefsPaneViewController: NSViewController {
         scroll.documentView = doc
         doc.widthAnchor.constraint(equalTo: scroll.contentView.widthAnchor).isActive = true
         view = scroll
-        preferredContentSize = Self.contentSize
         build()
     }
 

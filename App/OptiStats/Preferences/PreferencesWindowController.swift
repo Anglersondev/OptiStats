@@ -70,6 +70,7 @@ final class PreferencesWindowController: NSObject, NSWindowDelegate {
         w.delegate = self
         w.setContentSize(NSSize(width: 190 + PrefsPaneViewController.contentSize.width, height: PrefsPaneViewController.contentSize.height))
         w.minSize = NSSize(width: 760, height: 420)
+        w.setFrameAutosaveName("OptiStatsPreferences")
         w.center()
         tabs = tabVC
         sidebar = side

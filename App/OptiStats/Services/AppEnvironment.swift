@@ -22,6 +22,8 @@ final class AppEnvironment {
 
     /// A camada de interface assina para reconstruir itens da barra quando as preferências mudam.
     var onPreferencesApplied: (() -> Void)?
+    /// Abre a janela com todos os processos (ligada pelo AppDelegate).
+    var openProcessBrowser: (() -> Void)?
 
     init(platform: PlatformServices) {
         self.platform = platform

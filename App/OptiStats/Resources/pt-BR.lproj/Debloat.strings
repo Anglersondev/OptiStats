@@ -164,3 +164,9 @@
 "debloat.filter.pending" = "Só o que falta (%ld)";
 "debloat.filter.done" = "Já desativados (%ld)";
 "debloat.presetSummary" = "O preset tem %ld itens: %ld já desativados, %ld selecionados para aplicar, %ld não existem neste Mac.";
+"debloat.report.absent" = "não existe neste Mac";
+"debloat.report.already" = "já desativado";
+"debloat.report.apply" = "será desativado";
+"debloat.report.system" = "serviço de sistema, ignorado (ative serviços de sistema para incluir)";
+"debloat.update.addedList" = "Novos:";
+"debloat.update.removedList" = "Removidos:";

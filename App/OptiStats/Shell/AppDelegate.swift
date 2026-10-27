@@ -6,6 +6,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusController: StatusItemController!
     private var preferencesController: PreferencesWindowController?
     private var aboutController: AboutWindowController?
+    private var processBrowser: ProcessBrowserWindowController?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         installMainMenu()
@@ -19,6 +20,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         controller.onOpenMaintenance = { [weak self] in self?.showMaintenance() }
         statusController = controller
         // A barra reage a mudanças de preferências (visibilidade, ordem, rótulos, unidade...).
+        env.openProcessBrowser = { [weak self] in self?.showProcessBrowser() }
         env.onPreferencesApplied = { [weak controller] in controller?.preferencesDidChange() }
 
         env.start()   // registra coletores e chama applyPreferences() -> controller.preferencesDidChange()
@@ -45,6 +47,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     /// Manutenção vive como abas dentro de Preferências (Disco e cache, RAM avançada, Debloat).
     func showMaintenance() { showPreferences(tab: .diskCleanup) }
+
+    func showProcessBrowser() {
+        if processBrowser == nil { processBrowser = ProcessBrowserWindowController() }
+        processBrowser?.show()
+    }
 
     func showAbout() {
         if aboutController == nil {

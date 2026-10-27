@@ -33,6 +33,8 @@ final class DebloatPane: PrefsPaneViewController {
     private var stateFilter: StateFilter = .all
     private var allowSystem = false
     private var notice: String?
+    /// Relatório por item do último preset escolhido (nome, estado).
+    private var presetReport: (title: String, lines: [(String, String, NSColor)])?
     private var lastShown = 0
 
     private weak var applyButton: NSButton?
@@ -148,7 +150,7 @@ final class DebloatPane: PrefsPaneViewController {
         let tel = button(L("debloat.presetTelemetry")) { [weak self] in self?.selectPreset(.telemetry) }
         let bal = button(L("debloat.presetBalanced")) { [weak self] in self?.selectPreset(.balanced) }
         let all = button(L("debloat.presetAll")) { [weak self] in self?.confirmPresetAll() }
-        let clear = button(L("debloat.clear")) { [weak self] in self?.selected.removeAll(); self?.refreshList() }
+        let clear = button(L("debloat.clear")) { [weak self] in self?.selected.removeAll(); self?.presetReport = nil; self?.refreshList() }
         stack.addArrangedSubview(NSStackView.horizontal([tel, bal, all, clear], spacing: 8))
 
         let apply = button(L("debloat.apply", 0)) { [weak self] in self?.confirmApply() }
@@ -189,6 +191,12 @@ final class DebloatPane: PrefsPaneViewController {
         guard let list = listStack, let cat = catalog else { return }
         for v in list.arrangedSubviews { list.removeArrangedSubview(v); v.removeFromSuperview() }
         listTargets.removeAll()
+        if let r = presetReport {
+            list.addFullWidth(NSTextField.label(r.title, font: NSFont.systemFont(ofSize: 12, weight: .semibold), color: Theme.primaryText, lines: 0))
+            for (name, status, color) in r.lines {
+                list.addFullWidth(indent(NSTextField.label("\(name) — \(status)", font: Theme.body(11), color: color, lines: 0), 12))
+            }
+        }
         let q = search.trimmingCharacters(in: .whitespaces).lowercased()
         var shown = 0
         for sec in cat.sections {
@@ -315,16 +323,25 @@ final class DebloatPane: PrefsPaneViewController {
     private func selectPreset(_ preset: DebloatPreset) {
         guard let cat = catalog else { return }
         var skipped = 0, already = 0, absent = 0, toApply = 0
+        var lines: [(String, String, NSColor)] = []
         let items = cat.presetItems(preset)
         for item in items {
-            guard let e = entries[item.label], e.domain != nil else { absent += 1; continue }
-            if e.state == .disabled { already += 1; continue }
+            guard let e = entries[item.label], e.domain != nil else {
+                absent += 1; lines.append((item.label, L("debloat.report.absent"), Theme.tertiaryText)); continue
+            }
+            if e.state == .disabled { already += 1; lines.append((item.label, L("debloat.report.already"), Theme.good)); continue }
             guard e.state == .enabled else { continue }
-            if isSelectable(e) { selected.insert(item.label); toApply += 1 } else if e.domain == .system && !allowSystem { skipped += 1 }
+            if isSelectable(e) {
+                selected.insert(item.label); toApply += 1
+                lines.append((item.label, L("debloat.report.apply"), Theme.primaryText))
+            } else if e.domain == .system && !allowSystem {
+                skipped += 1; lines.append((item.label, L("debloat.report.system"), Theme.warn))
+            }
         }
         var text = L("debloat.presetSummary", items.count, already, toApply, absent)
         if skipped > 0 { text += " " + L("debloat.presetSkipped", skipped) }
-        notice = text
+        presetReport = (text, lines)
+        notice = nil
         rebuildSoon()
     }
 
@@ -404,17 +421,16 @@ final class DebloatPane: PrefsPaneViewController {
             let new = UpstreamCatalog.parse(block)
             let diff = catalog.map { UpstreamCatalog.diff(old: $0, new: new) } ?? CatalogDiff(added: new.items.map { $0.label }, removed: [])
             let text = diff.isEmpty ? L("debloat.update.diffNone") : L("debloat.update.diffText", diff.added.count, diff.removed.count)
-            rebuildSoon()
-            MaintUI.confirm(window: view.window, title: L("debloat.update.diffTitle"), text: text,
-                            action: L("debloat.update.save")) { [weak self] ok in
-                guard ok, let self else { return }
-                do {
-                    try DebloatCatalogStore.save(block: block)
-                    self.notice = L("debloat.update.saved", diff.added.count, diff.removed.count)
-                    self.reload()
-                } catch {
-                    self.showError(L("debloat.update.failed", L("debloat.update.err.saveFailed")))
-                }
+            do {
+                try DebloatCatalogStore.save(block: block)
+                var text = diff.isEmpty ? L("debloat.update.diffNone") : L("debloat.update.saved", diff.added.count, diff.removed.count)
+                if !diff.added.isEmpty { text += "\n" + L("debloat.update.addedList") + " " + diff.added.prefix(15).joined(separator: ", ") }
+                if !diff.removed.isEmpty { text += "\n" + L("debloat.update.removedList") + " " + diff.removed.prefix(15).joined(separator: ", ") }
+                notice = text
+                reload()
+            } catch {
+                rebuildSoon()
+                showError(L("debloat.update.failed", L("debloat.update.err.saveFailed")))
             }
         }
     }

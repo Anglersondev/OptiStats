@@ -106,7 +106,8 @@ final class MemoryAdvancedPane: PrefsPaneViewController {
             }
         }
         let refresh = button(L("maint.ram.refresh")) { [weak self] in self?.reload() }
-        stack.addArrangedSubview(NSStackView.horizontal([optimizer, loginSettings, refresh], spacing: 8))
+        let allProcs = button(L("procs.open")) { [weak self] in self?.env.openProcessBrowser?() }
+        stack.addArrangedSubview(NSStackView.horizontal([optimizer, loginSettings, refresh, allProcs], spacing: 8))
 
         addSection(L("ram.diag.section"))
         stack.addFullWidth(diagnosisBox)
