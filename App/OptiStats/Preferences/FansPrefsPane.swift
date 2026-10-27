@@ -58,6 +58,17 @@ final class FansPrefsPane: PrefsPaneViewController {
 
         guard let settings = manager.settings else { addNote(L("fan.err.notInstalled"), color: Theme.tertiaryText); return }
 
+        if settings.isUnsupportedForThisMac {
+            addSection(L("fan.manual.section"))
+            addNote(L("fan.unsupported.note"), color: Theme.secondaryText)
+            stack.addArrangedSubview(NSStackView.horizontal([button(L("fan.unsupported.retry")) { [weak self] in
+                self?.manager.settings?.markUnsupported(false)
+                self?.rebuildSoon()
+            }], spacing: 8))
+            addReadingsSection(fans: fans, settings: settings)
+            return
+        }
+
         // 3) Permissão
         addSection(L("fan.manual.section"))
         stack.addArrangedSubview(checkbox(L("fan.allow.title"), isOn: settings.manualAllowed) { [weak self] on in
@@ -84,13 +95,18 @@ final class FansPrefsPane: PrefsPaneViewController {
         if settings.smartBoostEnabled { addNote(smartBoostStateText(), color: Theme.secondaryText) }
 
         // 6) Ventoinhas
+        addReadingsSection(fans: fans, settings: settings)
+    }
+
+    /// Leituras atuais (RPM, mín–máx). Sempre visíveis; o controle por ventoinha só existe se permitido e validado.
+    private func addReadingsSection(fans: [FanReading], settings: FanControlSettings) {
         addSection(L("prefs.fans.readings"))
         if fans.isEmpty {
             let state = env.store.state(.fans)
             addNote(ModulePopoverViewController.message(for: state) ?? L("prefs.fans.none"), color: Theme.tertiaryText)
             return
         }
-        let canControl = settings.manualAllowed && helperRunning && !settings.smartBoostEnabled && !manager.busy
+        let canControl = !settings.isUnsupportedForThisMac && settings.manualAllowed && helperRunning && !settings.smartBoostEnabled && !manager.busy
         for fan in fans { addFanRow(fan, canControl: canControl) }
         addNote(L("fan.row.note"))
         updateReadings()

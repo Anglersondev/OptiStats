@@ -9,6 +9,7 @@ final class FanControlSettings {
         static let manualAllowed = "app.optistats.fanControl.manualAllowed"
         static let smartBoost = "app.optistats.fanControl.smartBoost"
         static let validatedModels = "app.optistats.fanControl.validatedModels"
+        static let unsupportedModels = "app.optistats.fanControl.unsupportedModels"
     }
 
     init(defaults: UserDefaults = .standard, modelKey: @escaping () -> String) {
@@ -33,6 +34,17 @@ final class FanControlSettings {
 
     var isValidatedForThisMac: Bool {
         (defaults.stringArray(forKey: Key.validatedModels) ?? []).contains(currentModel)
+    }
+
+    /// O teste reprovou neste Mac/macOS: o controle manual fica escondido até o dono pedir para tentar de novo.
+    var isUnsupportedForThisMac: Bool {
+        (defaults.stringArray(forKey: Key.unsupportedModels) ?? []).contains(currentModel)
+    }
+
+    func markUnsupported(_ unsupported: Bool) {
+        var list = Set(defaults.stringArray(forKey: Key.unsupportedModels) ?? [])
+        if unsupported { list.insert(currentModel) } else { list.remove(currentModel) }
+        defaults.set(Array(list).sorted(), forKey: Key.unsupportedModels)
     }
 
     func markValidated(_ validated: Bool) {

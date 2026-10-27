@@ -93,3 +93,5 @@
 "fan.err.internalError" = "Internal helper error.";
 "fan.helper.outdatedBanner" = "The installed helper is from an older version of OptiStats. Click \"Update helper\" (asks for your password once) before testing control.";
 "fan.helper.update" = "Update helper";
+"fan.unsupported.note" = "This Mac's macOS does not allow manual fan control (the test did not pass). Fans stay on macOS automatic, which is safe. You can uninstall the helper above.";
+"fan.unsupported.retry" = "Try again";

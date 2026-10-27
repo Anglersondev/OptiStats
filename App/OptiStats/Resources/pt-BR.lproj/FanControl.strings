@@ -93,3 +93,5 @@
 "fan.err.internalError" = "Erro interno do helper.";
 "fan.helper.outdatedBanner" = "O helper instalado é de uma versão anterior do OptiStats. Clique em \"Atualizar helper\" (pede a senha uma vez) antes de testar o controle.";
 "fan.helper.update" = "Atualizar helper";
+"fan.unsupported.note" = "O macOS deste Mac não permite controle manual das ventoinhas (o teste não passou). As ventoinhas seguem no automático do macOS, que é seguro. Você pode desinstalar o helper acima.";
+"fan.unsupported.retry" = "Tentar de novo";
