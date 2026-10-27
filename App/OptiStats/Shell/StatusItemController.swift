@@ -285,7 +285,7 @@ final class StatusItemController: NSObject {
         let gap: CGFloat = 7
         struct Col { var top: String?; var bottom: String }
         if entry.isPair, texts.count == 2 {
-            return pairImage(entry: entry, top: texts[0].display, bottom: texts[1].display)
+            return pairImage(entry: entry, top: texts[0].value, bottom: texts[1].value)   // só valores: sem nome em nenhuma linha
         }
         let cols: [Col] = texts.map { t in
             if let l = t.lines, l.count == 2 { return Col(top: l[0], bottom: l[1]) }
