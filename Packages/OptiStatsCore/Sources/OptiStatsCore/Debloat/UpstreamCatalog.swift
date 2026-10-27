@@ -65,6 +65,7 @@ public struct CatalogDiff: Equatable {
     public let added: [String]
     public let removed: [String]
     public var isEmpty: Bool { added.isEmpty && removed.isEmpty }
+    public init(added: [String], removed: [String]) { self.added = added; self.removed = removed }
 }
 
 public struct UpstreamCatalog: Equatable {
