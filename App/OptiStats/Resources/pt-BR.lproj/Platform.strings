@@ -1,0 +1,15 @@
+/* Área Platform: motivos exibidos quando uma fonte de dados não está disponível. */
+"platform.reason.cpuFailed" = "Não foi possível ler os contadores de CPU";
+"platform.reason.memoryFailed" = "Não foi possível ler as estatísticas de memória";
+"platform.reason.noGPUStats" = "O sistema não expõe a utilização da GPU";
+"platform.reason.noDisk" = "Nenhuma informação de disco disponível";
+"platform.reason.networkFailed" = "Não foi possível ler os contadores de rede";
+"platform.reason.noBattery" = "Este Mac não tem bateria";
+"platform.reason.processesFailed" = "Não foi possível listar os processos";
+"platform.reason.smcOpenFailed" = "Não foi possível abrir o serviço de sensores (%@)";
+"platform.reason.noTemperatures" = "Nenhum sensor de temperatura disponível neste Mac";
+"platform.reason.noFans" = "Este Mac não tem ventoinhas";
+"platform.reason.noElectrical" = "Nenhum sensor elétrico disponível neste Mac";
+"platform.reason.noPower" = "Leituras de potência indisponíveis neste Mac";
+"platform.fan.readonly" = "O controle de ventoinhas não está disponível nesta versão (somente leitura)";
+"platform.error.launchAtLogin" = "Não foi possível alterar o início no login: %@";
