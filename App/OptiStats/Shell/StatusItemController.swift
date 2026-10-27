@@ -70,19 +70,18 @@ final class StatusItemController: NSObject {
             let configs = kinds.map { WidgetConfig(kind: $0, enabled: true, label: prefs.menuBar.combinedLabel, decimals: 0) }
             return [(signature: "combined|\(layout.rawValue)|\(prefs.menuBar.combinedLabel.rawValue)|" + kinds.map { $0.rawValue }.joined(separator: ","), configs: configs)]
         }
+        // Todo indicador ligado aparece no seu próprio item; o empilhado é um item EXTRA com dois indicadores.
+        // Um indicador pode estar sozinho e também embaixo de outro (e o mesmo par não é criado duas vezes).
         var out: [(signature: String, configs: [WidgetConfig])] = []
-        var consumed = Set<WidgetKind>()
+        var pairs = Set<Set<WidgetKind>>()
         let allowed: (WidgetKind) -> Bool = { prefs.monitoringMode == .full || $0.isEssential }
-        for w in prefs.activeWidgets() where !consumed.contains(w.kind) {
-            if let other = w.stackWith, other != w.kind, allowed(other), !consumed.contains(other) {
-                consumed.insert(other)
-                let second = prefs.menuBar.widgets.first { $0.kind == other }
-                    ?? WidgetConfig(kind: other, enabled: true)
+        for w in prefs.activeWidgets() {
+            if let other = w.stackWith, other != w.kind, allowed(other), pairs.insert([w.kind, other]).inserted {
+                let second = prefs.menuBar.widgets.first { $0.kind == other } ?? WidgetConfig(kind: other, enabled: true)
                 let sig = "pair|\(w.kind.rawValue)|\(w.label.rawValue)|\(w.decimals)|\(w.content.rawValue)|\(other.rawValue)|\(second.label.rawValue)|\(second.decimals)|\(second.content.rawValue)"
                 out.append((signature: sig, configs: [w, second]))
-            } else {
-                out.append((signature: "\(w.kind.rawValue)|\(layout.rawValue)|\(w.label.rawValue)|\(w.decimals)|\(w.content.rawValue)", configs: [w]))
             }
+            out.append((signature: "\(w.kind.rawValue)|\(layout.rawValue)|\(w.label.rawValue)|\(w.decimals)|\(w.content.rawValue)", configs: [w]))
         }
         return out
     }
