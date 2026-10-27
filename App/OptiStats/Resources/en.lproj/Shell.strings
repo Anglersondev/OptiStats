@@ -34,7 +34,7 @@
 "about.title" = "About OptiStats";
 "about.version" = "Version %@ (%@)";
 "about.tagline" = "A lightweight system monitor for the Mac menu bar, focused on low resource usage.";
-"about.privacy" = "No telemetry. No network access. Everything stays on this Mac.";
+"about.privacy" = "No telemetry. Everything stays on this Mac. The only network use is the optional Debloat catalog update button, started by you.";
 "about.licenses" = "Licenses and notices";
 "prefs.window.title" = "OptiStats Preferences";
 "prefs.ok" = "OK";
@@ -171,7 +171,7 @@
 "prefs.diag.exportFailed" = "Could not save the report: %@";
 "prefs.privacy.section" = "Your data stays on your Mac";
 "prefs.privacy.noTelemetry" = "No telemetry, analytics or tracking of any kind.";
-"prefs.privacy.local" = "All readings are processed locally and are not sent over the network.";
+"prefs.privacy.local" = "All readings are processed locally and are not sent over the network. The only exception is the optional, manual “Update from GitHub” button in the Debloat tab, which downloads the public service catalog (nothing of yours is sent).";
 "prefs.privacy.noWrite" = "The app only reads sensors and fans. It never writes to the SMC or changes fan speed.";
 "prefs.privacy.noKill" = "Apps are only closed after your explicit confirmation, and protected apps are never suggested.";
 "prefs.privacy.redaction" = "Diagnostic reports have personal data redacted.";

@@ -26,13 +26,15 @@ def rel(p): return str(p.relative_to(ROOT))
 fileref = {}
 def ftype(p):
     return {".swift": "sourcecode.swift", ".strings": "text.plist.strings", ".plist": "text.plist.xml",
-            ".entitlements": "text.plist.entitlements", ".xcassets": "folder.assetcatalog"}.get(p.suffix, "text")
+            ".entitlements": "text.plist.entitlements", ".xcassets": "folder.assetcatalog", ".txt": "text"}.get(p.suffix, "text")
 def mkref(p, name=None):
     i = add("ref:" + rel(p), p.name,
             f"isa = PBXFileReference; lastKnownFileType = {ftype(p)}; name = {q(name or p.name)}; path = {q(rel(p))}; sourceTree = SOURCE_ROOT;")
     fileref[p] = i; return i
 
 for p in swift: mkref(p)
+textres = sorted(APP.rglob("*.txt"))
+for p in textres: mkref(p)
 for p in [plist, ent]: mkref(p)
 if assets.exists(): mkref(assets)
 variant = {}
@@ -55,6 +57,7 @@ def group(dirpath, name):
         if f in fileref: kids.append(fileref[f])
     if dirpath.name == "Resources":
         kids += list(variant.values())
+        kids += [fileref[t] for t in textres if t.parent == dirpath]
         if assets.exists(): kids.append(fileref[assets])
     if not kids: return None
     return add("grp:" + rel(dirpath), name, "isa = PBXGroup; children = (%s); name = %s; sourceTree = \"<group>\";" %
@@ -70,6 +73,7 @@ maingrp = add("main", "Main", f"isa = PBXGroup; children = ({appgroup}, {pkgfile
 # --- build phases ----------------------------------------------------------
 sbf = [add("bf:" + rel(p), p.name + " in Sources", f"isa = PBXBuildFile; fileRef = {fileref[p]};") for p in swift]
 rbf = [add("bfr:" + n, n + " in Resources", f"isa = PBXBuildFile; fileRef = {v};") for n, v in variant.items()]
+for t in textres: rbf.append(add("bfr:" + rel(t), t.name + " in Resources", f"isa = PBXBuildFile; fileRef = {fileref[t]};"))
 if assets.exists(): rbf.append(add("bfr:assets", "Assets in Resources", f"isa = PBXBuildFile; fileRef = {fileref[assets]};"))
 pbf = add("bfp", "OptiStatsCore in Frameworks", f"isa = PBXBuildFile; productRef = {pkgprod};")
 srcphase = add("ph:src", "Sources", "isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (%s); runOnlyForDeploymentPostprocessing = 0;" % ", ".join(sbf))
@@ -80,7 +84,7 @@ resphase = add("ph:res", "Resources", "isa = PBXResourcesBuildPhase; buildAction
 common = {
     "ALWAYS_SEARCH_USER_PATHS": "NO", "CLANG_ENABLE_MODULES": "YES", "CLANG_ENABLE_OBJC_ARC": "YES",
     "ENABLE_STRICT_OBJC_MSGSEND": "YES", "GCC_NO_COMMON_BLOCKS": "YES", "MACOSX_DEPLOYMENT_TARGET": "13.0",
-    "SDKROOT": "macosx", "SWIFT_VERSION": "5.0", "ONLY_ACTIVE_ARCH": "NO",
+    "SDKROOT": "macosx", "ARCHS": "arm64", "EXCLUDED_ARCHS": "x86_64", "SWIFT_VERSION": "5.0", "ONLY_ACTIVE_ARCH": "NO",
 }
 dbg = dict(common, **{"DEBUG_INFORMATION_FORMAT": "dwarf", "ENABLE_TESTABILITY": "YES", "GCC_OPTIMIZATION_LEVEL": "0",
                       "SWIFT_OPTIMIZATION_LEVEL": "-Onone", "SWIFT_ACTIVE_COMPILATION_CONDITIONS": "DEBUG", "ONLY_ACTIVE_ARCH": "YES"})
