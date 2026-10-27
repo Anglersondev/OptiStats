@@ -109,7 +109,7 @@ final class SMCFanDriver {
             }
         }
         guard confirmed else {
-            let detail = "modo=\(modeNow.map(String.init) ?? "?") (chave \(modeKey(fan)), esperado 1), alvo lido=\(targetNow.map { String(format: "%.1f", $0) } ?? "?") pedido=\(Int(rpm)) tipo=\(target.type)"
+            let detail = "modo=\(modeNow.map(String.init) ?? "?") (chave \(modeKey(fan)), esperado 1), alvo lido=\(targetNow.map { String(format: "%.1f", $0) } ?? "?") pedido=\(Int(rpm)) tipo=\(target.type) Ftst=\(smc.read(FanSMCKeys.unlockKey)?.bytes.first.map(String.init) ?? "?") ftstEngaged=\(ftstEngaged)"
             return failAndRestore(Failure(code: .verifyFailed, message: "leitura de volta não confere: \(detail)"))
         }
         return .success(())
