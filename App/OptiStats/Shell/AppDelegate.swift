@@ -74,6 +74,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         let appItem = NSMenuItem()
         let appMenu = NSMenu()
+        let about = NSMenuItem(title: L("shell.menu.about"), action: #selector(showAboutFromMenu(_:)), keyEquivalent: "")
+        about.target = self
+        appMenu.addItem(about)
+        appMenu.addItem(.separator())
         appMenu.addItem(withTitle: L("shell.menu.quit"), action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
         appItem.submenu = appMenu
         main.addItem(appItem)
@@ -92,4 +96,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         NSApp.mainMenu = main
     }
+
+    @objc private func showAboutFromMenu(_ sender: Any?) { showAbout() }
 }

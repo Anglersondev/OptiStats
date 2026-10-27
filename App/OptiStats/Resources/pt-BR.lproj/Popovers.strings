@@ -50,6 +50,8 @@
 "disk.volume.free" = "%@ livres de %@";
 "disk.write" = "Escrita";
 "fans.boost.notEnabled" = "O Smart Boost não está habilitado nesta versão.";
+"fans.boost.available" = "Disponível para ativar. O controle pode ser configurado em Preferências > Ventoinhas.";
+"fans.boost.active" = "Ativo: acompanha as ventoinhas e acelera quando necessário.";
 "fans.boost.readOnly" = "O controle de ventoinhas fica em Preferências > Ventoinhas. Vem desligado e exige o helper.";
 "fans.boost.unavailable" = "O Smart Boost está indisponível: %@";
 "fans.boost.unvalidated" = "O Smart Boost está indisponível: o caminho de controle não foi validado neste hardware e permanece bloqueado.";
@@ -57,6 +59,7 @@
 "fans.fanN" = "Ventoinha %ld";
 "fans.mode.automatic" = "automático (macOS)";
 "fans.mode.manual" = "manual (forçado por outro app)";
+"fans.mode.ownManual" = "manual (OptiStats)";
 "fans.mode.unknown" = "modo desconhecido";
 "fans.none" = "Este Mac não tem ventoinhas (o resfriamento é passivo).";
 "fans.noneReadable" = "Nenhuma ventoinha pôde ser lida neste Mac.";

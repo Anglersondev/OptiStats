@@ -35,6 +35,8 @@
 "fan.allow.confirmAction" = "Allow";
 "fan.mode.automatic" = "Automatic";
 "fan.mode.manual" = "Manual";
+"fan.fullSpeed" = "100%";
+"fan.fullSpeed.tooltip" = "Full fan speed (up to the Mac's reported limit)";
 "fan.row.note" = "Choosing Automatic returns all fans to macOS. In Manual, the slider is limited to the fan's real minimum and maximum, and the value is applied when you release it.";
 "fan.test.section" = "Control test (experimental)";
 "fan.test.button" = "Test control";

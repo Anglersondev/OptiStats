@@ -141,8 +141,10 @@ final class FanControlManager {
 
     func setManual(fan: Int, rpm: Double, _ done: @escaping (String?) -> Void) {
         guard let client, let s = settings, s.manualAllowed else { done(L("fan.err.notAllowed")); return }
+        guard case .validated = capability, !s.isUnsupportedForThisMac else { done(L("fan.err.needsValidation")); return }
         guard !s.smartBoostEnabled else { done(L("fan.err.smartBoostActive")); return }
         guard !busy else { done(L("fan.err.busy")); return }
+        setBusy(true)
         io.async { [weak self] in
             let result = client.setTarget(fan: fan, rpm: rpm)
             DispatchQueue.main.async {
@@ -159,7 +161,7 @@ final class FanControlManager {
                     self.stopHeartbeat()
                     done(HelperFanActuator.describe(f))
                 }
-                self.onChange?()
+                self.setBusy(false)
             }
         }
     }
@@ -328,7 +330,10 @@ final class FanControlManager {
             let report = Self.performTest(client: client)
             DispatchQueue.main.async {
                 guard let self else { return }
-                if report.passed { s.markValidated(true); s.markUnsupported(false) } else { s.markUnsupported(true) }
+                // Falha de teste também pode ser transitória (outro app, SMC ocupado, RPM já alto).
+                // Só um teste aprovado autoriza escrita; uma falha não prova incompatibilidade do Mac.
+                if report.passed { s.markValidated(true); s.markUnsupported(false) }
+                else { s.markValidated(false) }
                 self.setBusy(false)
                 done(report)
             }
