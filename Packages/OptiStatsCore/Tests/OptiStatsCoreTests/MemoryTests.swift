@@ -127,3 +127,52 @@ final class SeriesTests: XCTestCase {
         XCTAssertEqual(d.first?.v, 0); XCTAssertEqual(d.last?.v, 100)
     }
 }
+
+final class MemoryDiagnosisTests: XCTestCase {
+    private func snap(pressure: MemoryPressureLevel? = .normal, total: UInt64 = 16 * GiB, free: UInt64 = 8 * GiB,
+                      cached: UInt64 = 0, compressed: UInt64 = 0, original: UInt64? = nil, avail: UInt64 = 8 * GiB,
+                      swap: UInt64 = 0, swapOuts: UInt64 = 0, t: TimeInterval = 0) -> MemorySnapshot {
+        var s = memorySnapshot(t: t, total: total, used: total - avail, pressure: pressure, swapUsed: swap, swapOuts: swapOuts)
+        s.freeStrictBytes = free; s.cachedFilesBytes = cached; s.compressedBytes = compressed
+        s.compressorOriginalBytes = original; s.availableBytes = avail
+        return s
+    }
+
+    func testCacheFullIsNormalNotPressure() {
+        let d = MemoryDiagnosis.evaluate(snap(free: 100 * MiB, cached: 8 * GiB, avail: 9 * GiB), rates: nil)
+        XCTAssertEqual(d.verdict, .cacheFull)
+    }
+
+    func testHealthyWithPlentyFree() {
+        XCTAssertEqual(MemoryDiagnosis.evaluate(snap(), rates: nil).verdict, .healthy)
+    }
+
+    func testRealPressureNeedsWarningPlusActiveSwap() {
+        let a = snap(pressure: .warning, avail: 2 * GiB, swap: GiB, swapOuts: 0, t: 0)
+        var b = a; b.timestamp = 10; b.counters.swapOuts = 500
+        let rates = MemoryRates.between(a, b)
+        XCTAssertEqual(MemoryDiagnosis.evaluate(b, rates: rates).verdict, .realPressure)
+        XCTAssertEqual(MemoryDiagnosis.evaluate(a, rates: nil).verdict, .watch)   // atenção sem troca ativa
+    }
+
+    func testCriticalIsAlwaysRealPressure() {
+        XCTAssertEqual(MemoryDiagnosis.evaluate(snap(pressure: .critical), rates: nil).verdict, .realPressure)
+    }
+
+    func testNoPressureMeansInsufficientData() {
+        XCTAssertEqual(MemoryDiagnosis.evaluate(snap(pressure: nil), rates: nil).verdict, .insufficientData)
+    }
+
+    func testCompressionRatioAndNilWhenUnknown() {
+        let s = snap(compressed: 2 * GiB, original: 5 * GiB)
+        XCTAssertEqual(MemoryDiagnosis.compressionRatio(of: s)!, 2.5, accuracy: 0.001)
+        XCTAssertNil(MemoryDiagnosis.compressionRatio(of: snap(compressed: GiB)))
+    }
+
+    func testPurgeReportDeltasAreGlobalObservations() {
+        let r = PurgeReport(before: snap(cached: 6 * GiB, avail: 8 * GiB), after: snap(cached: 2 * GiB, avail: 9 * GiB))
+        XCTAssertEqual(r.cachedDelta, -Int64(4 * GiB))
+        XCTAssertEqual(r.availableDelta, Int64(GiB))
+        XCTAssertNil(PurgeReport(before: nil, after: nil).availableDelta)
+    }
+}

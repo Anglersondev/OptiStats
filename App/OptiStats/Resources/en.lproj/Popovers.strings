@@ -50,7 +50,7 @@
 "disk.volume.free" = "%@ free of %@";
 "disk.write" = "Write";
 "fans.boost.notEnabled" = "Smart Boost is not enabled in this version.";
-"fans.boost.readOnly" = "OptiStats only reads the fans; macOS keeps full control of their speed.";
+"fans.boost.readOnly" = "Fan control is managed in Preferences > Fans. It is off by default and requires the helper.";
 "fans.boost.unavailable" = "Smart Boost is unavailable: %@";
 "fans.boost.unvalidated" = "Smart Boost is unavailable: the control path has not been validated on this hardware, so it stays blocked.";
 "fans.empty" = "Collecting fan data…";

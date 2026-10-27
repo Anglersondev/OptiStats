@@ -13,6 +13,8 @@ def q(s): return '"%s"' % s.replace('\\', '\\\\').replace('"', '\\"')
 objs = {}  # id -> (comment, body)
 def add(key, comment, body): objs[uid(key)] = (comment, body); return uid(key)
 
+HELPER = ROOT / "Helper"
+helper_swift = sorted(HELPER.rglob("*.swift")) if HELPER.exists() else []
 swift = sorted(p for p in APP.rglob("*.swift"))
 strings = {}   # nome -> {lang: path}
 for p in sorted(APP.rglob("*.strings")):
@@ -33,6 +35,7 @@ def mkref(p, name=None):
     fileref[p] = i; return i
 
 for p in swift: mkref(p)
+for p in helper_swift: mkref(p)
 textres = sorted(APP.rglob("*.txt"))
 for p in textres: mkref(p)
 for p in [plist, ent]: mkref(p)
@@ -63,12 +66,20 @@ def group(dirpath, name):
     return add("grp:" + rel(dirpath), name, "isa = PBXGroup; children = (%s); name = %s; sourceTree = \"<group>\";" %
                (", ".join(kids), q(name)))
 appgroup = group(APP, "OptiStats")
+helpergroup = None
+if helper_swift:
+    helpergroup = add("grp:helper", "Helper", "isa = PBXGroup; children = (%s); name = Helper; sourceTree = \"<group>\";" %
+                      ", ".join(fileref[p] for p in helper_swift))
 pkgref = add("pkgref", "OptiStatsCore", 'isa = XCLocalSwiftPackageReference; relativePath = "Packages/OptiStatsCore";')
 pkgprod = add("pkgprod", "OptiStatsCore", f"isa = XCSwiftPackageProductDependency; package = {pkgref}; productName = OptiStatsCore;")
 pkgfile = add("pkgfile", "Packages/OptiStatsCore", 'isa = PBXFileReference; lastKnownFileType = folder; name = OptiStatsCore; path = "Packages/OptiStatsCore"; sourceTree = SOURCE_ROOT;')
 product = add("product", "OptiStats.app", "isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = OptiStats.app; sourceTree = BUILT_PRODUCTS_DIR;")
 productsgrp = add("products", "Products", f"isa = PBXGroup; children = ({product}); name = Products; sourceTree = \"<group>\";")
-maingrp = add("main", "Main", f"isa = PBXGroup; children = ({appgroup}, {pkgfile}, {productsgrp}); sourceTree = \"<group>\";")
+hprod = None
+if helper_swift:
+    hprod = add("hproduct", "OptiStatsHelper", "isa = PBXFileReference; explicitFileType = compiled.mach-o.executable; includeInIndex = 0; path = OptiStatsHelper; sourceTree = BUILT_PRODUCTS_DIR;")
+    objs[productsgrp] = (objs[productsgrp][0], objs[productsgrp][1].replace(f"children = ({product})", f"children = ({product}, {hprod})"))
+maingrp = add("main", "Main", "isa = PBXGroup; children = (%s); sourceTree = \"<group>\";" % ", ".join(x for x in [appgroup, helpergroup, pkgfile, productsgrp] if x))
 
 # --- build phases ----------------------------------------------------------
 sbf = [add("bf:" + rel(p), p.name + " in Sources", f"isa = PBXBuildFile; fileRef = {fileref[p]};") for p in swift]
@@ -107,8 +118,29 @@ tc = [cfg("tcd", "Debug", tgt), cfg("tcr", "Release", tgt)]
 def cl(key, ids): return add(key, "Build configuration list", "isa = XCConfigurationList; buildConfigurations = (%s); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release;" % ", ".join(ids))
 pcl = cl("pcl", pc); tcl = cl("tcl", tc)
 
-target = add("target", "OptiStats", f"isa = PBXNativeTarget; buildConfigurationList = {tcl}; buildPhases = ({srcphase}, {fwphase}, {resphase}); buildRules = (); dependencies = (); name = OptiStats; packageProductDependencies = ({pkgprod}); productName = OptiStats; productReference = {product}; productType = \"com.apple.product-type.application\";")
-project = add("project", "Project object", f"isa = PBXProject; attributes = {{BuildIndependentTargetsInParallel = 1; LastSwiftUpdateCheck = 1500; LastUpgradeCheck = 1500;}}; buildConfigurationList = {pcl}; compatibilityVersion = \"Xcode 14.0\"; developmentRegion = en; hasScannedForEncodings = 0; knownRegions = (en, \"pt-BR\", Base); mainGroup = {maingrp}; packageReferences = ({pkgref}); productRefGroup = {productsgrp}; projectDirPath = \"\"; projectRoot = \"\"; targets = ({target});")
+htarget = None
+app_deps = ""
+app_phases = f"{srcphase}, {fwphase}, {resphase}"
+if helper_swift:
+    hsbf = [add("hbf:" + rel(p), p.name + " in Sources", f"isa = PBXBuildFile; fileRef = {fileref[p]};") for p in helper_swift]
+    hsrc = add("hph:src", "Sources", "isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (%s); runOnlyForDeploymentPostprocessing = 0;" % ", ".join(hsbf))
+    hpkgprod = add("hpkgprod", "OptiStatsCore", f"isa = XCSwiftPackageProductDependency; package = {pkgref}; productName = OptiStatsCore;")
+    hpbf = add("hbfp", "OptiStatsCore in Frameworks", f"isa = PBXBuildFile; productRef = {hpkgprod};")
+    hfw = add("hph:fw", "Frameworks", f"isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = ({hpbf}); runOnlyForDeploymentPostprocessing = 0;")
+    hset = dict(PRODUCT_NAME="OptiStatsHelper", SKIP_INSTALL="YES", CODE_SIGN_IDENTITY="-", CODE_SIGNING_ALLOWED="YES",
+                ENABLE_HARDENED_RUNTIME="NO", GENERATE_INFOPLIST_FILE="NO", SWIFT_EMIT_LOC_STRINGS="NO")
+    hcl = cl("hcl", [cfg("hcd", "Debug", hset), cfg("hcr", "Release", hset)])
+    htarget = add("htarget", "OptiStatsHelper", f"isa = PBXNativeTarget; buildConfigurationList = {hcl}; buildPhases = ({hsrc}, {hfw}); buildRules = (); dependencies = (); name = OptiStatsHelper; packageProductDependencies = ({hpkgprod}); productName = OptiStatsHelper; productReference = {hprod}; productType = \"com.apple.product-type.tool\";")
+    proxy = add("hproxy", "PBXContainerItemProxy", f"isa = PBXContainerItemProxy; containerPortal = {uid('project')}; proxyType = 1; remoteGlobalIDString = {htarget}; remoteInfo = OptiStatsHelper;")
+    dep = add("hdep", "PBXTargetDependency", f"isa = PBXTargetDependency; target = {htarget}; targetProxy = {proxy};")
+    cpbf = add("hcopybf", "OptiStatsHelper in Copy Helper", f"isa = PBXBuildFile; fileRef = {hprod};")
+    cpph = add("hcopy", "Embed Helper", f"isa = PBXCopyFilesBuildPhase; buildActionMask = 2147483647; dstPath = \"\"; dstSubfolderSpec = 7; files = ({cpbf}); name = \"Embed Helper\"; runOnlyForDeploymentPostprocessing = 0;")
+    app_deps = dep
+    app_phases += f", {cpph}"
+
+target = add("target", "OptiStats", f"isa = PBXNativeTarget; buildConfigurationList = {tcl}; buildPhases = ({app_phases}); buildRules = (); dependencies = ({app_deps}); name = OptiStats; packageProductDependencies = ({pkgprod}); productName = OptiStats; productReference = {product}; productType = \"com.apple.product-type.application\";")
+all_targets = ", ".join(x for x in [target, htarget] if x)
+project = add("project", "Project object", f"isa = PBXProject; attributes = {{BuildIndependentTargetsInParallel = 1; LastSwiftUpdateCheck = 1500; LastUpgradeCheck = 1500;}}; buildConfigurationList = {pcl}; compatibilityVersion = \"Xcode 14.0\"; developmentRegion = en; hasScannedForEncodings = 0; knownRegions = (en, \"pt-BR\", Base); mainGroup = {maingrp}; packageReferences = ({pkgref}); productRefGroup = {productsgrp}; projectDirPath = \"\"; projectRoot = \"\"; targets = ({all_targets});")
 
 # --- saída -------------------------------------------------------------------
 sections = {}

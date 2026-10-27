@@ -86,6 +86,7 @@ public enum ProcessGrouper {
             }
             buckets[key, default: []].append(s)
         }
+        mergeOrphanHelpers(order: &order, buckets: &buckets, meta: &meta)
         return order.map { key in
             let members = buckets[key]!
             let m = meta[key]!
@@ -98,6 +99,66 @@ public enum ProcessGrouper {
             return AppGroup(id: key, displayName: m.name, bundlePath: m.bundlePath, bundleIdentifier: bundleID,
                             leader: leader, members: members, isSystemOwned: m.system)
         }.sorted { $0.footprintBytes > $1.footprintBytes }
+    }
+}
+
+extension ProcessGrouper {
+    /// Une processos auxiliares SEM `.app` no caminho (ex.: WebContent do Safari, XPC de apps) ao app de que dependem:
+    /// 1) pelo PID responsável (`responsiblePID`) quando ele aponta para um membro de um grupo de app;
+    /// 2) pelo bundle id prefixado ("com.google.Chrome.helper" → "com.google.Chrome").
+    /// Só afeta grupos "proc:" (sem bundle); nunca funde dois apps distintos.
+    fileprivate static func mergeOrphanHelpers(order: inout [String], buckets: inout [String: [ProcessSample]],
+                                               meta: inout [String: (name: String, bundlePath: String?, system: Bool)]) {
+        var appKeyByPID: [Int32: String] = [:]
+        var appKeyByBundleID: [String: String] = [:]
+        for key in order where key.hasPrefix("app:") {
+            for m in buckets[key] ?? [] {
+                appKeyByPID[m.identity.pid] = key
+                if let b = m.bundleIdentifier, appKeyByBundleID[b] == nil { appKeyByBundleID[b] = key }
+            }
+        }
+        guard !appKeyByPID.isEmpty else { return }
+        // Prefixos mais longos primeiro, para não casar "com.google" antes de "com.google.Chrome".
+        let bundleIDs = appKeyByBundleID.keys.sorted { $0.count > $1.count }
+        var removed = Set<String>()
+        for key in order where key.hasPrefix("proc:") {
+            guard let samples = buckets[key] else { continue }
+            var remaining: [ProcessSample] = []
+            for s in samples {
+                var target: String?
+                if let r = s.responsiblePID, r != s.identity.pid, let k = appKeyByPID[r] { target = k }
+                if target == nil, let id = s.bundleIdentifier,
+                   let owner = bundleIDs.first(where: { id.hasPrefix($0 + ".") && $0.split(separator: ".").count >= 3 }) {
+                    target = appKeyByBundleID[owner]
+                }
+                if let t = target { buckets[t, default: []].append(s) } else { remaining.append(s) }
+            }
+            if remaining.isEmpty { removed.insert(key); buckets[key] = nil; meta[key] = nil } else { buckets[key] = remaining }
+        }
+        order.removeAll { removed.contains($0) }
+    }
+
+    /// Papel do processo dentro de um app com muitos processos (só para exibição).
+    public enum ChildRole: String, Equatable { case renderer, gpu, network, plugin, helper, main }
+
+    public static func childRole(of sample: ProcessSample) -> ChildRole {
+        let n = sample.name.lowercased()
+        if n.contains("renderer") || n.contains("webcontent") || n.contains("web content") { return .renderer }
+        if n.contains("(gpu)") || n.hasSuffix(" gpu") || n.contains("gpu helper") || n.contains("gpu process") { return .gpu }
+        if n.contains("network") { return .network }
+        if n.contains("plugin") || n.contains("extension") { return .plugin }
+        if n.contains("helper") { return .helper }
+        return .main
+    }
+
+    /// Processos do grupo mais pesados primeiro (somente exibição; nada aqui encerra processos).
+    public static func heaviestMembers(of group: AppGroup, limit: Int) -> [ProcessSample] {
+        guard limit > 0 else { return [] }
+        let sorted = group.members.sorted {
+            let a = $0.footprintBytes ?? 0, b = $1.footprintBytes ?? 0
+            return a != b ? a > b : $0.identity.pid < $1.identity.pid
+        }
+        return Array(sorted.prefix(limit))
     }
 }
 

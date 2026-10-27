@@ -153,7 +153,7 @@
 "prefs.optimizer.builtinSection" = "Always protected";
 "prefs.optimizer.builtinNote" = "System processes (Finder, Dock, WindowServer and similar), the frontmost app and OptiStats itself are always protected and cannot be released.";
 "prefs.fans.status" = "Fan control";
-"prefs.fans.warning" = "Read-only. This version never writes to the SMC and does not change fan speed. Fans stay under automatic macOS control.";
+"prefs.fans.warning" = "Manual control is off by default. macOS keeps thermal protection and your fans return to automatic when the app quits, sleeps or loses contact with the helper.";
 "prefs.fans.control" = "Control capability:";
 "prefs.fans.capability.unavailable" = "Unavailable (%@)";
 "prefs.fans.capability.experimental" = "Experimental and not validated; blocked";
@@ -172,7 +172,7 @@
 "prefs.privacy.section" = "Your data stays on your Mac";
 "prefs.privacy.noTelemetry" = "No telemetry, analytics or tracking of any kind.";
 "prefs.privacy.local" = "All readings are processed locally and are not sent over the network. The only exception is the optional, manual “Update from GitHub” button in the Debloat tab, which downloads the public service catalog (nothing of yours is sent).";
-"prefs.privacy.noWrite" = "The app only reads sensors and fans. It never writes to the SMC or changes fan speed.";
+"prefs.privacy.noWrite" = "Sensors are read-only. Fan speed is changed only if you install the helper and turn on manual control; it can be undone at any time.";
 "prefs.privacy.noKill" = "Apps are only closed after your explicit confirmation, and protected apps are never suggested.";
 "prefs.privacy.redaction" = "Diagnostic reports have personal data redacted.";
 "prefs.privacy.history" = "History is kept in memory and discarded when the app quits.";

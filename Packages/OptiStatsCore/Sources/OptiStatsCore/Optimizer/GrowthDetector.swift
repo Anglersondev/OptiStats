@@ -44,6 +44,11 @@ public final class GrowthDetector {
         for key in series.keys where !alive.contains(key) { series.removeValue(forKey: key) }
     }
 
+    /// Série em memória do grupo (segundos, bytes) para gráficos; vazia se não houver dados. Nunca vai a disco.
+    public func history(for groupID: String) -> [(t: TimeInterval, bytes: UInt64)] {
+        (series[groupID] ?? []).map { ($0.t, UInt64(max(0, $0.bytes))) }
+    }
+
     public func suspicion(for groupID: String) -> GrowthSuspicion? {
         guard let s = series[groupID], s.count >= config.minSamples,
               let first = s.first, let last = s.last else { return nil }

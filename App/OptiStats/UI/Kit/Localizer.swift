@@ -7,7 +7,7 @@ final class Localizer {
     static let shared = Localizer()
 
     /// Ordem de busca. Cada área mantém o seu `.strings` (en.lproj e pt-BR.lproj).
-    static let tables = ["Common", "Shell", "Popovers", "Platform", "Maintenance", "Debloat"]
+    static let tables = ["Common", "Shell", "Popovers", "Platform", "Maintenance", "Debloat", "RamAdvanced", "FanControl"]
 
     private(set) var language: LanguageChoice = .system
     private(set) var locale: Locale = Locale.current

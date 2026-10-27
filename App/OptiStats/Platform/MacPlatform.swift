@@ -9,7 +9,12 @@ final class MacPlatform: PlatformServices {
     private let appController = MacAppController()
     private let systemEvents = MacSystemEvents()
     private let meter = MacSelfMeter()
-    private let actuator: FanActuator = UnavailableFanActuator(reason: L("platform.fan.readonly"))
+    /// Atuador de ventoinhas: fala com o helper privilegiado (se o usuário o instalou). Sem helper → `.unavailable`.
+    private lazy var actuator: FanActuator = HelperFanActuator(settings: FanControlSettings(modelKey: { [unowned self] in
+        // Flag de validação por modelo de hardware E versão principal do macOS (uma atualização maior exige novo teste).
+        let model = self.readSystemProfile().modelIdentifier ?? "unknown"
+        return "\(model)|macOS\(ProcessInfo.processInfo.operatingSystemVersion.majorVersion)"
+    }))
     private var cachedProfile: SystemProfile?
 
     // Memória total usada pelo `memoryProbe` (definida quando o perfil é lido).

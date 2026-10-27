@@ -21,7 +21,8 @@ enum MemoryReader {
             purgeableCount: UInt64(stats.purgeable_count), externalPageCount: UInt64(stats.external_page_count),
             internalPageCount: UInt64(stats.internal_page_count),
             swapIns: stats.swapins, swapOuts: stats.swapouts, pageIns: stats.pageins, pageOuts: stats.pageouts,
-            compressions: stats.compressions, decompressions: stats.decompressions)
+            compressions: stats.compressions, decompressions: stats.decompressions,
+            uncompressedInCompressorCount: stats.total_uncompressed_pages_in_compressor)
         return MemoryFormula.snapshot(from: vm, totalBytes: totalBytes, swap: swapUsage(),
                                       pressure: pressureLevel(), timestamp: timestamp)
     }
