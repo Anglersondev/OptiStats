@@ -16,6 +16,8 @@ public struct MenuBarText: Equatable {
     public var isAvailable: Bool
     /// Texto longo para tooltip e VoiceOver (explica o escopo da medida).
     public var detail: String
+    /// Preenchido só quando o item mostra carga E temperatura: [carga, temperatura] (para o desenho empilhado).
+    public var lines: [String]? = nil
     public var display: String { [label, value].compactMap { $0 }.joined(separator: " ") }
 }
 
@@ -96,6 +98,7 @@ public enum MenuBarFormatter {
             out.value = [load.isAvailable ? load.value : nil, temp].compactMap { $0 }.joined(separator: " ")
             if out.value.isEmpty { out.value = unavailable }
             out.isAvailable = load.isAvailable || temp != nil
+            out.lines = [load.isAvailable ? load.value : unavailable, temp ?? unavailable]
         }
         out.detail = load.detail + " · " + name
         return out

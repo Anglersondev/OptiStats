@@ -183,3 +183,10 @@
 "prefs.content.load" = "Carga %";
 "prefs.content.temperature" = "Temperatura";
 "prefs.content.both" = "Ambos";
+"prefs.menubar.layout" = "Estilo";
+"prefs.menubar.layout.line" = "Uma linha";
+"prefs.menubar.layout.stacked" = "Empilhado (duas linhas)";
+"prefs.menubar.layoutNote" = "Empilhado desenha o nome pequeno em cima e o valor embaixo (carga em cima e temperatura embaixo quando os dois aparecem). Com vários indicadores combinados, clicar em um abre o painel dele e um seletor no topo troca para os outros.";
+"prefs.menubar.combinedLabel" = "Nome no modo compacto";
+"prefs.menubar.combinedLabel.short" = "Nome abreviado (CPU, VENT…)";
+"prefs.menubar.combinedLabel.none" = "Sem nome (só valores)";

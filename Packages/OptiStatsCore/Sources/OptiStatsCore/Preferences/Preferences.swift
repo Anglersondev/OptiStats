@@ -66,6 +66,11 @@ public struct WidgetConfig: Codable, Equatable {
     public var showsTemperatureInline: Bool { (kind == .cpu || kind == .gpu) && content != .load }
 }
 
+/// Como a barra desenha cada item: texto em uma linha ou duas linhas empilhadas (rótulo/valor ou carga/temperatura).
+public enum MenuBarLayout: String, Codable, CaseIterable {
+    case line, stacked
+}
+
 public struct MenuBarConfig: Codable, Equatable {
     /// A ordem do array é a ordem de criação dos itens (o macOS decide a posição final na barra).
     public var widgets: [WidgetConfig]
@@ -74,10 +79,29 @@ public struct MenuBarConfig: Codable, Equatable {
     public var combinedKinds: [WidgetKind]
     public var temperatureSource: TemperatureSource
     public var powerScope: PowerScopeChoice
+    public var layout: MenuBarLayout = .line
+    /// Rótulo dos indicadores no modo compacto (nome abreviado, ícone ou só o valor).
+    public var combinedLabel: LabelStyle = .short
+
+    private enum CodingKeys: String, CodingKey { case widgets, combined, combinedKinds, temperatureSource, powerScope, layout, combinedLabel }
 
     public static let `default` = MenuBarConfig(
         widgets: WidgetKind.allCases.map { WidgetConfig(kind: $0, enabled: $0 == .ram || $0 == .cpu) },
         combined: false, combinedKinds: [.cpu, .ram], temperatureSource: .cpuAverage, powerScope: .systemTotal)
+}
+
+extension MenuBarConfig {
+    /// Tolerante: preferências salvas antes do campo `layout` continuam válidas.
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        widgets = try c.decode([WidgetConfig].self, forKey: .widgets)
+        combined = try c.decode(Bool.self, forKey: .combined)
+        combinedKinds = try c.decode([WidgetKind].self, forKey: .combinedKinds)
+        temperatureSource = try c.decode(TemperatureSource.self, forKey: .temperatureSource)
+        powerScope = try c.decode(PowerScopeChoice.self, forKey: .powerScope)
+        layout = (try? c.decodeIfPresent(MenuBarLayout.self, forKey: .layout)) ?? .line
+        combinedLabel = (try? c.decodeIfPresent(LabelStyle.self, forKey: .combinedLabel)) ?? .short
+    }
 }
 
 public struct MemoryPreferences: Codable, Equatable {
