@@ -21,7 +21,10 @@ final class MenuBarPrefsPane: PrefsPaneViewController {
             let enabled = checkbox(name, isOn: w.enabled) { [weak self] on in
                 self?.change { prefs in
                     if let i = prefs.menuBar.widgets.firstIndex(where: { $0.kind == kind }) { prefs.menuBar.widgets[i].enabled = on }
+                    // Ligar um indicador não essencial promove para o modo Completo: só o que está visível é amostrado.
+                    if on && !kind.isEssential && prefs.monitoringMode == .essential { prefs.monitoringMode = .full }
                 }
+                self?.rebuildSoon()
             }
             enabled.widthAnchor.constraint(equalToConstant: 250).isActive = true
 
