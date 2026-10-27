@@ -29,7 +29,11 @@ public enum ServiceCatalog {
         .init(label: "com.apple.news.widget", titleKey: "debloat.svc.news", domain: .user, risk: .low),
         .init(label: "com.apple.gamed", titleKey: "debloat.svc.gameCenter", domain: .user, risk: .low),
         .init(label: "com.apple.ScreenTimeAgent", titleKey: "debloat.svc.screenTime", domain: .user, risk: .medium, warningKey: "debloat.warn.screenTime"),
-        .init(label: "com.apple.ReportCrash", titleKey: "debloat.svc.crashReporter", domain: .user, risk: .low)
+        .init(label: "com.apple.ReportCrash", titleKey: "debloat.svc.crashReporter", domain: .user, risk: .low),
+        // Domínio de SISTEMA: só com opt-in explícito e senha de administrador (ver `DebloatLevel.system`).
+        .init(label: "com.apple.analyticsd", titleKey: "debloat.svc.analytics", domain: .system, risk: .low),
+        .init(label: "com.apple.SubmitDiagInfo", titleKey: "debloat.svc.submitDiag", domain: .system, risk: .low),
+        .init(label: "com.apple.apsd.diag", titleKey: "debloat.svc.apsDiag", domain: .system, risk: .medium, warningKey: "debloat.warn.push")
     ]
     public static func service(_ label: String) -> CatalogService? { all.first { $0.label == label } }
 }
@@ -62,13 +66,21 @@ public struct DebloatPlanner {
         return d ? .disabled : .enabled
     }
 
-    public func disableCommand(_ s: CatalogService) -> [String]? {
-        guard s.domain == .user, ServiceCatalog.service(s.label) == s else { return nil }
-        return ["launchctl", "disable", "gui/\(uid)/\(s.label)"]
-    }
-    public func enableCommand(_ s: CatalogService) -> [String]? {
-        guard s.domain == .user, ServiceCatalog.service(s.label) == s else { return nil }
-        return ["launchctl", "enable", "gui/\(uid)/\(s.label)"]
+    /// Nível escolhido pela pessoa. `.system` exige senha de administrador e é opt-in (desligado por padrão).
+    public enum Level: String, Codable { case auditOnly, user, system }
+
+    /// Comando de desativar (argv). `nil` se o nível não permite o domínio do serviço ou se ele não está no catálogo.
+    public func disableCommand(_ s: CatalogService, level: Level = .user) -> [String]? { command("disable", s, level) }
+    public func enableCommand(_ s: CatalogService, level: Level = .user) -> [String]? { command("enable", s, level) }
+
+    private func command(_ verb: String, _ s: CatalogService, _ level: Level) -> [String]? {
+        guard ServiceCatalog.service(s.label) == s else { return nil }
+        switch (level, s.domain) {
+        case (.auditOnly, _): return nil
+        case (.user, .user), (.system, .user): return ["launchctl", verb, "gui/\(uid)/\(s.label)"]
+        case (.system, .system): return ["launchctl", verb, "system/\(s.label)"]
+        case (.user, .system): return nil
+        }
     }
     /// Texto copiável para o usuário rodar por conta própria (serviços de sistema).
     public func manualCommand(_ s: CatalogService, disable: Bool) -> String {
