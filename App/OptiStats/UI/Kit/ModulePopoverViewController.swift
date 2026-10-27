@@ -50,6 +50,29 @@ class ModulePopoverViewController: NSViewController {
     /// Subclasses podem adicionar controles ao lado do título.
     func headerAccessories() -> [NSView] { [] }
 
+    // MARK: Menu "…" (Preferências, Manutenção, Sobre, Sair)
+
+    private let moreButton = NSButton()
+
+    @objc private func moreTapped() {
+        let menu = NSMenu()
+        func add(_ title: String, _ action: Selector) {
+            let item = NSMenuItem(title: title, action: action, keyEquivalent: "")
+            item.target = self
+            menu.addItem(item)
+        }
+        add(L("shell.menu.preferences"), #selector(menuPreferences))
+        add(L("shell.menu.maintenance"), #selector(menuMaintenance))
+        add(L("shell.menu.about"), #selector(menuAbout))
+        menu.addItem(.separator())
+        add(L("shell.menu.quit"), #selector(menuQuit))
+        menu.popUp(positioning: nil, at: NSPoint(x: 0, y: moreButton.bounds.height + 2), in: moreButton)
+    }
+    @objc private func menuPreferences() { env.openPreferences?() }
+    @objc private func menuMaintenance() { env.openMaintenance?() }
+    @objc private func menuAbout() { env.openAbout?() }
+    @objc private func menuQuit() { NSApp.terminate(nil) }
+
     // MARK: Layout
 
     override func loadView() {
@@ -68,9 +91,19 @@ class ModulePopoverViewController: NSViewController {
         refreshButton.setAccessibilityLabel(L("common.refreshNow"))
         refreshButton.translatesAutoresizingMaskIntoConstraints = false
 
+        moreButton.image = NSImage(systemSymbolName: "ellipsis.circle", accessibilityDescription: L("common.more"))
+        moreButton.isBordered = false
+        moreButton.bezelStyle = .regularSquare
+        moreButton.contentTintColor = Theme.secondaryText
+        moreButton.toolTip = L("common.more")
+        moreButton.target = self
+        moreButton.action = #selector(moreTapped)
+        moreButton.setAccessibilityLabel(L("common.more"))
+        moreButton.translatesAutoresizingMaskIntoConstraints = false
+
         let spacer = NSView(); spacer.translatesAutoresizingMaskIntoConstraints = false
         spacer.setContentHuggingPriority(.defaultLow, for: .horizontal)
-        let header = NSStackView.horizontal([title, spacer] + headerAccessories() + [refreshButton], spacing: 8)
+        let header = NSStackView.horizontal([title, spacer] + headerAccessories() + [moreButton, refreshButton], spacing: 8)
 
         buildContent()
         content.edgeInsets = NSEdgeInsets(top: 4, left: 0, bottom: 4, right: 0)
