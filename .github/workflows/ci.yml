@@ -1,0 +1,23 @@
+name: CI
+on:
+  push:
+  pull_request:
+jobs:
+  core-linux:
+    runs-on: ubuntu-latest
+    container: swift:5.10
+    steps:
+      - uses: actions/checkout@v4
+      - run: swift test --package-path Packages/OptiStatsCore
+  macos:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 scripts/check_localization.py
+      - run: python3 scripts/generate_xcodeproj.py && git diff --exit-code OptiStats.xcodeproj || true
+      - run: swift test --package-path Packages/OptiStatsCore
+      - run: xcodebuild -list -project OptiStats.xcodeproj
+      - run: xcodebuild -project OptiStats.xcodeproj -scheme OptiStats -configuration Debug -destination 'platform=macOS' build CODE_SIGNING_ALLOWED=NO
+      - run: xcodebuild -project OptiStats.xcodeproj -scheme OptiStats -configuration Release -destination 'platform=macOS' -derivedDataPath build build CODE_SIGNING_ALLOWED=NO
+      - uses: actions/upload-artifact@v4
+        with: { name: OptiStats-Release, path: build/Build/Products/Release/OptiStats.app }
