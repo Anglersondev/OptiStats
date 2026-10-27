@@ -54,6 +54,16 @@ final class MenuBarPrefsPane: PrefsPaneViewController {
                     if let j = prefs.menuBar.widgets.firstIndex(where: { $0.kind == kind }) { prefs.menuBar.widgets[j].decimals = i }
                 }
             }
+            // Empilhar outro indicador embaixo deste (um item só na barra; o clique abre os dois painéis).
+            let partners = WidgetKind.allCases.filter { $0 != kind }
+            let stackPopup = popup([L("prefs.menubar.stackNone")] + partners.map { PrefsText.kindName($0) },
+                                   selected: (w.stackWith.flatMap { partners.firstIndex(of: $0) }).map { $0 + 1 } ?? 0) { [weak self] i in
+                self?.change { prefs in
+                    guard let j = prefs.menuBar.widgets.firstIndex(where: { $0.kind == kind }) else { return }
+                    prefs.menuBar.widgets[j].stackWith = i == 0 ? nil : partners[i - 1]
+                    if i > 0, !partners[i - 1].isEssential, prefs.monitoringMode == .essential { prefs.monitoringMode = .full }
+                }
+            }
             let up = iconButton(symbol: "chevron.up", fallback: "↑", label: L("prefs.menubar.moveUp")) { [weak self] in
                 self?.move(kind, by: -1)
             }
@@ -68,6 +78,9 @@ final class MenuBarPrefsPane: PrefsPaneViewController {
             rowViews += [NSTextField.label(L("prefs.menubar.decimals"), font: Theme.body(11), color: Theme.secondaryText), decimalsPopup, up, down]
             let row = NSStackView.horizontal(rowViews, spacing: 8)
             stack.addArrangedSubview(row)
+            let stackRow = NSStackView.horizontal([NSTextField.label(L("prefs.menubar.stackWith"), font: Theme.body(11), color: Theme.secondaryText), stackPopup], spacing: 8)
+            stackRow.edgeInsets = NSEdgeInsets(top: 0, left: 24, bottom: 4, right: 0)
+            stack.addArrangedSubview(stackRow)
         }
 
         addSection(L("prefs.menubar.compactSection"))

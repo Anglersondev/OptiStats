@@ -35,7 +35,17 @@ final class AboutWindowController: NSObject, NSWindowDelegate {
         let privacy = NSTextField.label(L("about.privacy"), font: Theme.body(11), color: Theme.secondaryText, alignment: .center, lines: 0)
         privacy.preferredMaxLayoutWidth = 420
 
-        let header = NSStackView.vertical([icon, name, ver, tagline, privacy], spacing: 6)
+        func link(_ text: String, _ url: String) -> NSTextField {
+            let f = NSTextField(labelWithAttributedString: NSAttributedString(string: text, attributes: [
+                .link: URL(string: url) as Any, .font: Theme.body(12), .foregroundColor: NSColor.linkColor]))
+            f.allowsEditingTextAttributes = true
+            f.isSelectable = true
+            return f
+        }
+        let author = NSStackView.horizontal([NSTextField.label(L("about.by"), font: Theme.body(11), color: Theme.secondaryText),
+                                             link("GitHub: Anglersondev", "https://github.com/Anglersondev"),
+                                             link("anglerson.com.br", "https://anglerson.com.br")], spacing: 10)
+        let header = NSStackView.vertical([icon, name, ver, tagline, privacy, author], spacing: 6)
         header.alignment = .centerX
 
         let licenseTitle = SectionHeaderView(L("about.licenses"))

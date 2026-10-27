@@ -190,3 +190,6 @@
 "prefs.menubar.combinedLabel" = "Label in compact mode";
 "prefs.menubar.combinedLabel.short" = "Short name (CPU, FAN…)";
 "prefs.menubar.combinedLabel.none" = "No name (values only)";
+"prefs.menubar.stackWith" = "Stack another indicator below:";
+"prefs.menubar.stackNone" = "None";
+"about.by" = "By Anglerson";

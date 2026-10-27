@@ -14,6 +14,8 @@ final class StatusItemController: NSObject {
         var columnWidths: [CGFloat] = []
         var columnRanges: [ClosedRange<CGFloat>] = []
         var imageWidth: CGFloat = 0
+        /// Item com dois indicadores empilhados (um em cima do outro): sempre desenhado como imagem.
+        var isPair: Bool { signature.hasPrefix("pair|") }
         init(signature: String, configs: [WidgetConfig], item: NSStatusItem) {
             self.signature = signature; self.configs = configs; self.item = item
         }
@@ -68,7 +70,21 @@ final class StatusItemController: NSObject {
             let configs = kinds.map { WidgetConfig(kind: $0, enabled: true, label: prefs.menuBar.combinedLabel, decimals: 0) }
             return [(signature: "combined|\(layout.rawValue)|\(prefs.menuBar.combinedLabel.rawValue)|" + kinds.map { $0.rawValue }.joined(separator: ","), configs: configs)]
         }
-        return prefs.activeWidgets().map { (signature: "\($0.kind.rawValue)|\(layout.rawValue)|\($0.label.rawValue)|\($0.decimals)|\($0.content.rawValue)", configs: [$0]) }
+        var out: [(signature: String, configs: [WidgetConfig])] = []
+        var consumed = Set<WidgetKind>()
+        let allowed: (WidgetKind) -> Bool = { prefs.monitoringMode == .full || $0.isEssential }
+        for w in prefs.activeWidgets() where !consumed.contains(w.kind) {
+            if let other = w.stackWith, other != w.kind, allowed(other), !consumed.contains(other) {
+                consumed.insert(other)
+                let second = prefs.menuBar.widgets.first { $0.kind == other }
+                    ?? WidgetConfig(kind: other, enabled: true)
+                let sig = "pair|\(w.kind.rawValue)|\(w.label.rawValue)|\(w.decimals)|\(w.content.rawValue)|\(other.rawValue)|\(second.label.rawValue)|\(second.decimals)|\(second.content.rawValue)"
+                out.append((signature: sig, configs: [w, second]))
+            } else {
+                out.append((signature: "\(w.kind.rawValue)|\(layout.rawValue)|\(w.label.rawValue)|\(w.decimals)|\(w.content.rawValue)", configs: [w]))
+            }
+        }
+        return out
     }
 
     private func rebuild(_ desired: [(signature: String, configs: [WidgetConfig])]) {
@@ -84,8 +100,8 @@ final class StatusItemController: NSObject {
             let entry = Entry(signature: d.signature, configs: d.configs, item: item)
             if let button = item.button {
                 button.font = NSFont.monospacedDigitSystemFont(ofSize: NSFont.systemFontSize, weight: .regular)
-                button.imagePosition = env.preferences.current.menuBar.layout == .stacked ? .imageOnly : .imageLeft
-                if env.preferences.current.menuBar.layout == .line, d.configs.count == 1, d.configs[0].label == .icon {
+                button.imagePosition = (env.preferences.current.menuBar.layout == .stacked || entry.isPair) ? .imageOnly : .imageLeft
+                if env.preferences.current.menuBar.layout == .line, !entry.isPair, d.configs.count == 1, d.configs[0].label == .icon {
                     button.image = Self.symbol(for: d.configs[0].kind)
                 }
                 button.target = self
@@ -128,7 +144,7 @@ final class StatusItemController: NSObject {
                                   labels: labels, locale: Localizer.shared.locale)
         }
         // No modo ícone o rótulo é omitido pelo formatter; o título é só o valor.
-        let stacked = prefs.menuBar.layout == .stacked
+        let stacked = prefs.menuBar.layout == .stacked || entry.isPair
         let title = texts.map { $0.display }.joined(separator: " ")
         let detail = texts.map { "\($0.detail): \($0.value)" }.joined(separator: ", ")
         guard let button = entry.item.button else { return }
@@ -179,6 +195,10 @@ final class StatusItemController: NSObject {
     /// Em itens empilhados/combinados, o clique abre o painel da coluna sob o cursor (os outros ficam no seletor do painel).
     private func clickedKind(in entry: Entry) -> WidgetKind {
         guard entry.configs.count > 1, let button = entry.item.button, let event = NSApp.currentEvent else { return entry.primaryKind }
+        if entry.isPair {   // metade de cima abre o primeiro painel, metade de baixo o segundo
+            let y = button.convert(event.locationInWindow, from: nil).y
+            return y >= button.bounds.midY ? entry.configs[0].kind : entry.configs[1].kind
+        }
         let x = button.convert(event.locationInWindow, from: nil).x - max(0, (button.bounds.width - entry.imageWidth) / 2)
         if let i = entry.columnRanges.firstIndex(where: { $0.contains(x) }), i < entry.configs.count { return entry.configs[i].kind }
         return entry.primaryKind
@@ -264,6 +284,9 @@ final class StatusItemController: NSObject {
         let soloFont = NSFont.monospacedDigitSystemFont(ofSize: 12, weight: .medium)
         let gap: CGFloat = 7
         struct Col { var top: String?; var bottom: String }
+        if entry.isPair, texts.count == 2 {
+            return pairImage(entry: entry, top: texts[0].display, bottom: texts[1].display)
+        }
         let cols: [Col] = texts.map { t in
             if let l = t.lines, l.count == 2 { return Col(top: l[0], bottom: l[1]) }
             return Col(top: t.label, bottom: t.value)
@@ -297,6 +320,26 @@ final class StatusItemController: NSObject {
                     draw(c.bottom, soloFont, y: 3)
                 }
                 x += w + gap
+            }
+            return true
+        }
+        image.isTemplate = true
+        return image
+    }
+
+    /// Dois indicadores, um embaixo do outro, centralizados (ex.: temperatura em cima, ventoinha embaixo).
+    private static func pairImage(entry: Entry, top: String, bottom: String) -> NSImage {
+        let font = NSFont.monospacedDigitSystemFont(ofSize: 10, weight: .medium)
+        func width(_ s: String) -> CGFloat { (s as NSString).size(withAttributes: [.font: font]).width }
+        if entry.columnWidths.count != 1 { entry.columnWidths = [0] }
+        entry.columnWidths[0] = max(entry.columnWidths[0], ceil(max(width(top), width(bottom))))
+        let w = max(1, entry.columnWidths[0])
+        entry.columnRanges = [0...w]
+        entry.imageWidth = w
+        let image = NSImage(size: NSSize(width: w, height: 22), flipped: false) { _ in
+            for (s, y) in [(top, CGFloat(11.5)), (bottom, CGFloat(0.5))] {
+                (s as NSString).draw(at: NSPoint(x: (w - width(s)) / 2, y: y),
+                                     withAttributes: [.font: font, .foregroundColor: NSColor.black])
             }
             return true
         }

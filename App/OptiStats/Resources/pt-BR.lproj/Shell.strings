@@ -190,3 +190,6 @@
 "prefs.menubar.combinedLabel" = "Nome no modo compacto";
 "prefs.menubar.combinedLabel.short" = "Nome abreviado (CPU, VENT…)";
 "prefs.menubar.combinedLabel.none" = "Sem nome (só valores)";
+"prefs.menubar.stackWith" = "Empilhar outro indicador embaixo:";
+"prefs.menubar.stackNone" = "Nenhum";
+"about.by" = "Por Anglerson";

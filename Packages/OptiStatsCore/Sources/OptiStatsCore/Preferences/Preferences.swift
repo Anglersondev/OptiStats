@@ -50,10 +50,14 @@ public struct WidgetConfig: Codable, Equatable {
     public var label: LabelStyle
     public var decimals: Int
     public var content: WidgetContent
-    public init(kind: WidgetKind, enabled: Bool, label: LabelStyle = .short, decimals: Int = 0, content: WidgetContent = .load) {
+    /// Outro indicador desenhado EMBAIXO deste, no mesmo item da barra (um clique abre os dois painéis).
+    public var stackWith: WidgetKind?
+    public init(kind: WidgetKind, enabled: Bool, label: LabelStyle = .short, decimals: Int = 0, content: WidgetContent = .load,
+                stackWith: WidgetKind? = nil) {
         self.kind = kind; self.enabled = enabled; self.label = label; self.decimals = decimals; self.content = content
+        self.stackWith = stackWith
     }
-    private enum CodingKeys: String, CodingKey { case kind, enabled, label, decimals, content }
+    private enum CodingKeys: String, CodingKey { case kind, enabled, label, decimals, content, stackWith }
     public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         kind = try c.decode(WidgetKind.self, forKey: .kind)
@@ -61,6 +65,7 @@ public struct WidgetConfig: Codable, Equatable {
         label = try c.decodeIfPresent(LabelStyle.self, forKey: .label) ?? .short
         decimals = try c.decodeIfPresent(Int.self, forKey: .decimals) ?? 0
         content = (try? c.decodeIfPresent(WidgetContent.self, forKey: .content)) ?? .load
+        stackWith = (try? c.decodeIfPresent(WidgetKind.self, forKey: .stackWith)) ?? nil
     }
     /// CPU e GPU podem mostrar temperatura; os demais indicadores têm conteúdo único.
     public var showsTemperatureInline: Bool { (kind == .cpu || kind == .gpu) && content != .load }
@@ -220,6 +225,10 @@ public struct Preferences: Codable, Equatable {
         // CPU/GPU com temperatura embutida precisam do coletor de temperaturas (só em modo Completo).
         if monitoringMode == .full, activeWidgets().contains(where: \.showsTemperatureInline), !kinds.contains(.temperature) {
             kinds.append(.temperature)
+        }
+        // Indicadores empilhados sob outro também precisam de coletor.
+        for w in activeWidgets() {
+            if let s = w.stackWith, s != w.kind, allowed(s), !kinds.contains(s) { kinds.append(s) }
         }
         return kinds
     }
