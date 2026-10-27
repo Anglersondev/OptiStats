@@ -102,7 +102,7 @@ dbg = dict(common, **{"DEBUG_INFORMATION_FORMAT": "dwarf", "ENABLE_TESTABILITY":
 rel_ = dict(common, **{"DEBUG_INFORMATION_FORMAT": "dwarf-with-dsym", "SWIFT_OPTIMIZATION_LEVEL": "-O",
                        "SWIFT_COMPILATION_MODE": "wholemodule", "ENABLE_NS_ASSERTIONS": "NO"})
 tgt = {
-    "PRODUCT_NAME": "OptiStats", "PRODUCT_BUNDLE_IDENTIFIER": "dev.optistats.OptiStats", "MARKETING_VERSION": "1.0.0",
+    "PRODUCT_NAME": "OptiStats", "PRODUCT_BUNDLE_IDENTIFIER": "dev.optistats.OptiStats", "MARKETING_VERSION": "1.0",
     "CURRENT_PROJECT_VERSION": "1", "INFOPLIST_FILE": rel(plist), "CODE_SIGN_ENTITLEMENTS": rel(ent),
     "CODE_SIGN_IDENTITY": "-", "ENABLE_HARDENED_RUNTIME": "YES",
     "GENERATE_INFOPLIST_FILE": "NO", "COMBINE_HIDPI_IMAGES": "YES", "LD_RUNPATH_SEARCH_PATHS": "$(inherited) @executable_path/../Frameworks",

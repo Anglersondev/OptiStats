@@ -32,7 +32,7 @@
 "shell.menu.quit" = "Sair do OptiStats";
 "shell.popover.unavailable" = "Este painel ainda não está disponível.";
 "about.title" = "Sobre o OptiStats";
-"about.version" = "Versão %@ (%@)";
+"about.version" = "OptiStats v%@";
 "about.tagline" = "Um monitor de sistema leve para a barra de menus do Mac, focado em baixo consumo.";
 "about.privacy" = "Sem telemetria. Tudo permanece neste Mac. A única rede é o botão opcional de atualizar o catálogo do Debloat, iniciado por você.";
 "about.licenses" = "Licenças e avisos";

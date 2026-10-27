@@ -19,6 +19,6 @@ jobs:
       - run: xcodebuild -list -project OptiStats.xcodeproj
       - run: xcodebuild -project OptiStats.xcodeproj -scheme OptiStats -configuration Debug -destination 'platform=macOS' build CODE_SIGNING_ALLOWED=NO
       - run: xcodebuild -project OptiStats.xcodeproj -scheme OptiStats -configuration Release -destination 'platform=macOS' -derivedDataPath build build CODE_SIGNING_ALLOWED=NO
-      - run: scripts/make_dmg.sh build/Build/Products/Release/OptiStats.app OptiStats.dmg
+      - run: scripts/make_dmg.sh build/Build/Products/Release/OptiStats.app OptiStats-1.0.dmg
       - uses: actions/upload-artifact@v4
-        with: { name: OptiStats-dmg, path: OptiStats.dmg }
+        with: { name: OptiStats-dmg, path: OptiStats-1.0.dmg }

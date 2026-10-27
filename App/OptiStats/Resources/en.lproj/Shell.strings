@@ -32,7 +32,7 @@
 "shell.menu.quit" = "Quit OptiStats";
 "shell.popover.unavailable" = "This panel is not available yet.";
 "about.title" = "About OptiStats";
-"about.version" = "Version %@ (%@)";
+"about.version" = "OptiStats v%@";
 "about.tagline" = "A lightweight system monitor for the Mac menu bar, focused on low resource usage.";
 "about.privacy" = "No telemetry. Everything stays on this Mac. The only network use is the optional Debloat catalog update button, started by you.";
 "about.licenses" = "Licenses and notices";
