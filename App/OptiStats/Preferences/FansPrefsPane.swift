@@ -273,7 +273,26 @@ final class FansPrefsPane: PrefsPaneViewController {
         }
     }
 
+    /// Outros apps que controlam ventoinhas (e seguram o modo manual) invalidam o teste.
+    private static let otherFanApps: [(bundleID: String, name: String)] = [
+        ("eu.exelban.Stats", "Stats"), ("com.crystalidea.macsfancontrol", "Macs Fan Control"),
+        ("com.tunabellysoftware.tgpro", "TG Pro"), ("com.crystalidea.MacsFanControl", "Macs Fan Control")
+    ]
+
+    private func otherFanControllersRunning() -> [String] {
+        var names: [String] = []
+        for (id, name) in Self.otherFanApps where !NSRunningApplication.runningApplications(withBundleIdentifier: id).isEmpty && !names.contains(name) {
+            names.append(name)
+        }
+        return names
+    }
+
     private func confirmTest() {
+        let others = otherFanControllersRunning()
+        if !others.isEmpty {
+            MaintUI.inform(window: view.window, title: L("fan.test.otherApp.title"), text: L("fan.test.otherApp.text", others.joined(separator: ", ")))
+            return
+        }
         MaintUI.confirm(window: view.window, title: L("fan.test.confirmTitle"), text: L("fan.test.confirmText"),
                         action: L("fan.test.confirmAction")) { [weak self] ok in
             guard ok, let self else { return }

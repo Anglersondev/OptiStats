@@ -95,3 +95,5 @@
 "fan.helper.update" = "Update helper";
 "fan.unsupported.note" = "This Mac's macOS does not allow manual fan control (the test did not pass). Fans stay on macOS automatic, which is safe. You can uninstall the helper above.";
 "fan.unsupported.retry" = "Try again";
+"fan.test.otherApp.title" = "Another app is controlling the fans";
+"fan.test.otherApp.text" = "%@ is running and may be holding the fans in manual mode, which makes this test unreliable. Set its fans to Automatic or quit it, then run the test again.";
