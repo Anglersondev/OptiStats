@@ -179,3 +179,7 @@
 "prefs.privacy.permissionsSection" = "Permissions";
 "prefs.privacy.permissions" = "OptiStats does not require Accessibility, Full Disk Access or Screen Recording. If a source needs a permission, the related panel explains it.";
 "shell.menu.maintenance" = "Maintenance…";
+
+"prefs.content.load" = "Load %";
+"prefs.content.temperature" = "Temperature";
+"prefs.content.both" = "Both";

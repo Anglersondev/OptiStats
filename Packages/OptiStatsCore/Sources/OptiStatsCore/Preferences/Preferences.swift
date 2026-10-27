@@ -41,14 +41,29 @@ public enum TemperatureSource: Codable, Equatable {
 
 public enum PowerScopeChoice: String, Codable, CaseIterable { case systemTotal, battery, dcIn, cpu, gpu }
 
+/// O que CPU/GPU mostram na barra: carga (%), temperatura ou os dois.
+public enum WidgetContent: String, Codable, CaseIterable { case load, temperature, both }
+
 public struct WidgetConfig: Codable, Equatable {
     public var kind: WidgetKind
     public var enabled: Bool
     public var label: LabelStyle
     public var decimals: Int
-    public init(kind: WidgetKind, enabled: Bool, label: LabelStyle = .short, decimals: Int = 0) {
-        self.kind = kind; self.enabled = enabled; self.label = label; self.decimals = decimals
+    public var content: WidgetContent
+    public init(kind: WidgetKind, enabled: Bool, label: LabelStyle = .short, decimals: Int = 0, content: WidgetContent = .load) {
+        self.kind = kind; self.enabled = enabled; self.label = label; self.decimals = decimals; self.content = content
     }
+    private enum CodingKeys: String, CodingKey { case kind, enabled, label, decimals, content }
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        kind = try c.decode(WidgetKind.self, forKey: .kind)
+        enabled = try c.decodeIfPresent(Bool.self, forKey: .enabled) ?? false
+        label = try c.decodeIfPresent(LabelStyle.self, forKey: .label) ?? .short
+        decimals = try c.decodeIfPresent(Int.self, forKey: .decimals) ?? 0
+        content = (try? c.decodeIfPresent(WidgetContent.self, forKey: .content)) ?? .load
+    }
+    /// CPU e GPU podem mostrar temperatura; os demais indicadores têm conteúdo único.
+    public var showsTemperatureInline: Bool { (kind == .cpu || kind == .gpu) && content != .load }
 }
 
 public struct MenuBarConfig: Codable, Equatable {
@@ -177,7 +192,12 @@ public struct Preferences: Codable, Equatable {
     public func visibleKinds() -> [WidgetKind] {
         let allowed: (WidgetKind) -> Bool = { self.monitoringMode == .full || $0.isEssential }
         if menuBar.combined { return menuBar.combinedKinds.filter(allowed) }
-        return activeWidgets().map(\.kind)
+        var kinds = activeWidgets().map(\.kind)
+        // CPU/GPU com temperatura embutida precisam do coletor de temperaturas (só em modo Completo).
+        if monitoringMode == .full, activeWidgets().contains(where: \.showsTemperatureInline), !kinds.contains(.temperature) {
+            kinds.append(.temperature)
+        }
+        return kinds
     }
 }
 

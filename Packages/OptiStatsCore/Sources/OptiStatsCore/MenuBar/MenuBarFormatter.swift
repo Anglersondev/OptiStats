@@ -38,10 +38,10 @@ public enum MenuBarFormatter {
             return make(labels.ram, v, "RAM")
         case .cpu:
             let v = store.cpu.map { ByteFormat.percent($0.load.total, decimals: d, locale: locale) }
-            return make(labels.cpu, v, "CPU")
+            return withTemperature(make(labels.cpu, v, "CPU"), config: config, source: .cpuAverage, store: store, prefs: prefs, locale: locale)
         case .gpu:
             let v = store.gpu?.utilization.map { ByteFormat.percent($0, decimals: d, locale: locale) }
-            return make(labels.gpu, v, "GPU")
+            return withTemperature(make(labels.gpu, v, "GPU"), config: config, source: .gpuAverage, store: store, prefs: prefs, locale: locale)
         case .temperature:
             let (value, name) = temperature(prefs.menuBar.temperatureSource, store: store)
             let text = value.map { formatTemperature($0, unit: prefs.temperatureUnit, decimals: d, locale: locale) }
@@ -81,6 +81,24 @@ public enum MenuBarFormatter {
             let value = ByteFormat.percent(p / 100, decimals: 0, locale: locale) + (b.isCharging ? " ⚡" : "")
             return make(labels.battery, value, "Battery")
         }
+    }
+
+    /// Aplica `config.content` ao texto de carga já calculado: só carga, só temperatura, ou "carga temperatura".
+    static func withTemperature(_ load: MenuBarText, config: WidgetConfig, source: TemperatureSource, store: MetricsStore,
+                                prefs: Preferences, locale: Locale) -> MenuBarText {
+        guard config.content != .load else { return load }
+        let (value, name) = temperature(source, store: store)
+        let temp = value.map { formatTemperature($0, unit: prefs.temperatureUnit, decimals: config.decimals, locale: locale) }
+        var out = load
+        if config.content == .temperature {
+            out.value = temp ?? unavailable; out.isAvailable = temp != nil
+        } else {
+            out.value = [load.isAvailable ? load.value : nil, temp].compactMap { $0 }.joined(separator: " ")
+            if out.value.isEmpty { out.value = unavailable }
+            out.isAvailable = load.isAvailable || temp != nil
+        }
+        out.detail = load.detail + " · " + name
+        return out
     }
 
     public static func formatTemperature(_ celsius: Double, unit: TemperatureUnit, decimals: Int, locale: Locale = .current) -> String {
