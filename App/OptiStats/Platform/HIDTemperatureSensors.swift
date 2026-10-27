@@ -22,6 +22,9 @@ final class HIDTemperatureSensors {
     private let copyEvent: CopyEventFn?
     private let floatValue: FloatValueFn?
     private var client: UnsafeMutableRawPointer?
+    /// Serviços e nomes de produto em cache: a lista de sensores não muda entre leituras, só os valores.
+    private var cachedServices: CFArray?
+    private var cachedProducts: [String] = []
 
     init() {
         let handle = dlopen("/System/Library/Frameworks/IOKit.framework/IOKit", RTLD_NOW)
@@ -45,6 +48,7 @@ final class HIDTemperatureSensors {
 
     /// Libera o cliente HID (recurso caro). Recriado na próxima leitura.
     func release() {
+        cachedServices = nil; cachedProducts = []
         if let c = client { Unmanaged<AnyObject>.fromOpaque(c).release(); client = nil }
     }
 
@@ -59,21 +63,25 @@ final class HIDTemperatureSensors {
 
     /// Lê (nome do produto, °C) de todos os sensores de temperatura HID. Vazio se indisponível.
     func readTemperatures() -> [(product: String, celsius: Double)] {
-        guard let copyServices, let copyProperty, let copyEvent, let floatValue, let c = ensureClient(),
-              let rawArray = copyServices(c) else { return [] }
-        let services = Unmanaged<CFArray>.fromOpaque(rawArray).takeRetainedValue()
-        var out: [(String, Double)] = []
-        for i in 0..<CFArrayGetCount(services) {
-            guard let sp = CFArrayGetValueAtIndex(services, i) else { continue }
-            let service = UnsafeMutableRawPointer(mutating: sp)
-            var product = ""
-            if let rawName = copyProperty(service, "Product" as CFString) {
-                product = (Unmanaged<AnyObject>.fromOpaque(rawName).takeRetainedValue() as? String) ?? ""
+        guard let copyServices, let copyProperty, let copyEvent, let floatValue, let c = ensureClient() else { return [] }
+        if cachedServices == nil {
+            guard let rawArray = copyServices(c) else { return [] }
+            let services = Unmanaged<CFArray>.fromOpaque(rawArray).takeRetainedValue()
+            cachedProducts = (0..<CFArrayGetCount(services)).map { i in
+                guard let sp = CFArrayGetValueAtIndex(services, i),
+                      let rawName = copyProperty(UnsafeMutableRawPointer(mutating: sp), "Product" as CFString) else { return "" }
+                return (Unmanaged<AnyObject>.fromOpaque(rawName).takeRetainedValue() as? String) ?? ""
             }
-            guard !product.isEmpty, let rawEvent = copyEvent(service, Self.eventTypeTemperature, 0, 0) else { continue }
+            cachedServices = services
+        }
+        guard let services = cachedServices else { return [] }
+        var out: [(String, Double)] = []
+        for i in 0..<CFArrayGetCount(services) where i < cachedProducts.count && !cachedProducts[i].isEmpty {
+            guard let sp = CFArrayGetValueAtIndex(services, i),
+                  let rawEvent = copyEvent(UnsafeMutableRawPointer(mutating: sp), Self.eventTypeTemperature, 0, 0) else { continue }
             let value = floatValue(rawEvent, Self.fieldTemperatureLevel)
             Unmanaged<AnyObject>.fromOpaque(rawEvent).release()
-            out.append((product, value))
+            out.append((cachedProducts[i], value))
         }
         return out
     }

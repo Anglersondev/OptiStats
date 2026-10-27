@@ -17,8 +17,8 @@ final class GPUCollector: BaseCollector {
         var found = false
         var device: Double?, renderer: Double?, tiler: Double?
         IOReg.forEachService(matching: "IOAccelerator") { entry in
-            guard let props = IOReg.properties(of: entry),
-                  let stats = props["PerformanceStatistics"] as? [String: Any] else { return }
+            // Só a chave necessária: copiar todas as propriedades do acelerador a cada leitura é caro.
+            guard let stats = IOReg.property(of: entry, key: "PerformanceStatistics") as? [String: Any] else { return }
             guard let d = stats.double("Device Utilization %") else { return }
             // Com mais de um acelerador, mantém o mais carregado.
             if device == nil || d > (device ?? 0) {
