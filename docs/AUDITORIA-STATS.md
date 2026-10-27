@@ -8,6 +8,6 @@ Fonte estudada: repositório clonado (código-fonte). O `Contents2.zip` enviado 
 | Fórmula de memória "usada" | **Divergente, documentado** | Stats usa uma fórmula própria; OptiStats segue o estilo do Monitor de Atividade e mantém a do Stats como `alternativeUsedBytes` para reconciliação. |
 | Catálogo de chaves SMC | **Adaptado (MIT)** | Reorganizado por geração M1–M6; chaves ausentes degradam para "indisponível". |
 | Leitura HID/IOReport | **Adaptado conceitualmente** | via `dlopen/dlsym`, sem bridging header; falha → `.unsupported`. |
-| Controle de ventoinhas (escrita SMC/helper privilegiado) | **Descartado em v1** | Só leitura. Smart Boost é máquina de estados testada, mas o atuador real é `UnavailableFanActuator`. |
-| Atualizador, telemetria opcional, helper privilegiado | **Descartado** | 100% local, sem rede, sem helper. |
+| Controle de ventoinhas (escrita SMC/helper privilegiado) | **Adaptado e isolado em helper opcional** | Leitura por padrão; escrita somente após permissão e teste neste Mac. Limites, watchdog e confirmação próprios. |
+| Atualizador e telemetria | **Não adotados** | Sem telemetria. Há download manual do catálogo Debloat por HTTPS; helper opcional somente para ventoinhas. |
 | Topologia E/P | **Reescrito** | Validada contra `hw.perflevelN`; rótulo só quando verificado. |

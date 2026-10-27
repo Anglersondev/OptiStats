@@ -14,6 +14,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: python3 scripts/check_localization.py
+      - run: python3 scripts/check_site.py
       - run: python3 scripts/generate_xcodeproj.py && git diff --exit-code OptiStats.xcodeproj || true
       - run: swift test --package-path Packages/OptiStatsCore
       - run: xcodebuild -list -project OptiStats.xcodeproj
