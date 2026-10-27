@@ -53,6 +53,7 @@ class ModulePopoverViewController: NSViewController {
     // MARK: Menu "…" (Preferências, Manutenção, Sobre, Sair)
 
     private let moreButton = NSButton()
+    private let aboutButton = NSButton()
 
     @objc private func moreTapped() {
         let menu = NSMenu()
@@ -101,9 +102,17 @@ class ModulePopoverViewController: NSViewController {
         moreButton.setAccessibilityLabel(L("common.more"))
         moreButton.translatesAutoresizingMaskIntoConstraints = false
 
+        aboutButton.title = L("shell.menu.aboutShort")
+        aboutButton.isBordered = false
+        aboutButton.font = Theme.body(11)
+        aboutButton.toolTip = L("shell.menu.about")
+        aboutButton.target = self
+        aboutButton.action = #selector(menuAbout)
+        aboutButton.translatesAutoresizingMaskIntoConstraints = false
+
         let spacer = NSView(); spacer.translatesAutoresizingMaskIntoConstraints = false
         spacer.setContentHuggingPriority(.defaultLow, for: .horizontal)
-        let header = NSStackView.horizontal([title, spacer] + headerAccessories() + [moreButton, refreshButton], spacing: 8)
+        let header = NSStackView.horizontal([title, spacer] + headerAccessories() + [aboutButton, moreButton, refreshButton], spacing: 8)
 
         buildContent()
         content.edgeInsets = NSEdgeInsets(top: 4, left: 0, bottom: 4, right: 0)

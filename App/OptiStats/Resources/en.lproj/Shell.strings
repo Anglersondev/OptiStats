@@ -29,6 +29,7 @@
 "shell.menu.refresh" = "Refresh Now";
 "shell.menu.preferences" = "Preferences…";
 "shell.menu.about" = "About OptiStats";
+"shell.menu.aboutShort" = "About";
 "shell.menu.quit" = "Quit OptiStats";
 "shell.popover.unavailable" = "This panel is not available yet.";
 "about.title" = "About OptiStats";
@@ -194,3 +195,4 @@
 "prefs.menubar.stackNone" = "None";
 "about.by" = "By Anglerson";
 "about.support" = "Enjoying OptiStats? Fuel the next update with a coffee ☕";
+"about.donateButton" = "Support Anglerson ☕";

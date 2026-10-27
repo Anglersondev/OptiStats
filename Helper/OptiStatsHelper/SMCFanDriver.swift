@@ -82,6 +82,12 @@ final class SMCFanDriver {
             return .failure(Failure(code: .unsupportedHardware, message: "tipo da chave de alvo não suportado"))
         }
 
+        // Não assumir uma ventoinha já posta em manual por outro controlador.
+        // Nesse caso não há nada nosso para restaurar.
+        if smc.read(modeKey(fan))?.bytes.first == 1 && !manualFans.contains(fan) {
+            return .failure(Failure(code: .conflictingController, message: "ventoinha já está em manual por outro controlador"))
+        }
+
         // 1) modo manual (com destravamento Ftst se necessário)
         manualFans.insert(fan)   // registrar ANTES: se algo falhar, a restauração cobre esta ventoinha
         if let failure = enterManual(fan: fan) { return failAndRestore(failure) }

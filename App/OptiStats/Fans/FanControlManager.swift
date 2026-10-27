@@ -52,7 +52,9 @@ final class FanControlManager {
     func start() {
         guard let s = settings, s.smartBoostEnabled else { return }
         // Smart Boost só retoma se continuar permitido e validado; caso contrário volta a desligado.
-        if s.manualAllowed, case .validated = capability { startSmartBoost() } else { s.smartBoostEnabled = false }
+        if s.manualAllowed, HelperInstaller.installedMatchesBundled() == true, case .validated = capability {
+            startSmartBoost()
+        } else { s.smartBoostEnabled = false }
     }
 
     /// Encerramento do app: restaura o automático e derruba a conexão (o helper também restaura ao ver a desconexão).
@@ -71,9 +73,10 @@ final class FanControlManager {
     }
 
     func thermalChanged(_ level: ThermalLevel) {
-        if level == .critical, !manualTargets.isEmpty {
-            restoreInBackground(message: L("fan.msg.thermalRestored"))
-        }
+        guard level == .critical, engaged else { return }
+        settings?.smartBoostEnabled = false
+        stopSmartBoostState()
+        restoreInBackground(message: L("fan.msg.thermalRestored"))
     }
 
     // MARK: Helper
@@ -141,6 +144,7 @@ final class FanControlManager {
 
     func setManual(fan: Int, rpm: Double, _ done: @escaping (String?) -> Void) {
         guard let client, let s = settings, s.manualAllowed else { done(L("fan.err.notAllowed")); return }
+        guard HelperInstaller.installedMatchesBundled() == true else { done(L("fan.helper.outdatedBanner")); return }
         guard case .validated = capability, !s.isUnsupportedForThisMac else { done(L("fan.err.needsValidation")); return }
         guard !s.smartBoostEnabled else { done(L("fan.err.smartBoostActive")); return }
         guard !busy else { done(L("fan.err.busy")); return }
@@ -239,6 +243,7 @@ final class FanControlManager {
             return nil
         }
         guard s.manualAllowed else { return L("fan.err.notAllowed") }
+        guard HelperInstaller.installedMatchesBundled() == true else { return L("fan.helper.outdatedBanner") }
         guard case .validated = capability else { return L("fan.err.needsValidation") }
         guard manualTargets.isEmpty else { return L("fan.err.manualActive") }
         s.smartBoostEnabled = true
@@ -324,6 +329,9 @@ final class FanControlManager {
     func runControlTest(_ done: @escaping (FanTestReport) -> Void) {
         guard let client, let s = settings else { done(FanTestReport(passed: false, message: L("fan.err.notInstalled"))); return }
         guard s.manualAllowed else { done(FanTestReport(passed: false, message: L("fan.err.notAllowed"))); return }
+        guard HelperInstaller.installedMatchesBundled() == true else {
+            done(FanTestReport(passed: false, message: L("fan.helper.outdatedBanner"))); return
+        }
         guard !engaged, !s.smartBoostEnabled, !busy else { done(FanTestReport(passed: false, message: L("fan.test.busy"))); return }
         setBusy(true)
         io.async { [weak self] in

@@ -29,6 +29,7 @@
 "shell.menu.refresh" = "Atualizar agora";
 "shell.menu.preferences" = "Preferências…";
 "shell.menu.about" = "Sobre o OptiStats";
+"shell.menu.aboutShort" = "Sobre";
 "shell.menu.quit" = "Sair do OptiStats";
 "shell.popover.unavailable" = "Este painel ainda não está disponível.";
 "about.title" = "Sobre o OptiStats";
@@ -194,3 +195,4 @@
 "prefs.menubar.stackNone" = "Nenhum";
 "about.by" = "Por Anglerson";
 "about.support" = "Curtindo o OptiStats? Pague um café ☕ e ajude a manter as próximas atualizações:";
+"about.donateButton" = "Apoiar Anglerson ☕";
