@@ -19,12 +19,15 @@ public struct VMStatistics: Equatable {
     public var pageOuts: UInt64
     public var compressions: UInt64
     public var decompressions: UInt64
+    /// Páginas ORIGINAIS (não comprimidas) guardadas no compressor (`total_uncompressed_pages_in_compressor`). Opcional.
+    public var uncompressedInCompressorCount: UInt64 = 0
 
     public init(pageSize: UInt64, freeCount: UInt64 = 0, activeCount: UInt64 = 0, inactiveCount: UInt64 = 0,
                 speculativeCount: UInt64 = 0, wireCount: UInt64 = 0, compressorPageCount: UInt64 = 0,
                 purgeableCount: UInt64 = 0, externalPageCount: UInt64 = 0, internalPageCount: UInt64 = 0,
                 swapIns: UInt64 = 0, swapOuts: UInt64 = 0, pageIns: UInt64 = 0, pageOuts: UInt64 = 0,
-                compressions: UInt64 = 0, decompressions: UInt64 = 0) {
+                compressions: UInt64 = 0, decompressions: UInt64 = 0, uncompressedInCompressorCount: UInt64 = 0) {
+        self.uncompressedInCompressorCount = uncompressedInCompressorCount
         self.pageSize = pageSize
         self.freeCount = freeCount
         self.activeCount = activeCount
@@ -97,6 +100,8 @@ public struct MemorySnapshot: Equatable {
     public var swap: SwapUsage?
     public var pressure: MemoryPressureLevel?
     public var counters: MemoryCounters
+    /// Bytes originais (antes de comprimir) guardados no compressor; nil se a fonte não informa.
+    public var compressorOriginalBytes: UInt64? = nil
 
     public var usedFraction: Double {
         totalBytes > 0 ? min(1, Double(usedBytes) / Double(totalBytes)) : 0
@@ -136,7 +141,8 @@ public enum MemoryFormula {
             alternativeUsedBytes: altUsed, swap: swap, pressure: pressure,
             counters: MemoryCounters(swapIns: vm.swapIns, swapOuts: vm.swapOuts, pageIns: vm.pageIns,
                                      pageOuts: vm.pageOuts, compressions: vm.compressions,
-                                     decompressions: vm.decompressions))
+                                     decompressions: vm.decompressions),
+            compressorOriginalBytes: vm.uncompressedInCompressorCount > 0 ? vm.uncompressedInCompressorCount * page : nil)
     }
 }
 

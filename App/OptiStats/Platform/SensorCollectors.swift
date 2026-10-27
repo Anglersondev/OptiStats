@@ -76,7 +76,8 @@ final class FanCollector: BaseCollector {
             let lo = SensorValidator.validate(smc.read("F\(i)Mn"), kind: .fan)
             let hi = SensorValidator.validate(smc.read("F\(i)Mx"), kind: .fan)
             var mode = FanMode.unknown
-            if let m = smc.read("F\(i)Md") { mode = m == 0 ? .automatic : .manual }
+            // "F{i}Md" (maioria) ou "F{i}md" (Apple Silicon recente); 0 e 3 são automáticos, 1 é manual (como no Stats).
+            if let m = smc.read("F\(i)Md") ?? smc.read("F\(i)md") { mode = (m == 0 || m == 3) ? .automatic : .manual }
             fans.append(FanReading(index: i, name: nil, rpm: rpm, minRPM: lo, maxRPM: hi, mode: mode, timestamp: t))
         }
         store.updateSensors(timestamp: t, owner: "fans", fans: fans)

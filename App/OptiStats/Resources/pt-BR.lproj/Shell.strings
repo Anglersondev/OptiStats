@@ -153,7 +153,7 @@
 "prefs.optimizer.builtinSection" = "Sempre protegidos";
 "prefs.optimizer.builtinNote" = "Processos do sistema (Finder, Dock, WindowServer e similares), o app em primeiro plano e o próprio OptiStats são sempre protegidos e não podem ser liberados.";
 "prefs.fans.status" = "Controle das ventoinhas";
-"prefs.fans.warning" = "Somente leitura. Esta versão nunca escreve no SMC e não altera a velocidade das ventoinhas. As ventoinhas permanecem sob controle automático do macOS.";
+"prefs.fans.warning" = "O controle manual vem desligado. O macOS mantém a proteção térmica e as ventoinhas voltam ao automático quando o app fecha, o Mac dorme ou o helper perde contato.";
 "prefs.fans.control" = "Capacidade de controle:";
 "prefs.fans.capability.unavailable" = "Indisponível (%@)";
 "prefs.fans.capability.experimental" = "Experimental e não validada; bloqueada";
@@ -172,7 +172,7 @@
 "prefs.privacy.section" = "Seus dados ficam no seu Mac";
 "prefs.privacy.noTelemetry" = "Sem telemetria, análises ou rastreamento de qualquer tipo.";
 "prefs.privacy.local" = "Todas as leituras são processadas localmente e não são enviadas pela rede. A única exceção é o botão opcional e manual “Atualizar do GitHub” na aba Debloat, que baixa o catálogo público de serviços (nada seu é enviado).";
-"prefs.privacy.noWrite" = "O app apenas lê sensores e ventoinhas. Nunca escreve no SMC nem altera a velocidade das ventoinhas.";
+"prefs.privacy.noWrite" = "Sensores são só leitura. A velocidade das ventoinhas só muda se você instalar o helper e ligar o controle manual, e dá para desfazer a qualquer momento.";
 "prefs.privacy.noKill" = "Apps só são encerrados após sua confirmação explícita, e apps protegidos nunca são sugeridos.";
 "prefs.privacy.redaction" = "Relatórios de diagnóstico têm dados pessoais removidos.";
 "prefs.privacy.history" = "O histórico fica na memória e é descartado ao sair do app.";

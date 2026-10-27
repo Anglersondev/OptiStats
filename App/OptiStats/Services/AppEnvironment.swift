@@ -13,6 +13,8 @@ final class AppEnvironment {
     let system: SystemProfile
     let coordinator: SamplingCoordinator
     let growth = GrowthDetector()
+    /// Controle (opcional) de ventoinhas pelo helper. Criado sob demanda; nada roda até o usuário habilitar.
+    private(set) lazy var fanControl = FanControlManager(env: self)
 
     private(set) var powerContext: PowerContext
     private var tokens: [SubscriptionToken] = []
@@ -59,13 +61,14 @@ final class AppEnvironment {
             self.growth.record(groups: snap.byMemory, at: snap.timestamp)
         })
         applyPreferences()
+        fanControl.start()
     }
 
     func stop() {
         platform.events.stop()
         coordinator.pause()
-        // Nenhum controle de ventoinha está ativo nesta versão; garantir o modo automático é inofensivo.
-        _ = platform.fanActuator.apply(.restoreAutomatic(reason: "encerrando o aplicativo"))
+        // Devolve as ventoinhas ao macOS (e derruba a conexão: o helper também restaura ao ver a desconexão).
+        fanControl.shutdown()
     }
 
     // MARK: Preferências → política de amostragem
@@ -100,6 +103,7 @@ final class AppEnvironment {
     private func handle(_ event: SystemEvent) {
         switch event {
         case .willSleep, .screenLocked:
+            if case .willSleep = event { fanControl.systemWillSleep() }
             coordinator.pause()
         case .didWake, .screenUnlocked:
             powerContext = platform.events.currentPowerContext()
@@ -107,6 +111,7 @@ final class AppEnvironment {
             coordinator.resume()
         case .thermalChanged(let level):
             powerContext.thermal = level
+            fanControl.thermalChanged(level)
             coordinator.setConfiguration(samplingConfiguration)
         case .lowPowerModeChanged(let on):
             powerContext.lowPowerMode = on

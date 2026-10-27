@@ -57,3 +57,10 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 IN THE SOFTWARE.
+
+---
+
+## Stats (continuação): controle de ventoinhas
+
+A sequência de escrita das ventoinhas no SMC do `Helper/OptiStatsHelper` (chaves `F{i}Md`, `F{i}Tg`, `Ftst`, comandos de escrita e leitura de volta) foi adaptada do
+estudo de `SMC/smc.swift` do Stats (MIT, aviso acima), reescrita com limites de segurança, watchdog e leitura de confirmação próprios.

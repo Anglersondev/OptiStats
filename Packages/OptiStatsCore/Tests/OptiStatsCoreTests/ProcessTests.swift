@@ -92,3 +92,46 @@ final class ProtectionPolicyTests: XCTestCase {
         XCTAssertTrue(policy.verdict(for: safari, context: AppRuntimeContext()).isSoftProtected)
     }
 }
+
+final class ProcessHelperGroupingTests: XCTestCase {
+    func testWebKitStyleOrphanJoinsAppByResponsiblePID() {
+        let safari = "/Applications/Safari.app"
+        var web = process(20, "com.apple.WebKit.WebContent", path: "/System/Library/Frameworks/WebKit.framework/XPCServices/WebContent.xpc/Contents/MacOS/WebContent", footprint: 700 * MiB)
+        web.responsiblePID = 10
+        let groups = ProcessGrouper.group([
+            process(10, "Safari", path: safari + "/Contents/MacOS/Safari", bundle: "com.apple.Safari", footprint: 300 * MiB), web])
+        XCTAssertEqual(groups.count, 1)
+        XCTAssertEqual(groups[0].processCount, 2)
+        XCTAssertEqual(groups[0].footprintBytes, 1000 * MiB)
+    }
+
+    func testBundlePrefixJoinsHelperWithoutAppPath() {
+        let groups = ProcessGrouper.group([
+            process(1, "Google Chrome", path: "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome", bundle: "com.google.Chrome", footprint: 200 * MiB),
+            process(2, "chrome_crashpad", path: "/tmp/x/crashpad", bundle: "com.google.Chrome.helper", footprint: 50 * MiB),
+            process(3, "other", path: "/usr/bin/other", bundle: "com.google.Other", footprint: 10 * MiB)])
+        XCTAssertEqual(groups.first { $0.displayName == "Google Chrome" }?.processCount, 2)
+        XCTAssertEqual(groups.count, 2)
+    }
+
+    func testUnrelatedProcessesNeverMerged() {
+        let groups = ProcessGrouper.group([
+            process(1, "A", path: "/Applications/A.app/Contents/MacOS/A", bundle: "com.a.app", footprint: MiB),
+            process(2, "daemon", path: "/usr/sbin/daemon", bundle: "com.apple.daemon", footprint: MiB)])
+        XCTAssertEqual(groups.count, 2)
+    }
+
+    func testRolesAndHeaviestMembers() {
+        let g = appGroup("Brave", footprint: 0)
+        var members = [process(1, "Brave", footprint: 100 * MiB), process(2, "Brave Helper (Renderer)", footprint: 900 * MiB),
+                       process(3, "Brave Helper (GPU)", footprint: 300 * MiB), process(4, "Brave Helper", footprint: 10 * MiB)]
+        members[0].name = "Brave"
+        var group = g; group.members = members
+        let top = ProcessGrouper.heaviestMembers(of: group, limit: 2)
+        XCTAssertEqual(top.map(\.identity.pid), [2, 3])
+        XCTAssertEqual(ProcessGrouper.childRole(of: members[1]), .renderer)
+        XCTAssertEqual(ProcessGrouper.childRole(of: members[2]), .gpu)
+        XCTAssertEqual(ProcessGrouper.childRole(of: members[3]), .helper)
+        XCTAssertEqual(ProcessGrouper.childRole(of: members[0]), .main)
+    }
+}
