@@ -95,3 +95,5 @@
 "fan.helper.update" = "Atualizar helper";
 "fan.unsupported.note" = "O macOS deste Mac não permite controle manual das ventoinhas (o teste não passou). As ventoinhas seguem no automático do macOS, que é seguro. Você pode desinstalar o helper acima.";
 "fan.unsupported.retry" = "Tentar de novo";
+"fan.test.otherApp.title" = "Outro app está controlando as ventoinhas";
+"fan.test.otherApp.text" = "%@ está aberto e pode estar segurando as ventoinhas em manual, o que invalida este teste. Coloque as ventoinhas dele em Automático ou feche o app e rode o teste de novo.";
