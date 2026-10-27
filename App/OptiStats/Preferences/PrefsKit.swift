@@ -17,7 +17,7 @@ enum PrefsText {
 /// Base das abas: pilha vertical rolável + auxiliares para controles ligados às preferências.
 /// Regra: nenhuma aba cria timers; abas que precisam de dados vivos declaram demanda só enquanto visíveis.
 class PrefsPaneViewController: NSViewController {
-    static let contentSize = NSSize(width: 720, height: 520)
+    static let contentSize = NSSize(width: 980, height: 560)
 
     let env: AppEnvironment
     let stack = NSStackView.vertical([], spacing: 10)
