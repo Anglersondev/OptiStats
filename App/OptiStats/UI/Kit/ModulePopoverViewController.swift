@@ -65,6 +65,7 @@ class ModulePopoverViewController: NSViewController {
         add(L("shell.menu.preferences"), #selector(menuPreferences))
         add(L("shell.menu.maintenance"), #selector(menuMaintenance))
         add(L("shell.menu.about"), #selector(menuAbout))
+        add(L("shell.menu.donate"), #selector(menuDonate))
         menu.addItem(.separator())
         add(L("shell.menu.quit"), #selector(menuQuit))
         menu.popUp(positioning: nil, at: NSPoint(x: 0, y: moreButton.bounds.height + 2), in: moreButton)
@@ -72,6 +73,9 @@ class ModulePopoverViewController: NSViewController {
     @objc private func menuPreferences() { env.openPreferences?() }
     @objc private func menuMaintenance() { env.openMaintenance?() }
     @objc private func menuAbout() { env.openAbout?() }
+    @objc private func menuDonate() {
+        if let url = URL(string: "https://pixgg.com/Anglerson") { NSWorkspace.shared.open(url) }
+    }
     @objc private func menuQuit() { NSApp.terminate(nil) }
 
     // MARK: Layout
