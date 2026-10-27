@@ -102,6 +102,11 @@ final class SMCFanDriver {
             modeNow = smc.read(modeKey(fan))?.bytes.first
             targetNow = smc.read(FanSMCKeys.target(fan))?.number
             if modeNow == 1, SMCFanTargetEncoding.matches(readBack: targetNow, requested: rpm) { confirmed = true; break }
+            // O sistema pode ter devolvido o modo para automático: reafirma o manual e o alvo e lê de novo.
+            if modeNow != 1, let current = smc.read(modeKey(fan)) {
+                _ = writeMode(modeKey(fan), current, to: 1)
+                _ = writeWithRetry(FanSMCKeys.target(fan), bytes: payload, size: target.size)
+            }
         }
         guard confirmed else {
             let detail = "modo=\(modeNow.map(String.init) ?? "?") (chave \(modeKey(fan)), esperado 1), alvo lido=\(targetNow.map { String(format: "%.1f", $0) } ?? "?") pedido=\(Int(rpm)) tipo=\(target.type)"
@@ -122,7 +127,12 @@ final class SMCFanDriver {
         guard let current = smc.read(key) else { return Failure(code: .unlockFailed, message: "não foi possível ler \(key)") }
         if current.bytes.first == 1 { return nil }
         // Tentativa direta (funciona em chips recentes sem Ftst).
-        if writeMode(key, current, to: 1) { return nil }
+        // Em M1–M4 a escrita direta pode ser aceita e ignorada (o thermalmonitord devolve o modo para 0): só vale se a leitura confirmar.
+        if writeMode(key, current, to: 1) {
+            usleep(150_000)
+            if smc.read(key)?.bytes.first == 1 { return nil }
+            HelperLog.write("modo \(key) aceito mas lido de volta como \(smc.read(key)?.bytes.first.map(String.init) ?? "?"); usando o caminho Ftst")
+        }
 
         // Caminho Ftst (M1–M4): pedir ao thermalmonitord que ceda o controle e repetir a escrita do modo.
         guard let ftst = smc.read(FanSMCKeys.unlockKey), ftst.size > 0 else {
@@ -152,7 +162,10 @@ final class SMCFanDriver {
         let key = modeKey(fan)
         for _ in 0..<attempts {
             if shouldAbort() { return false }
-            if let current = smc.read(key), writeMode(key, current, to: 1) { return true }
+            if let current = smc.read(key), writeMode(key, current, to: 1) {
+                usleep(100_000)
+                if smc.read(key)?.bytes.first == 1 { return true }   // só conta se o modo realmente ficou em manual
+            }
             usleep(100_000)
         }
         return false
