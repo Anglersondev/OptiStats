@@ -210,8 +210,13 @@ final class SMCFanDriver {
             if !writeWithRetry(FanSMCKeys.unlockKey, bytes: off, size: ftst.size) { ok = false }
         }
         // Confirmação por leitura de volta (só do que é nosso).
-        for i in manualFans where smc.read(modeKey(i))?.bytes.first == 1 { ok = false }
-        if ftstEngaged, let ftst = smc.read(FanSMCKeys.unlockKey), (ftst.bytes.first ?? 0) != 0 { ok = false }
+        for i in manualFans {
+            // Ausência de leitura não confirma que o SMC voltou ao automático.
+            guard let mode = smc.read(modeKey(i))?.bytes.first, mode != 1 else { ok = false; continue }
+        }
+        if ftstEngaged {
+            if smc.read(FanSMCKeys.unlockKey)?.bytes.first != 0 { ok = false }
+        }
         if ok { manualFans.removeAll(); ftstEngaged = false }
         restorePending = !ok
         if !ok { HelperLog.write("restauração não confirmada; nova tentativa em breve") }
