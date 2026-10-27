@@ -5,6 +5,12 @@ root = pathlib.Path(__file__).resolve().parent.parent / "App" / "OptiStats"
 res = root / "Resources"
 def keys(p): return set(re.findall(r'^\s*"([^"]+)"\s*=', p.read_text(encoding="utf-8"), re.M))
 ok = True
+LINE = re.compile(r'^"(?:[^"\\]|\\.)*"\s*=\s*"(?:[^"\\]|\\.)*";$')
+for f in res.glob("*/*.strings"):
+    for n, line in enumerate(f.read_text(encoding="utf-8").splitlines(), 1):
+        t = line.strip()
+        if t and not t.startswith(("/*", "*", "//")) and not LINE.match(t):
+            print(f"{f.relative_to(res)}:{n}: sintaxe inválida (aspas sem escape?)"); ok = False
 en = {p.name: keys(p) for p in (res / "en.lproj").glob("*.strings")}
 pt = {p.name: keys(p) for p in (res / "pt-BR.lproj").glob("*.strings")}
 for n in sorted(set(en) | set(pt)):

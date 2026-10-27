@@ -91,5 +91,5 @@
 "fan.err.writeFailed" = "The fan controller refused the write. Automatic was restored.";
 "fan.err.verifyFailed" = "The value read back did not match, so automatic was restored.";
 "fan.err.internalError" = "Internal helper error.";
-"fan.helper.outdatedBanner" = "The installed helper is from an older version of OptiStats. Click "Update helper" (asks for your password once) before testing control.";
+"fan.helper.outdatedBanner" = "The installed helper is from an older version of OptiStats. Click \"Update helper\" (asks for your password once) before testing control.";
 "fan.helper.update" = "Update helper";
