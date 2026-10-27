@@ -1,0 +1,15 @@
+/* Platform area: reasons shown when a data source is unavailable. */
+"platform.reason.cpuFailed" = "Could not read CPU counters";
+"platform.reason.memoryFailed" = "Could not read memory statistics";
+"platform.reason.noGPUStats" = "This system does not expose GPU utilization";
+"platform.reason.noDisk" = "No disk information available";
+"platform.reason.networkFailed" = "Could not read network counters";
+"platform.reason.noBattery" = "This Mac has no battery";
+"platform.reason.processesFailed" = "Could not list processes";
+"platform.reason.smcOpenFailed" = "Could not open the sensor service (%@)";
+"platform.reason.noTemperatures" = "No temperature sensors available on this Mac";
+"platform.reason.noFans" = "This Mac has no fans";
+"platform.reason.noElectrical" = "No electrical sensors available on this Mac";
+"platform.reason.noPower" = "Power readings are not available on this Mac";
+"platform.fan.readonly" = "Fan control is not available in this version (read-only)";
+"platform.error.launchAtLogin" = "Could not change launch at login: %@";

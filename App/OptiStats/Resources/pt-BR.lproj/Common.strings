@@ -1,0 +1,11 @@
+"common.refreshNow" = "Atualizar agora";
+"common.updatedNow" = "Atualizado agora";
+"common.updatedAgo" = "Atualizado há %ds";
+"state.loading" = "Carregando…";
+"state.unsupported" = "Não suportado neste Mac";
+"state.denied" = "Acesso negado pelo sistema";
+"state.failed" = "Falha ao ler esta fonte";
+"state.paused" = "Pausado";
+"ram.title" = "Memória";
+"ram.used" = "Em uso";
+"common.more" = "Mais";

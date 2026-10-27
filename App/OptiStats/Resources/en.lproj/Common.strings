@@ -1,0 +1,11 @@
+"common.refreshNow" = "Refresh now";
+"common.updatedNow" = "Updated just now";
+"common.updatedAgo" = "Updated %ds ago";
+"state.loading" = "Loading…";
+"state.unsupported" = "Not supported on this Mac";
+"state.denied" = "Access denied by the system";
+"state.failed" = "Failed to read this source";
+"state.paused" = "Paused";
+"ram.title" = "Memory";
+"ram.used" = "Used";
+"common.more" = "More";
