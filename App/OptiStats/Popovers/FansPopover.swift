@@ -7,10 +7,12 @@ final class FanRowView: NSStackView {
     private let bar = SegmentedBarView(height: 6)
     private let detail = NSTextField.label(font: Theme.body(10), color: Theme.secondaryText)
     private let mode = NSSegmentedControl(labels: [L("fan.mode.automatic"), L("fan.mode.manual")], trackingMode: .selectOne, target: nil, action: nil)
+    private let fullSpeed = NSButton(title: L("fan.fullSpeed"), target: nil, action: nil)
     private let slider = NSSlider(value: 0, minValue: 0, maxValue: 1, target: nil, action: nil)
     private let sliderValue = NSTextField.label(font: Theme.number(10), color: Theme.secondaryText)
     private lazy var controls: NSStackView = {
-        let s = NSStackView.vertical([mode, NSStackView.horizontal([slider, sliderValue], spacing: 8)], spacing: 4)
+        let s = NSStackView.vertical([NSStackView.horizontal([mode, fullSpeed], spacing: 6),
+                                      NSStackView.horizontal([slider, sliderValue], spacing: 8)], spacing: 4)
         s.alignment = .leading
         return s
     }()
@@ -28,6 +30,9 @@ final class FanRowView: NSStackView {
         addFullWidth(bar)
         addFullWidth(detail)
         mode.target = self; mode.action = #selector(modeChanged)
+        fullSpeed.target = self; fullSpeed.action = #selector(fullSpeedTapped)
+        fullSpeed.toolTip = L("fan.fullSpeed.tooltip")
+        fullSpeed.setAccessibilityLabel(L("fan.fullSpeed.tooltip"))
         slider.target = self; slider.action = #selector(sliderMoved)
         slider.isContinuous = true
         slider.translatesAutoresizingMaskIntoConstraints = false
@@ -40,6 +45,8 @@ final class FanRowView: NSStackView {
         if mode.selectedSegment == 0 { onControl?(fanIndex, nil) } else { onControl?(fanIndex, slider.doubleValue.rounded()) }
     }
 
+    @objc private func fullSpeedTapped() { onControl?(fanIndex, slider.maxValue.rounded(.down)) }
+
     @objc private func sliderMoved() {
         sliderValue.stringValue = "\(Int(slider.doubleValue.rounded())) RPM"
         // Envia ao soltar (ou por teclado), nunca a cada pixel arrastado; só se estiver em Manual.
@@ -47,15 +54,20 @@ final class FanRowView: NSStackView {
         if mode.selectedSegment == 1, type != .leftMouseDragged, type != .leftMouseDown { onControl?(fanIndex, slider.doubleValue.rounded()) }
     }
 
-    /// Controle Automático/Manual (só quando o controle está liberado e validado neste Mac).
-    func configureControl(fan: FanReading, available: Bool, manualRPM: Double?) {
+    /// Mostra os controles sempre que os limites são conhecidos; só habilita escrita após validação.
+    func configureControl(fan: FanReading, available: Bool, manualRPM: Double?, unavailableReason: String) {
         fanIndex = fan.index
-        guard available, let lo = fan.minRPM, let hi = fan.maxRPM, hi > lo else { controls.isHidden = true; return }
+        guard let lo = fan.minRPM, let hi = fan.maxRPM, hi > lo else { controls.isHidden = true; return }
         controls.isHidden = false
         slider.minValue = lo.rounded(.up); slider.maxValue = hi.rounded(.down)
+        mode.setEnabled(available || manualRPM != nil, forSegment: 0)
+        mode.setEnabled(available, forSegment: 1)
+        fullSpeed.isEnabled = available
+        mode.toolTip = available ? nil : unavailableReason
+        fullSpeed.toolTip = available ? L("fan.fullSpeed.tooltip") : unavailableReason
         let tracking = NSApp.currentEvent?.type == .leftMouseDragged
         mode.selectedSegment = manualRPM == nil ? 0 : 1
-        slider.isEnabled = manualRPM != nil
+        slider.isEnabled = available && manualRPM != nil
         if !tracking {
             slider.doubleValue = manualRPM ?? min(max(fan.rpm ?? lo, lo), hi)
             sliderValue.stringValue = manualRPM.map { "\(Int($0)) RPM" } ?? "—"
@@ -72,12 +84,13 @@ final class FanRowView: NSStackView {
     }
 }
 
-/// Ventoinhas: SOMENTE leitura. Smart Boost permanece indisponível, com a explicação do motivo.
+/// Ventoinhas: leituras e controles opcionais pelo helper validado neste Mac.
 final class FansPopover: StatPopover {
     private let fanPool = ViewPool<FanRowView>(spacing: 10) { FanRowView() }
     private let chart = LineChartView(height: 56)
     private let boostCheckbox = NSButton(checkboxWithTitle: "", target: nil, action: nil)
     private let boostNote = Fmt.note(lines: 6)
+    private let controlNote = Fmt.note(lines: 3)
     private var chartSection: NSStackView!
     private static let palette: [NSColor] = [NSColor.controlAccentColor, NSColor.systemTeal, NSColor.systemPurple, NSColor.systemOrange]
 
@@ -89,12 +102,13 @@ final class FansPopover: StatPopover {
     override var lastDataTimestamp: TimeInterval? { env.store.sensors?.fans.map(\.timestamp).max() }
 
     override func buildBody() {
-        body.addFullWidth(makeSection(L("fans.section.fans"), [fanPool.stack]))
+        body.addFullWidth(makeSection(L("fans.section.fans"), [fanPool.stack, controlNote]))
+        controlNote.isHidden = true
         chartSection = makeSection(L("fans.section.history"), [chart])
         body.addFullWidth(chartSection)
         boostCheckbox.title = L("fans.smartBoost")
-        boostCheckbox.isEnabled = false
-        boostCheckbox.state = .off
+        boostCheckbox.target = self
+        boostCheckbox.action = #selector(boostChanged)
         boostCheckbox.translatesAutoresizingMaskIntoConstraints = false
         body.addFullWidth(makeSection(L("fans.section.control"), [boostCheckbox, boostNote]))
         chart.fixedRange = nil
@@ -109,17 +123,35 @@ final class FansPopover: StatPopover {
     }
 
     private func boostExplanation() -> String {
+        let settings = env.fanControl.settings
+        if settings?.manualAllowed != true { return L("fan.err.notAllowed") }
         switch env.platform.fanActuator.capability {
         case .unavailable(let reason):
-            return L("fans.boost.unavailable", reason) + "\n" + L("fans.boost.readOnly")
+            return L("fans.boost.unavailable", reason)
         case .experimentalUnvalidated:
-            return L("fans.boost.unvalidated") + "\n" + L("fans.boost.readOnly")
+            return L("fans.boost.unvalidated")
         case .validated:
-            return L("fans.boost.notEnabled") + "\n" + L("fans.boost.readOnly")
+            return settings?.smartBoostEnabled == true ? L("fans.boost.active") : L("fans.boost.available")
         }
     }
 
+    @objc private func boostChanged() {
+        if let error = env.fanControl.setSmartBoost(boostCheckbox.state == .on) {
+            controlNote.setText(error)
+            controlNote.isHidden = false
+        }
+        render()
+    }
+
     override func render() {
+        let settings = env.fanControl.settings
+        boostCheckbox.state = settings?.smartBoostEnabled == true ? .on : .off
+        if case .validated = env.platform.fanActuator.capability {
+            boostCheckbox.isEnabled = settings?.manualAllowed == true && !env.fanControl.busy
+                && env.fanControl.manualTargets.isEmpty
+        } else {
+            boostCheckbox.isEnabled = false
+        }
         boostNote.setText(boostExplanation())
         let fans = env.store.sensors?.fans ?? []
         if fans.isEmpty {
@@ -144,18 +176,34 @@ final class FansPopover: StatPopover {
                 range = L("fans.rangeUnknown")
             }
             let percent = fan.percentOfRange.map { " · " + Fmt.percent($0) } ?? ""
+            let ownManual = env.fanControl.manualTargets[fan.index] != nil
+            let displayedMode = ownManual ? L("fans.mode.ownManual") : modeText(fan.mode)
             row.configure(name: name, rpmText: Fmt.number(fan.rpm, decimals: 0, unit: "RPM") + percent,
-                          fraction: fan.percentOfRange, detailText: range + " · " + modeText(fan.mode))
+                          fraction: fan.percentOfRange, detailText: range + " · " + displayedMode)
             let settings = env.fanControl.settings
             var validated = false
             if case .validated = env.platform.fanActuator.capability { validated = true }
             let available = validated && (settings?.manualAllowed ?? false) && !(settings?.smartBoostEnabled ?? false)
                 && !(settings?.isUnsupportedForThisMac ?? true) && !env.fanControl.busy
-            row.configureControl(fan: fan, available: available, manualRPM: env.fanControl.manualTargets[fan.index])
+            let reason: String
+            if case .unavailable(let unavailable) = env.platform.fanActuator.capability { reason = unavailable }
+            else if settings?.manualAllowed != true { reason = L("fan.err.notAllowed") }
+            else if settings?.isUnsupportedForThisMac == true { reason = L("fan.err.needsValidation") }
+            else if !validated { reason = L("fan.err.needsValidation") }
+            else if settings?.smartBoostEnabled == true { reason = L("fan.err.smartBoostActive") }
+            else { reason = L("fan.err.busy") }
+            row.configureControl(fan: fan, available: available, manualRPM: env.fanControl.manualTargets[fan.index],
+                                 unavailableReason: reason)
             row.onControl = { [weak self] index, rpm in
                 guard let self else { return }
-                if let rpm { self.env.fanControl.setManual(fan: index, rpm: rpm) { [weak self] _ in self?.render() } }
-                else { self.env.fanControl.restoreAutomatic { [weak self] _ in self?.render() } }
+                let completion: (String?) -> Void = { [weak self] error in
+                    guard let self else { return }
+                    self.controlNote.setText(error ?? "")
+                    self.controlNote.isHidden = error == nil
+                    self.render()
+                }
+                if let rpm { self.env.fanControl.setManual(fan: index, rpm: rpm, completion) }
+                else { self.env.fanControl.restoreAutomatic(completion) }
             }
             let values = Fmt.values(env, .fan(fan.index))
             if values.count >= 2 {

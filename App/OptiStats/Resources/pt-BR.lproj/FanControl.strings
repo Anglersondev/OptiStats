@@ -35,6 +35,8 @@
 "fan.allow.confirmAction" = "Permitir";
 "fan.mode.automatic" = "Automático";
 "fan.mode.manual" = "Manual";
+"fan.fullSpeed" = "100%";
+"fan.fullSpeed.tooltip" = "Ventoinha no máximo (até o limite informado pelo Mac)";
 "fan.row.note" = "Escolher Automático devolve todas as ventoinhas ao macOS. Em Manual, o controle é limitado ao mínimo e máximo reais da ventoinha, e o valor é aplicado quando você solta.";
 "fan.test.section" = "Teste de controle (experimental)";
 "fan.test.button" = "Testar controle";

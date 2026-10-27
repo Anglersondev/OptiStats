@@ -50,6 +50,8 @@
 "disk.volume.free" = "%@ free of %@";
 "disk.write" = "Write";
 "fans.boost.notEnabled" = "Smart Boost is not enabled in this version.";
+"fans.boost.available" = "Ready to enable. Configure fan control in Preferences > Fans.";
+"fans.boost.active" = "Active: watches the fans and boosts them when needed.";
 "fans.boost.readOnly" = "Fan control is managed in Preferences > Fans. It is off by default and requires the helper.";
 "fans.boost.unavailable" = "Smart Boost is unavailable: %@";
 "fans.boost.unvalidated" = "Smart Boost is unavailable: the control path has not been validated on this hardware, so it stays blocked.";
@@ -57,6 +59,7 @@
 "fans.fanN" = "Fan %ld";
 "fans.mode.automatic" = "automatic (macOS)";
 "fans.mode.manual" = "manual (forced by another app)";
+"fans.mode.ownManual" = "manual (OptiStats)";
 "fans.mode.unknown" = "mode unknown";
 "fans.none" = "This Mac has no fans (it is cooled passively).";
 "fans.noneReadable" = "No fans could be read on this Mac.";

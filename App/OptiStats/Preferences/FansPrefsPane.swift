@@ -106,7 +106,10 @@ final class FansPrefsPane: PrefsPaneViewController {
             addNote(ModulePopoverViewController.message(for: state) ?? L("prefs.fans.none"), color: Theme.tertiaryText)
             return
         }
-        let canControl = !settings.isUnsupportedForThisMac && settings.manualAllowed && helperRunning && !settings.smartBoostEnabled && !manager.busy
+        var validated = false
+        if case .validated = manager.capability { validated = true }
+        let canControl = validated && !settings.isUnsupportedForThisMac && settings.manualAllowed
+            && helperRunning && !helperOutdated && !settings.smartBoostEnabled && !manager.busy
         for fan in fans { addFanRow(fan, canControl: canControl) }
         addNote(L("fan.row.note"))
         updateReadings()
@@ -199,7 +202,14 @@ final class FansPrefsPane: PrefsPaneViewController {
         popupControl.isEnabled = enabled
         popupControl.widthAnchor.constraint(equalToConstant: 120).isActive = true
 
-        let controls = NSStackView.horizontal([popupControl, slider, value], spacing: 10)
+        let fullSpeed = button(L("fan.fullSpeed")) { [weak self] in
+            guard let hi = fan.maxRPM else { return }
+            self?.applyManual(fan: index, rpm: hi.rounded(.down))
+        }
+        fullSpeed.isEnabled = enabled
+        fullSpeed.toolTip = L("fan.fullSpeed.tooltip")
+
+        let controls = NSStackView.horizontal([popupControl, slider, value, fullSpeed], spacing: 10)
         let indent = NSView(); indent.translatesAutoresizingMaskIntoConstraints = false
         indent.widthAnchor.constraint(equalToConstant: 200).isActive = true
         stack.addArrangedSubview(NSStackView.horizontal([indent, controls], spacing: 0))
