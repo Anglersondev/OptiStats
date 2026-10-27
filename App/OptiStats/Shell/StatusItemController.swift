@@ -29,6 +29,7 @@ final class StatusItemController: NSObject {
 
     var onOpenPreferences: (() -> Void)?
     var onOpenAbout: (() -> Void)?
+    var onOpenMaintenance: (() -> Void)?
 
     init(env: AppEnvironment) {
         self.env = env
@@ -161,9 +162,22 @@ final class StatusItemController: NSObject {
             host.close()
             return
         }
+        presentPopover(for: entry, kind: entry.primaryKind)
+    }
+
+    /// Abre o painel do módulo `kind` (usa o item da barra que o mostra; senão o primeiro). Sem itens: nada.
+    func openPopover(for kind: WidgetKind) {
+        guard let entry = entries.first(where: { $0.configs.contains { $0.kind == kind } }) ?? entries.first else {
+            NSSound.beep(); return
+        }
+        let shown = entry.configs.contains { $0.kind == kind } ? kind : entry.primaryKind
+        presentPopover(for: entry, kind: shown)
+    }
+
+    private func presentPopover(for entry: Entry, kind: WidgetKind) {
         closePopover()
         guard let button = entry.item.button else { return }
-        let controller = PopoverRegistry.make(entry.primaryKind, env: env)
+        let controller = PopoverRegistry.make(kind, env: env)
         let newHost = PopoverHost(controller: controller)
         newHost.onClose = { [weak self, weak entry, weak newHost] in
             guard let self else { return }
@@ -194,6 +208,7 @@ final class StatusItemController: NSObject {
         add(L("shell.menu.refresh"), #selector(menuRefresh))
         menu.addItem(.separator())
         add(L("shell.menu.preferences"), #selector(menuPreferences), ",")
+        add(L("shell.menu.maintenance"), #selector(menuMaintenance))
         add(L("shell.menu.about"), #selector(menuAbout))
         menu.addItem(.separator())
         add(L("shell.menu.quit"), #selector(menuQuit), "q")
@@ -211,6 +226,7 @@ final class StatusItemController: NSObject {
     }
     @objc private func menuPreferences() { onOpenPreferences?() }
     @objc private func menuAbout() { onOpenAbout?() }
+    @objc private func menuMaintenance() { onOpenMaintenance?() }
     @objc private func menuQuit() { NSApp.terminate(nil) }
 
     // MARK: Mapeamentos
