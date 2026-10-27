@@ -6,7 +6,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusController: StatusItemController!
     private var preferencesController: PreferencesWindowController?
     private var aboutController: AboutWindowController?
-    private var maintenanceController: MaintenanceWindowController?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         installMainMenu()
@@ -34,24 +33,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     // MARK: Janelas
 
-    func showPreferences() {
+    func showPreferences(tab: PreferencesWindowController.Tab? = nil) {
         if preferencesController == nil {
             let pc = PreferencesWindowController(env: env)
             pc.onClose = { [weak self] in self?.preferencesController = nil }
+            pc.onOpenMemoryOptimizer = { [weak self] in self?.statusController.openPopover(for: .ram) }
             preferencesController = pc
         }
-        preferencesController?.show()
+        preferencesController?.show(tab: tab)
     }
 
-    func showMaintenance() {
-        if maintenanceController == nil {
-            let mc = MaintenanceWindowController(env: env)
-            mc.onClose = { [weak self] in self?.maintenanceController = nil }
-            mc.onOpenMemoryOptimizer = { [weak self] in self?.statusController.openPopover(for: .ram) }
-            maintenanceController = mc
-        }
-        maintenanceController?.show()
-    }
+    /// Manutenção vive como abas dentro de Preferências (Disco e cache, RAM avançada, Debloat).
+    func showMaintenance() { showPreferences(tab: .diskCleanup) }
 
     func showAbout() {
         if aboutController == nil {
