@@ -127,10 +127,10 @@ final class DebloatPane: PrefsPaneViewController {
             self?.showAll = on
             self?.refreshList()
         })
-        let all = entries.values.filter { $0.domain != nil }
-        let doneCount = all.filter { $0.state == .disabled }.count
-        let pendingCount = all.filter { $0.state == .enabled }.count
-        addNote(L("debloat.summary", doneCount, pendingCount, all.count), color: doneCount > 0 ? Theme.good : Theme.secondaryText)
+        let presentEntries = entries.values.filter { $0.domain != nil }
+        let doneCount = presentEntries.filter { $0.state == .disabled }.count
+        let pendingCount = presentEntries.filter { $0.state == .enabled }.count
+        addNote(L("debloat.summary", doneCount, pendingCount, presentEntries.count), color: doneCount > 0 ? Theme.good : Theme.secondaryText)
         let filterLabels = [L("debloat.filter.all"), L("debloat.filter.pending", pendingCount), L("debloat.filter.done", doneCount)]
         let filterPopup = popup(filterLabels, selected: stateFilter.rawValue) { [weak self] i in
             self?.stateFilter = StateFilter(rawValue: i) ?? .all
