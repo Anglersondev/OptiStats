@@ -8,22 +8,31 @@ final class PreferencesWindowController: NSObject, NSWindowDelegate {
     private var window: NSWindow?
     private var tabs: NSTabViewController?
     var onClose: (() -> Void)?
+    /// Abre o popover de Memória (onde fica o otimizador), usado pela aba "RAM avançada".
+    var onOpenMemoryOptimizer: (() -> Void)?
+
+    /// Posição das abas na barra de ferramentas.
+    enum Tab: Int { case general = 0, diskCleanup = 8, memoryAdvanced = 9, debloat = 10 }
 
     init(env: AppEnvironment) {
         self.env = env
         super.init()
     }
 
-    func show() {
-        if window == nil { buildWindow(selectedIndex: 0) }
+    func show(tab: Tab? = nil) {
+        if window == nil { buildWindow(selectedIndex: tab?.rawValue ?? 0) }
+        else if let tab, let tabs, tab.rawValue < tabs.tabViewItems.count { tabs.selectedTabViewItemIndex = tab.rawValue }
         NSApp.activate(ignoringOtherApps: true)
         window?.makeKeyAndOrderFront(nil)
     }
 
     private func makePanes() -> [PrefsPaneViewController] {
-        [GeneralPrefsPane(env: env), MenuBarPrefsPane(env: env), SamplingPrefsPane(env: env),
-         SensorsPrefsPane(env: env), OptimizerPrefsPane(env: env), FansPrefsPane(env: env),
-         DiagnosticsPrefsPane(env: env), PrivacyPrefsPane(env: env)]
+        let ram = MemoryAdvancedPane(env: env)
+        ram.onOpenOptimizer = { [weak self] in self?.onOpenMemoryOptimizer?() }
+        return [GeneralPrefsPane(env: env), MenuBarPrefsPane(env: env), SamplingPrefsPane(env: env),
+                SensorsPrefsPane(env: env), OptimizerPrefsPane(env: env), FansPrefsPane(env: env),
+                DiagnosticsPrefsPane(env: env), PrivacyPrefsPane(env: env),
+                DiskCleanupPane(env: env), ram, DebloatPane(env: env)]
     }
 
     private func buildWindow(selectedIndex: Int) {
