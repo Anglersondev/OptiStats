@@ -64,9 +64,12 @@ enum HelperInstaller {
     /bin/rm -f \(plistPath) \(helperPath) \(socketPath)
     """
 
+    // AppleScript não tem "if" como expressão: o comando é montado em passos.
     private static let wrapper = [
         "on run argv",
-        "do shell script \"/bin/sh -c \" & quoted form of (item 1 of argv) & \" sh\" & (if (count of argv) > 1 then \" \" & quoted form of (item 2 of argv) else \"\") with administrator privileges",
+        "set cmd to \"/bin/sh -c \" & quoted form of (item 1 of argv) & \" sh\"",
+        "if (count of argv) > 1 then set cmd to cmd & \" \" & quoted form of (item 2 of argv)",
+        "do shell script cmd with administrator privileges",
         "end run"
     ]
 
