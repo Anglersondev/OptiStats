@@ -27,3 +27,6 @@ O app não usa sandbox (necessário para AppleSMC/IOReport). Assinatura: ad-hoc 
 
 ## Licenças
 Ver `THIRD_PARTY_NOTICES.md` (Stats, MIT) e `docs/AUDITORIA-STATS.md`. A licença do OptiStats em si é escolha do autor (pendente).
+
+## Apoie
+Se o OptiStats ajuda você, considere apoiar: https://pixgg.com/Anglerson
