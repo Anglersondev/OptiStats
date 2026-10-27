@@ -92,11 +92,20 @@ final class SMCFanDriver {
             return failAndRestore(Failure(code: .writeFailed, message: "escrita do alvo recusada: \(smc.lastError ?? "?")"))
         }
 
-        // 3) leitura de volta: modo == 1 e alvo confere
-        let modeNow = smc.read(modeKey(fan))?.bytes.first
-        let targetNow = smc.read(FanSMCKeys.target(fan))?.number
-        guard modeNow == 1, SMCFanTargetEncoding.matches(readBack: targetNow, requested: rpm) else {
-            return failAndRestore(Failure(code: .verifyFailed, message: "leitura de volta não confere (modo/alvo)"))
+        // 3) leitura de volta: modo == 1 e alvo confere. O SMC pode levar alguns ms para refletir a escrita:
+        //    tenta algumas vezes antes de declarar falha e registra os valores lidos para diagnóstico.
+        var modeNow: UInt8?
+        var targetNow: Double?
+        var confirmed = false
+        for attempt in 0..<8 {
+            usleep(attempt == 0 ? 150_000 : 100_000)
+            modeNow = smc.read(modeKey(fan))?.bytes.first
+            targetNow = smc.read(FanSMCKeys.target(fan))?.number
+            if modeNow == 1, SMCFanTargetEncoding.matches(readBack: targetNow, requested: rpm) { confirmed = true; break }
+        }
+        guard confirmed else {
+            let detail = "modo=\(modeNow.map(String.init) ?? "?") (chave \(modeKey(fan)), esperado 1), alvo lido=\(targetNow.map { String(format: "%.1f", $0) } ?? "?") pedido=\(Int(rpm)) tipo=\(target.type)"
+            return failAndRestore(Failure(code: .verifyFailed, message: "leitura de volta não confere: \(detail)"))
         }
         return .success(())
     }
