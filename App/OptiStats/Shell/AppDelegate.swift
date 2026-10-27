@@ -6,6 +6,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusController: StatusItemController!
     private var preferencesController: PreferencesWindowController?
     private var aboutController: AboutWindowController?
+    private var maintenanceController: MaintenanceWindowController?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         installMainMenu()
@@ -16,6 +17,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let controller = StatusItemController(env: env)
         controller.onOpenPreferences = { [weak self] in self?.showPreferences() }
         controller.onOpenAbout = { [weak self] in self?.showAbout() }
+        controller.onOpenMaintenance = { [weak self] in self?.showMaintenance() }
         statusController = controller
         // A barra reage a mudanças de preferências (visibilidade, ordem, rótulos, unidade...).
         env.onPreferencesApplied = { [weak controller] in controller?.preferencesDidChange() }
@@ -39,6 +41,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             preferencesController = pc
         }
         preferencesController?.show()
+    }
+
+    func showMaintenance() {
+        if maintenanceController == nil {
+            let mc = MaintenanceWindowController(env: env)
+            mc.onClose = { [weak self] in self?.maintenanceController = nil }
+            mc.onOpenMemoryOptimizer = { [weak self] in self?.statusController.openPopover(for: .ram) }
+            maintenanceController = mc
+        }
+        maintenanceController?.show()
     }
 
     func showAbout() {

@@ -15,6 +15,7 @@
 		1AA496BE5DFB89CAEC24FAF2 /* FansPopover.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65D6EEE3EDE31A5BB6EF0FC0;};
 		1D72D049AB884964BAED1FE3 /* ProcessCollector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0EC7D55E9C6C77E25C9C8D08;};
 		1F5492EBE70AD7167917DDC7 /* MemoryOptimizerPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F68C9B31C70A88FC9491193;};
+		20F199BD56BFEC917546B0C9 /* Maintenance.strings in Resources */ = {isa = PBXBuildFile; fileRef = 402695486BBAB54B9204D492;};
 		26466711F6F1D8115721A343 /* PopoverHost.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DE253E3197172A95E553FFB;};
 		265936AD50D2E1B3E5E0F470 /* AppsController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 778BD745D32462C1CD703CE7;};
 		272ED2478EF3458B7C0A95C5 /* Popovers.strings in Resources */ = {isa = PBXBuildFile; fileRef = 06C82FCFA672E5A45E42CD79;};
@@ -33,6 +34,7 @@
 		541FABA4641D7D330FE53019 /* SensorsPopover.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F3B236C90C405AF88E17E10;};
 		55401C3FE0DEE3E7A1A57058 /* NetworkCollector.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4CD2FC6118A93DDFA2E7C36;};
 		571F928878510DCE4A3FE46B /* Platform.strings in Resources */ = {isa = PBXBuildFile; fileRef = A9534562460147DEBAECA396;};
+		574A8BD5980D6DB49EC647E0 /* MaintenanceWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F1FBA2F6A2D16FF805D04AC;};
 		6A7A741E2AB797D65D91A8C4 /* PowerPopover.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87B35E6FF16518E9F7BA6EB9;};
 		6B96E62188867E8732F660EB /* CPUPopover.swift in Sources */ = {isa = PBXBuildFile; fileRef = D89C673B076654C3614B9DB5;};
 		76D902C29B61D7D998680E56 /* Assets in Resources */ = {isa = PBXBuildFile; fileRef = CAC0794D12FCEBA203AD8500;};
@@ -42,7 +44,9 @@
 		821C5280082A126430BED6BC /* AppEnvironment.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4D11951DC248BC9AB358645;};
 		8935BFC6D4D714441EFB8560 /* DiagnosticsPrefsPane.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0193FE771DEA32DD1A47A70F;};
 		8AD98C7552B76510D6BD8679 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0050579E18A7ABDCCDAFC2;};
+		8F632A18F8BA4675AA3707E7 /* DiskCleanupPane.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05C3B1341A642C223802DE69;};
 		91613C5548F3F3E324ABD6AE /* GeneralPrefsPane.swift in Sources */ = {isa = PBXBuildFile; fileRef = B07382ABE9DA274EBD301B9B;};
+		923539B6DA1B1ECBD888BFA1 /* MemoryAdvancedPane.swift in Sources */ = {isa = PBXBuildFile; fileRef = 103E230CD63F9EC4839AC8CA;};
 		939F4637A5AD422BB26FFAC8 /* DiskPopover.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7237A39309AE50E4E111542A;};
 		95C4909EA071A784899C3653 /* PlatformSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 044548F5E2EA34443B7CD987;};
 		97055A154A52EFAD350E80D9 /* Common.strings in Resources */ = {isa = PBXBuildFile; fileRef = 0BF4F8190BB825D0D199B74E;};
@@ -50,6 +54,7 @@
 		9C46B8F96F45465D06AE0345 /* SamplingPrefsPane.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0A4233ECF41F859F9275CDA;};
 		A6D0E6D77817D279DA5CFD04 /* ModulePopoverViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = ECED8BF4F76D232F493310AE;};
 		AA3AE035628102F30715651C /* MacPlatform.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1346C591256EB5B6BE995DFB;};
+		C316C3C13068E55F1FBD4270 /* DebloatPane.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD9557782D86C78A4ECCD355;};
 		C549F31E1F90605BC08C6B5D /* OptimizerPrefsPane.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16BFEB14B6F7C542A5646DF7;};
 		C86FB1006D47311751B5CF47 /* GPUCollector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AA1AFEED41F6A36377D00DF;};
 		CF88AA7EC1CD054346EF160C /* OptiStatsCore in Frameworks */ = {isa = PBXBuildFile; productRef = 95F91EFA189DA60320F57D9F;};
@@ -60,9 +65,11 @@
 		E76D919C4342230BBF5CB5C4 /* FansPrefsPane.swift in Sources */ = {isa = PBXBuildFile; fileRef = 098108A369A90A71E3B45C1B;};
 		EBFDBCA678F3A4CD4D86FB00 /* IOReportEnergy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F6FE9DCF3CB65225E3F2B35;};
 		EC16E828BE12C4CD9B5C16AB /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCD5FABA489D3D427D006384;};
+		ED0D4E4BFA4F24EC7BAFFF4E /* DiskFileSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = D91C493EB05A1F19CF2CDE8C;};
 		EE2FD198A06ABC89FCC29E85 /* MemoryPopover.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2CA557DFE9918F8121983C0;};
 		F5A1DD8B494791A963509C81 /* SystemProfileReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = D29845E7952691C4C5FF507B;};
 		F8A14E87A3A0A5948FD4987F /* RowViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42EBBCDFE4A43E8C1AB8A28E;};
+		FE273A1863C925912855C034 /* MaintenanceSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 33DD8F182201B3AB7D5F4108;};
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -70,9 +77,11 @@
 		0193FE771DEA32DD1A47A70F /* DiagnosticsPrefsPane.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "DiagnosticsPrefsPane.swift"; path = "App/OptiStats/Preferences/DiagnosticsPrefsPane.swift"; sourceTree = SOURCE_ROOT;};
 		02500D26A25FD0046D2FEFFF /* AboutWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "AboutWindowController.swift"; path = "App/OptiStats/Shell/AboutWindowController.swift"; sourceTree = SOURCE_ROOT;};
 		044548F5E2EA34443B7CD987 /* PlatformSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "PlatformSupport.swift"; path = "App/OptiStats/Platform/PlatformSupport.swift"; sourceTree = SOURCE_ROOT;};
+		05C3B1341A642C223802DE69 /* DiskCleanupPane.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "DiskCleanupPane.swift"; path = "App/OptiStats/Maintenance/DiskCleanupPane.swift"; sourceTree = SOURCE_ROOT;};
 		098108A369A90A71E3B45C1B /* FansPrefsPane.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "FansPrefsPane.swift"; path = "App/OptiStats/Preferences/FansPrefsPane.swift"; sourceTree = SOURCE_ROOT;};
 		0AA1AFEED41F6A36377D00DF /* GPUCollector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "GPUCollector.swift"; path = "App/OptiStats/Platform/GPUCollector.swift"; sourceTree = SOURCE_ROOT;};
 		0EC7D55E9C6C77E25C9C8D08 /* ProcessCollector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "ProcessCollector.swift"; path = "App/OptiStats/Platform/ProcessCollector.swift"; sourceTree = SOURCE_ROOT;};
+		103E230CD63F9EC4839AC8CA /* MemoryAdvancedPane.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "MemoryAdvancedPane.swift"; path = "App/OptiStats/Maintenance/MemoryAdvancedPane.swift"; sourceTree = SOURCE_ROOT;};
 		133EBD61C5B699E0637E4F5B /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "en"; path = "App/OptiStats/Resources/en.lproj/Shell.strings"; sourceTree = SOURCE_ROOT;};
 		1346C591256EB5B6BE995DFB /* MacPlatform.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "MacPlatform.swift"; path = "App/OptiStats/Platform/MacPlatform.swift"; sourceTree = SOURCE_ROOT;};
 		16BFEB14B6F7C542A5646DF7 /* OptimizerPrefsPane.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "OptimizerPrefsPane.swift"; path = "App/OptiStats/Preferences/OptimizerPrefsPane.swift"; sourceTree = SOURCE_ROOT;};
@@ -81,6 +90,7 @@
 		2C56B95540EC7201AB65C067 /* BatteryPopover.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "BatteryPopover.swift"; path = "App/OptiStats/Popovers/BatteryPopover.swift"; sourceTree = SOURCE_ROOT;};
 		2E18AE395C5FF3CCD25EE78A /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "AppDelegate.swift"; path = "App/OptiStats/Shell/AppDelegate.swift"; sourceTree = SOURCE_ROOT;};
 		2F6FE9DCF3CB65225E3F2B35 /* IOReportEnergy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "IOReportEnergy.swift"; path = "App/OptiStats/Platform/IOReportEnergy.swift"; sourceTree = SOURCE_ROOT;};
+		33DD8F182201B3AB7D5F4108 /* MaintenanceSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "MaintenanceSupport.swift"; path = "App/OptiStats/Maintenance/MaintenanceSupport.swift"; sourceTree = SOURCE_ROOT;};
 		3AF26A2834FC1075C778642B /* MenuBarPrefsPane.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "MenuBarPrefsPane.swift"; path = "App/OptiStats/Preferences/MenuBarPrefsPane.swift"; sourceTree = SOURCE_ROOT;};
 		42EBBCDFE4A43E8C1AB8A28E /* RowViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "RowViews.swift"; path = "App/OptiStats/UI/Kit/RowViews.swift"; sourceTree = SOURCE_ROOT;};
 		469F4ED8320C6552D4E706A2 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "en"; path = "App/OptiStats/Resources/en.lproj/Popovers.strings"; sourceTree = SOURCE_ROOT;};
@@ -99,6 +109,7 @@
 		7AF531CFC2AFD38B8906BCDC /* SensorCollectors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "SensorCollectors.swift"; path = "App/OptiStats/Platform/SensorCollectors.swift"; sourceTree = SOURCE_ROOT;};
 		86B4B832EC848C3DCD70F07E /* OptiStats.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; name = "OptiStats.entitlements"; path = "App/OptiStats/Support/OptiStats.entitlements"; sourceTree = SOURCE_ROOT;};
 		87B35E6FF16518E9F7BA6EB9 /* PowerPopover.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "PowerPopover.swift"; path = "App/OptiStats/Popovers/PowerPopover.swift"; sourceTree = SOURCE_ROOT;};
+		8F1FBA2F6A2D16FF805D04AC /* MaintenanceWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "MaintenanceWindowController.swift"; path = "App/OptiStats/Maintenance/MaintenanceWindowController.swift"; sourceTree = SOURCE_ROOT;};
 		937C751B083162F27F7C4B1D /* pt-BR */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "pt-BR"; path = "App/OptiStats/Resources/pt-BR.lproj/Common.strings"; sourceTree = SOURCE_ROOT;};
 		9811EEF95AB6CEB9A677DE3F /* pt-BR */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "pt-BR"; path = "App/OptiStats/Resources/pt-BR.lproj/Popovers.strings"; sourceTree = SOURCE_ROOT;};
 		9C4FB10EE4FEA67632535733 /* CPUCollector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "CPUCollector.swift"; path = "App/OptiStats/Platform/CPUCollector.swift"; sourceTree = SOURCE_ROOT;};
@@ -107,18 +118,22 @@
 		AAA00B51946271126414FB16 /* PopoverSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "PopoverSupport.swift"; path = "App/OptiStats/Popovers/PopoverSupport.swift"; sourceTree = SOURCE_ROOT;};
 		AB0CBD74B7ACAF3B609D76AB /* SystemEvents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "SystemEvents.swift"; path = "App/OptiStats/Platform/SystemEvents.swift"; sourceTree = SOURCE_ROOT;};
 		ADCEA02C9A44257A61F49E5D /* pt-BR */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "pt-BR"; path = "App/OptiStats/Resources/pt-BR.lproj/Shell.strings"; sourceTree = SOURCE_ROOT;};
+		B012F11E5EBF5AF68BB34BF9 /* pt-BR */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "pt-BR"; path = "App/OptiStats/Resources/pt-BR.lproj/Maintenance.strings"; sourceTree = SOURCE_ROOT;};
 		B07382ABE9DA274EBD301B9B /* GeneralPrefsPane.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "GeneralPrefsPane.swift"; path = "App/OptiStats/Preferences/GeneralPrefsPane.swift"; sourceTree = SOURCE_ROOT;};
 		B16961D2610315626F9589E1 /* Packages/OptiStatsCore */ = {isa = PBXFileReference; lastKnownFileType = folder; name = OptiStatsCore; path = "Packages/OptiStatsCore"; sourceTree = SOURCE_ROOT;};
 		B2CA557DFE9918F8121983C0 /* MemoryPopover.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "MemoryPopover.swift"; path = "App/OptiStats/Popovers/MemoryPopover.swift"; sourceTree = SOURCE_ROOT;};
 		B4CD2FC6118A93DDFA2E7C36 /* NetworkCollector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "NetworkCollector.swift"; path = "App/OptiStats/Platform/NetworkCollector.swift"; sourceTree = SOURCE_ROOT;};
 		BB0050579E18A7ABDCCDAFC2 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "main.swift"; path = "App/OptiStats/Shell/main.swift"; sourceTree = SOURCE_ROOT;};
 		BED98AE9787B8057F1E8D69F /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "en"; path = "App/OptiStats/Resources/en.lproj/Common.strings"; sourceTree = SOURCE_ROOT;};
+		C4FB78D3FF9FCB4C1DFD635D /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "en"; path = "App/OptiStats/Resources/en.lproj/Maintenance.strings"; sourceTree = SOURCE_ROOT;};
 		CAC0794D12FCEBA203AD8500 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = "Assets.xcassets"; path = "App/OptiStats/Resources/Assets.xcassets"; sourceTree = SOURCE_ROOT;};
 		CEAEDACC4AF56FE33DBA11E3 /* BatteryCollector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "BatteryCollector.swift"; path = "App/OptiStats/Platform/BatteryCollector.swift"; sourceTree = SOURCE_ROOT;};
 		D29845E7952691C4C5FF507B /* SystemProfileReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "SystemProfileReader.swift"; path = "App/OptiStats/Platform/SystemProfileReader.swift"; sourceTree = SOURCE_ROOT;};
 		D89C673B076654C3614B9DB5 /* CPUPopover.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "CPUPopover.swift"; path = "App/OptiStats/Popovers/CPUPopover.swift"; sourceTree = SOURCE_ROOT;};
+		D91C493EB05A1F19CF2CDE8C /* DiskFileSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "DiskFileSystem.swift"; path = "App/OptiStats/Maintenance/DiskFileSystem.swift"; sourceTree = SOURCE_ROOT;};
 		DC9814004847E5D042A12830 /* PrefsKit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "PrefsKit.swift"; path = "App/OptiStats/Preferences/PrefsKit.swift"; sourceTree = SOURCE_ROOT;};
 		DCFB4DEEC7B99460BC5C1558 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "en"; path = "App/OptiStats/Resources/en.lproj/Platform.strings"; sourceTree = SOURCE_ROOT;};
+		DD9557782D86C78A4ECCD355 /* DebloatPane.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "DebloatPane.swift"; path = "App/OptiStats/Maintenance/DebloatPane.swift"; sourceTree = SOURCE_ROOT;};
 		E26CC2B21114ECB4FDD1A255 /* PowerCollector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "PowerCollector.swift"; path = "App/OptiStats/Platform/PowerCollector.swift"; sourceTree = SOURCE_ROOT;};
 		E280D6F42E10BA8C86D4E0A5 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = "Info.plist"; path = "App/OptiStats/Support/Info.plist"; sourceTree = SOURCE_ROOT;};
 		ECED8BF4F76D232F493310AE /* ModulePopoverViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "ModulePopoverViewController.swift"; path = "App/OptiStats/UI/Kit/ModulePopoverViewController.swift"; sourceTree = SOURCE_ROOT;};
@@ -145,8 +160,9 @@
 		85FD0933D764C3F702CA598C /* UI */ = {isa = PBXGroup; children = (060C283ECD0998704F4DC6FD); name = "UI"; sourceTree = "<group>";};
 		86024CAD1E83101D97359D73 /* Products */ = {isa = PBXGroup; children = (F5BF48AA40CAD7891EB709FC); name = Products; sourceTree = "<group>";};
 		995E386BFA284354C3A2418A /* Popovers */ = {isa = PBXGroup; children = (2C56B95540EC7201AB65C067, D89C673B076654C3614B9DB5, 7237A39309AE50E4E111542A, 65D6EEE3EDE31A5BB6EF0FC0, F20F5DA8C56B501FD23848DB, 6F68C9B31C70A88FC9491193, B2CA557DFE9918F8121983C0, 632ECBBB2F90A47DD5E373F4, AAA00B51946271126414FB16, 87B35E6FF16518E9F7BA6EB9, 9F3B236C90C405AF88E17E10); name = "Popovers"; sourceTree = "<group>";};
-		9BA8CEEBACF12FAE47A8D784 /* OptiStats */ = {isa = PBXGroup; children = (0D7EED4A4DCFDA32CACDA09D, 995E386BFA284354C3A2418A, 1126B5D656D2BB38DFCD5CEC, E7D900CE3F325551464911A8, 76809F8A25DDBF4CFC497C33, 066D8A02202F788FE0FA3676, 45214F4FCA9417B752392EC2, 85FD0933D764C3F702CA598C); name = "OptiStats"; sourceTree = "<group>";};
-		E7D900CE3F325551464911A8 /* Resources */ = {isa = PBXGroup; children = (0BF4F8190BB825D0D199B74E, A9534562460147DEBAECA396, 06C82FCFA672E5A45E42CD79, 9C4A815AD2475AC8F1EEB800, CAC0794D12FCEBA203AD8500); name = "Resources"; sourceTree = "<group>";};
+		9BA8CEEBACF12FAE47A8D784 /* OptiStats */ = {isa = PBXGroup; children = (EC94E2CDCAEFDB45270C77B5, 0D7EED4A4DCFDA32CACDA09D, 995E386BFA284354C3A2418A, 1126B5D656D2BB38DFCD5CEC, E7D900CE3F325551464911A8, 76809F8A25DDBF4CFC497C33, 066D8A02202F788FE0FA3676, 45214F4FCA9417B752392EC2, 85FD0933D764C3F702CA598C); name = "OptiStats"; sourceTree = "<group>";};
+		E7D900CE3F325551464911A8 /* Resources */ = {isa = PBXGroup; children = (0BF4F8190BB825D0D199B74E, 402695486BBAB54B9204D492, A9534562460147DEBAECA396, 06C82FCFA672E5A45E42CD79, 9C4A815AD2475AC8F1EEB800, CAC0794D12FCEBA203AD8500); name = "Resources"; sourceTree = "<group>";};
+		EC94E2CDCAEFDB45270C77B5 /* Maintenance */ = {isa = PBXGroup; children = (DD9557782D86C78A4ECCD355, 05C3B1341A642C223802DE69, D91C493EB05A1F19CF2CDE8C, 33DD8F182201B3AB7D5F4108, 8F1FBA2F6A2D16FF805D04AC, 103E230CD63F9EC4839AC8CA); name = "Maintenance"; sourceTree = "<group>";};
 		FAD58DE7366495DB4650CFEF /* Main */ = {isa = PBXGroup; children = (9BA8CEEBACF12FAE47A8D784, B16961D2610315626F9589E1, 86024CAD1E83101D97359D73); sourceTree = "<group>";};
 /* End PBXGroup section */
 
@@ -159,16 +175,17 @@
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
-		900FCFD7923E3F7D03EF975B /* Resources */ = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (97055A154A52EFAD350E80D9, 571F928878510DCE4A3FE46B, 272ED2478EF3458B7C0A95C5, 4BAC111E3EB0397E5F3326C5, 76D902C29B61D7D998680E56); runOnlyForDeploymentPostprocessing = 0;};
+		900FCFD7923E3F7D03EF975B /* Resources */ = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (97055A154A52EFAD350E80D9, 20F199BD56BFEC917546B0C9, 571F928878510DCE4A3FE46B, 272ED2478EF3458B7C0A95C5, 4BAC111E3EB0397E5F3326C5, 76D902C29B61D7D998680E56); runOnlyForDeploymentPostprocessing = 0;};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-		77D28C97D4EFB8FA7E431B10 /* Sources */ = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (265936AD50D2E1B3E5E0F470, 13A378D502D14DC0354577A5, 7DDD049D1295F3ED35955282, 153EBE9909AC7C93B3FD8EA7, C86FB1006D47311751B5CF47, 4932F10926930D3DF7E249F1, EBFDBCA678F3A4CD4D86FB00, AA3AE035628102F30715651C, 2F5995D36738EFBD0761B7D2, 55401C3FE0DEE3E7A1A57058, 95C4909EA071A784899C3653, 39444D6942F8B35D1672323C, 1D72D049AB884964BAED1FE3, 9A1B6A1B54D9636D3E0D13F9, 4B162750CE823A30AA25CCA4, 052B374D480499CF736EFAB1, 34012CF42C3E49D507E5DBE9, F5A1DD8B494791A963509C81, 4A2ED2A33706FDD4DFCF5388, 6B96E62188867E8732F660EB, 939F4637A5AD422BB26FFAC8, 1AA496BE5DFB89CAEC24FAF2, 2C420EDCB3119438DFD5103A, 1F5492EBE70AD7167917DDC7, EE2FD198A06ABC89FCC29E85, 53E311D75B8771AF0863C85A, 7A72381AC239FEBACFC197EB, 6A7A741E2AB797D65D91A8C4, 541FABA4641D7D330FE53019, 8935BFC6D4D714441EFB8560, E76D919C4342230BBF5CB5C4, 91613C5548F3F3E324ABD6AE, E2AA85F5864FCB5F33C606F0, C549F31E1F90605BC08C6B5D, 3E59D18EEE37F1DC9BDE6F13, E14DF08958B798CA82A24D7F, 0AA533E5DFAFA84E7BFCD7CA, 9C46B8F96F45465D06AE0345, 7B3EFD662C8E848C79D613A1, 821C5280082A126430BED6BC, 048B28962CAD6B5AAF292133, E5A6031EDE3AAAFE15CE46A0, 26466711F6F1D8115721A343, 40D560C91FD0F777F5750F18, 8AD98C7552B76510D6BD8679, E0064529314CFA4D1CE42184, 2D30640BF3A1086CCB84EAC0, A6D0E6D77817D279DA5CFD04, F8A14E87A3A0A5948FD4987F, EC16E828BE12C4CD9B5C16AB); runOnlyForDeploymentPostprocessing = 0;};
+		77D28C97D4EFB8FA7E431B10 /* Sources */ = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (C316C3C13068E55F1FBD4270, 8F632A18F8BA4675AA3707E7, ED0D4E4BFA4F24EC7BAFFF4E, FE273A1863C925912855C034, 574A8BD5980D6DB49EC647E0, 923539B6DA1B1ECBD888BFA1, 265936AD50D2E1B3E5E0F470, 13A378D502D14DC0354577A5, 7DDD049D1295F3ED35955282, 153EBE9909AC7C93B3FD8EA7, C86FB1006D47311751B5CF47, 4932F10926930D3DF7E249F1, EBFDBCA678F3A4CD4D86FB00, AA3AE035628102F30715651C, 2F5995D36738EFBD0761B7D2, 55401C3FE0DEE3E7A1A57058, 95C4909EA071A784899C3653, 39444D6942F8B35D1672323C, 1D72D049AB884964BAED1FE3, 9A1B6A1B54D9636D3E0D13F9, 4B162750CE823A30AA25CCA4, 052B374D480499CF736EFAB1, 34012CF42C3E49D507E5DBE9, F5A1DD8B494791A963509C81, 4A2ED2A33706FDD4DFCF5388, 6B96E62188867E8732F660EB, 939F4637A5AD422BB26FFAC8, 1AA496BE5DFB89CAEC24FAF2, 2C420EDCB3119438DFD5103A, 1F5492EBE70AD7167917DDC7, EE2FD198A06ABC89FCC29E85, 53E311D75B8771AF0863C85A, 7A72381AC239FEBACFC197EB, 6A7A741E2AB797D65D91A8C4, 541FABA4641D7D330FE53019, 8935BFC6D4D714441EFB8560, E76D919C4342230BBF5CB5C4, 91613C5548F3F3E324ABD6AE, E2AA85F5864FCB5F33C606F0, C549F31E1F90605BC08C6B5D, 3E59D18EEE37F1DC9BDE6F13, E14DF08958B798CA82A24D7F, 0AA533E5DFAFA84E7BFCD7CA, 9C46B8F96F45465D06AE0345, 7B3EFD662C8E848C79D613A1, 821C5280082A126430BED6BC, 048B28962CAD6B5AAF292133, E5A6031EDE3AAAFE15CE46A0, 26466711F6F1D8115721A343, 40D560C91FD0F777F5750F18, 8AD98C7552B76510D6BD8679, E0064529314CFA4D1CE42184, 2D30640BF3A1086CCB84EAC0, A6D0E6D77817D279DA5CFD04, F8A14E87A3A0A5948FD4987F, EC16E828BE12C4CD9B5C16AB); runOnlyForDeploymentPostprocessing = 0;};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXVariantGroup section */
 		06C82FCFA672E5A45E42CD79 /* Popovers.strings */ = {isa = PBXVariantGroup; children = (469F4ED8320C6552D4E706A2, 9811EEF95AB6CEB9A677DE3F); name = "Popovers.strings"; sourceTree = "<group>";};
 		0BF4F8190BB825D0D199B74E /* Common.strings */ = {isa = PBXVariantGroup; children = (BED98AE9787B8057F1E8D69F, 937C751B083162F27F7C4B1D); name = "Common.strings"; sourceTree = "<group>";};
+		402695486BBAB54B9204D492 /* Maintenance.strings */ = {isa = PBXVariantGroup; children = (C4FB78D3FF9FCB4C1DFD635D, B012F11E5EBF5AF68BB34BF9); name = "Maintenance.strings"; sourceTree = "<group>";};
 		9C4A815AD2475AC8F1EEB800 /* Shell.strings */ = {isa = PBXVariantGroup; children = (133EBD61C5B699E0637E4F5B, ADCEA02C9A44257A61F49E5D); name = "Shell.strings"; sourceTree = "<group>";};
 		A9534562460147DEBAECA396 /* Platform.strings */ = {isa = PBXVariantGroup; children = (DCFB4DEEC7B99460BC5C1558, 55C9EE9E52B064C81AF34270); name = "Platform.strings"; sourceTree = "<group>";};
 /* End PBXVariantGroup section */
