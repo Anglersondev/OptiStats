@@ -23,7 +23,7 @@ final class FansPrefsPane: PrefsPaneViewController {
     private var manager: FanControlManager { env.fanControl }
 
     /// Helper instalado de uma versão anterior do app: precisa ser atualizado (reinstalar) antes de testar.
-    private var helperOutdated: Bool { helperInfo.state == .running && (helperInfo.build ?? 0) < FanHelperConstants.helperBuild }
+    private var helperOutdated: Bool { helperInfo.state == .running && HelperInstaller.installedMatchesBundled() == false }
     private var helperRunning: Bool { helperInfo.state == .running && helperInfo.supported != false }
 
     override func build() {
@@ -134,7 +134,7 @@ final class FansPrefsPane: PrefsPaneViewController {
             if let err = helperInfo.error { return L("fan.helper.state.noAnswer", err) }
             var text = L("fan.helper.state.running")
             if helperInfo.supported == false { text += "\n" + L("fan.cap.unsupportedHardware") }
-            if let build = helperInfo.build, build != FanHelperConstants.helperBuild { text += "\n" + L("fan.helper.outdated") }
+            if helperOutdated { text += "\n" + L("fan.helper.outdated") }
             return text
         }
     }

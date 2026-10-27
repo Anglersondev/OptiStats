@@ -26,7 +26,7 @@ final class HelperServer {
     /// Bloqueia até receber SIGTERM/SIGINT. Retorna depois de restaurar o automático e remover o socket.
     func run() -> Bool {
         guard openListener() else { return false }
-        HelperLog.write("helper \(FanHelperConstants.helperBuild) escutando")
+        HelperLog.write("helper 1.0 escutando")
         while terminateRequested == 0 {
             var fds = [pollfd(fd: listenFD, events: Int16(POLLIN), revents: 0)]
             if clientFD >= 0 { fds.append(pollfd(fd: clientFD, events: Int16(POLLIN), revents: 0)) }
