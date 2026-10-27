@@ -179,3 +179,7 @@
 "prefs.privacy.permissionsSection" = "Permissões";
 "prefs.privacy.permissions" = "O OptiStats não exige Acessibilidade, Acesso Total ao Disco nem Gravação de Tela. Se alguma fonte precisar de permissão, o painel correspondente explica.";
 "shell.menu.maintenance" = "Manutenção…";
+
+"prefs.content.load" = "Carga %";
+"prefs.content.temperature" = "Temperatura";
+"prefs.content.both" = "Ambos";

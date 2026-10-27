@@ -63,7 +63,7 @@ final class StatusItemController: NSObject {
             let configs = kinds.map { WidgetConfig(kind: $0, enabled: true, label: .short, decimals: 0) }
             return [(signature: "combined|" + kinds.map { $0.rawValue }.joined(separator: ","), configs: configs)]
         }
-        return prefs.activeWidgets().map { (signature: "\($0.kind.rawValue)|\($0.label.rawValue)|\($0.decimals)", configs: [$0]) }
+        return prefs.activeWidgets().map { (signature: "\($0.kind.rawValue)|\($0.label.rawValue)|\($0.decimals)|\($0.content.rawValue)", configs: [$0]) }
     }
 
     private func rebuild(_ desired: [(signature: String, configs: [WidgetConfig])]) {

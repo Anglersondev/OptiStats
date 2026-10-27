@@ -103,3 +103,19 @@ final class MenuBarFormatterTests: XCTestCase {
         XCTAssertNil(none.batteryPowerW)
     }
 }
+
+final class WidgetContentTests: XCTestCase {
+    func testOldWidgetConfigDecodesWithLoadContent() throws {
+        let json = #"{"kind":"cpu","enabled":true,"label":"short","decimals":0}"#.data(using: .utf8)!
+        let w = try JSONDecoder().decode(WidgetConfig.self, from: json)
+        XCTAssertEqual(w.content, .load)
+    }
+    func testInlineTemperatureAddsCollector() {
+        var p = Preferences()
+        p.monitoringMode = .full
+        if let i = p.menuBar.widgets.firstIndex(where: { $0.kind == .cpu }) { p.menuBar.widgets[i].content = .temperature }
+        XCTAssertTrue(p.visibleKinds().contains(.temperature))
+        p.monitoringMode = .essential
+        XCTAssertFalse(p.visibleKinds().contains(.temperature))
+    }
+}

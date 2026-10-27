@@ -36,6 +36,19 @@ final class MenuBarPrefsPane: PrefsPaneViewController {
                     if let j = prefs.menuBar.widgets.firstIndex(where: { $0.kind == kind }) { prefs.menuBar.widgets[j].label = labelStyles[i] }
                 }
             }
+            // CPU/GPU: carga, temperatura ou os dois juntos (compacto: "24% 58°").
+            var contentViews: [NSView] = []
+            if kind == .cpu || kind == .gpu {
+                let contents = WidgetContent.allCases
+                contentViews.append(popup(contents.map { L("prefs.content.\($0.rawValue)") },
+                                          selected: contents.firstIndex(of: w.content) ?? 0) { [weak self] i in
+                    guard i < contents.count else { return }
+                    self?.change { prefs in
+                        if let j = prefs.menuBar.widgets.firstIndex(where: { $0.kind == kind }) { prefs.menuBar.widgets[j].content = contents[i] }
+                        if contents[i] != .load && prefs.monitoringMode == .essential { prefs.monitoringMode = .full }
+                    }
+                })
+            }
             let decimalsPopup = popup(["0", "1", "2"], selected: min(2, max(0, w.decimals))) { [weak self] i in
                 self?.change { prefs in
                     if let j = prefs.menuBar.widgets.firstIndex(where: { $0.kind == kind }) { prefs.menuBar.widgets[j].decimals = i }
@@ -50,8 +63,10 @@ final class MenuBarPrefsPane: PrefsPaneViewController {
             up.isEnabled = index > 0
             down.isEnabled = index < widgets.count - 1
 
-            let row = NSStackView.horizontal([enabled, labelPopup, NSTextField.label(L("prefs.menubar.decimals"), font: Theme.body(11), color: Theme.secondaryText),
-                                              decimalsPopup, up, down], spacing: 8)
+            var rowViews: [NSView] = [enabled, labelPopup]
+            rowViews += contentViews
+            rowViews += [NSTextField.label(L("prefs.menubar.decimals"), font: Theme.body(11), color: Theme.secondaryText), decimalsPopup, up, down]
+            let row = NSStackView.horizontal(rowViews, spacing: 8)
             stack.addArrangedSubview(row)
         }
 
