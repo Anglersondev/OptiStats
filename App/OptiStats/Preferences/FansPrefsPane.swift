@@ -22,6 +22,8 @@ final class FansPrefsPane: PrefsPaneViewController {
 
     private var manager: FanControlManager { env.fanControl }
 
+    /// Helper instalado de uma versão anterior do app: precisa ser atualizado (reinstalar) antes de testar.
+    private var helperOutdated: Bool { helperInfo.state == .running && (helperInfo.build ?? 0) < FanHelperConstants.helperBuild }
     private var helperRunning: Bool { helperInfo.state == .running && helperInfo.supported != false }
 
     override func build() {
@@ -45,7 +47,8 @@ final class FansPrefsPane: PrefsPaneViewController {
         status.preferredMaxLayoutWidth = 400
         statusLabel = status
         addRow(L("fan.helper.status"), status)
-        let installTitle = helperInfo.state == .notInstalled ? L("fan.helper.install") : L("fan.helper.reinstall")
+        if helperOutdated { addNote(L("fan.helper.outdatedBanner"), color: Theme.warn) }
+        let installTitle = helperInfo.state == .notInstalled ? L("fan.helper.install") : (helperOutdated ? L("fan.helper.update") : L("fan.helper.reinstall"))
         let install = button(installTitle) { [weak self] in self?.confirmInstall() }
         let uninstall = button(L("fan.helper.uninstall")) { [weak self] in self?.confirmUninstall() }
         install.isEnabled = !manager.busy
@@ -65,7 +68,7 @@ final class FansPrefsPane: PrefsPaneViewController {
         // 4) Teste de controle
         addSection(L("fan.test.section"))
         let test = button(L("fan.test.button")) { [weak self] in self?.confirmTest() }
-        test.isEnabled = settings.manualAllowed && helperRunning && !manager.busy && !manager.isEngaged
+        test.isEnabled = settings.manualAllowed && helperRunning && !helperOutdated && !manager.busy && !manager.isEngaged
         stack.addArrangedSubview(NSStackView.horizontal([test], spacing: 8))
         addNote(L("fan.test.note"))
         if let text = lastTestText { addNote(text, color: Theme.secondaryText) }

@@ -7,7 +7,7 @@ import Foundation
 public enum FanHelperConstants {
     public static let protocolVersion = 1
     /// Versão do binário do helper (informada em `hello`). Incrementar quando o comportamento mudar.
-    public static let helperBuild = 1
+    public static let helperBuild = 2
     public static let label = "dev.optistats.helper"
     public static let socketPath = "/var/run/dev.optistats.helper.sock"
     public static let helperPath = "/Library/PrivilegedHelperTools/dev.optistats.helper"
