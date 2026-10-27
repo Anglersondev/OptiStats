@@ -155,3 +155,12 @@
 "debloat.sec.icloudDrive" = "iCloud Drive, Keychain sync and CloudDocs. Files and passwords stop syncing; may affect sign-in.";
 "debloat.sec.mdm" = "Managed device (MDM) and managed apps services. Only for Macs without MDM enrollment.";
 "debloat.sec.replicator" = "Sync with paired devices (Replicator).";
+
+"debloat.header.done" = "%ld already disabled";
+"debloat.header.pending" = "%ld to go";
+"debloat.summary" = "On this Mac: %ld already disabled, %ld still active, %ld present in total.";
+"debloat.filter.label" = "Show:";
+"debloat.filter.all" = "All";
+"debloat.filter.pending" = "Only what is left (%ld)";
+"debloat.filter.done" = "Already disabled (%ld)";
+"debloat.presetSummary" = "Preset has %ld items: %ld already disabled, %ld selected to apply, %ld not present on this Mac.";

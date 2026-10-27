@@ -155,3 +155,12 @@
 "debloat.sec.icloudDrive" = "iCloud Drive, sincronização do Chaveiro e CloudDocs. Arquivos e senhas deixam de sincronizar; pode afetar o login.";
 "debloat.sec.mdm" = "Serviços de dispositivo gerenciado (MDM) e apps gerenciados. Só para Macs sem MDM.";
 "debloat.sec.replicator" = "Sincronização com dispositivos pareados (Replicator).";
+
+"debloat.header.done" = "%ld já desativados";
+"debloat.header.pending" = "%ld faltam";
+"debloat.summary" = "Neste Mac: %ld já desativados, %ld ainda ativos, %ld presentes no total.";
+"debloat.filter.label" = "Mostrar:";
+"debloat.filter.all" = "Todos";
+"debloat.filter.pending" = "Só o que falta (%ld)";
+"debloat.filter.done" = "Já desativados (%ld)";
+"debloat.presetSummary" = "O preset tem %ld itens: %ld já desativados, %ld selecionados para aplicar, %ld não existem neste Mac.";
