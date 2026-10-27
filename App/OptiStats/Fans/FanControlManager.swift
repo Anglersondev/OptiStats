@@ -73,7 +73,7 @@ final class FanControlManager {
     }
 
     func thermalChanged(_ level: ThermalLevel) {
-        guard level == .critical, engaged else { return }
+        guard level == .critical, engaged || settings?.smartBoostEnabled == true else { return }
         settings?.smartBoostEnabled = false
         stopSmartBoostState()
         restoreInBackground(message: L("fan.msg.thermalRestored"))
