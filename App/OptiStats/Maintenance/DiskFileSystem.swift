@@ -22,6 +22,12 @@ final class DiskFileSystem: FileSystemProviding {
         return v?.isSymbolicLink ?? false
     }
 
+    /// Pacotes (.app etc.) contam como diretório. Se não der para saber, assume diretório (mais seguro).
+    func isDirectory(_ path: String) -> Bool {
+        guard let v = try? URL(fileURLWithPath: path).resourceValues(forKeys: [.isDirectoryKey]) else { return true }
+        return v.isDirectory ?? true
+    }
+
     func allocatedBytes(at path: String) -> UInt64 {
         if cancelled { return 0 }
         let url = URL(fileURLWithPath: path)

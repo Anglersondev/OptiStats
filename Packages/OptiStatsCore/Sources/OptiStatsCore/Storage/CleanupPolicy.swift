@@ -4,10 +4,13 @@ import Foundation
 public enum CleanupCategory: String, Codable, CaseIterable {
     case appCaches, userLogs, trash, xcodeDerivedData, packageCaches   // removíveis
     case largeDownloads, deviceBackups                                 // somente relatório
+    /// Arquivo individual escolhido pela pessoa (grande/antigo/duplicado). Nunca vem de varredura automática:
+    /// só vale por arquivo, com confirmação explícita, e `canDelete` aplica regras próprias e mais estritas.
+    case userSelected
 
     public var isDeletable: Bool {
         switch self {
-        case .appCaches, .userLogs, .trash, .xcodeDerivedData, .packageCaches: return true
+        case .appCaches, .userLogs, .trash, .xcodeDerivedData, .packageCaches, .userSelected: return true
         case .largeDownloads, .deviceBackups: return false
         }
     }
@@ -29,6 +32,13 @@ public protocol FileSystemProviding {
     func children(of path: String) -> [String]          // caminhos completos; vazio se não existe
     func allocatedBytes(at path: String) -> UInt64       // recursivo
     func isSymbolicLink(_ path: String) -> Bool
+    /// Verdadeiro se `path` for diretório (inclui pacotes). Usado pela categoria `userSelected`, que só aceita arquivos.
+    func isDirectory(_ path: String) -> Bool
+}
+
+public extension FileSystemProviding {
+    /// Padrão conservador: sem informação, trata como diretório (portanto não removível por `userSelected`).
+    func isDirectory(_ path: String) -> Bool { true }
 }
 
 /// Regras de segurança da limpeza. É a ÚNICA fonte de verdade sobre o que pode ser apagado.
@@ -59,7 +69,40 @@ public struct CleanupPolicy {
         case .packageCaches: return [home + "/.npm/_cacache", home + "/.cache"]
         case .largeDownloads: return [home + "/Downloads"]
         case .deviceBackups: return [home + "/Library/Application Support/MobileSync/Backup"]
+        case .userSelected: return []   // sem raízes: vale só por arquivo (ver `canTrashUserFile`)
         }
+    }
+
+    /// Extensões de pacotes que nunca podem ter conteúdo interno removido arquivo a arquivo.
+    static let protectedPackageExtensions: Set<String> = [
+        "app", "framework", "bundle", "plugin", "kext", "pkg", "photoslibrary", "musiclibrary", "tvlibrary",
+        "fcpbundle", "imovielibrary", "logicx", "band", "sparsebundle", "xcodeproj", "xcworkspace", "playground"
+    ]
+
+    /// Regras da categoria `userSelected` (arquivo escolhido pela pessoa). Estritas e independentes de maiúsculas
+    /// (APFS/HFS+ costumam ignorar caixa). Requer `path` já normalizado, dentro do home, que:
+    /// - seja arquivo (nunca diretório/pacote) e não seja link simbólico (checado por quem chama);
+    /// - esteja fora de `~/Library`, exceto em `~/Library/Caches/` e `~/Library/Logs/`;
+    /// - nunca em `~/Library/Mobile Documents` (iCloud Drive), `/Applications` ou dentro de pacotes (.app etc.);
+    /// - não esteja na Lixeira (nada a ganhar) nem seja o próprio home.
+    public func canTrashUserFile(_ path: String, fs: FileSystemProviding) -> Bool {
+        let lp = path.lowercased(), lh = home.lowercased()
+        guard lp.hasPrefix(lh + "/"), lp.count > lh.count + 1 else { return false }
+        guard !lp.hasPrefix("/applications/"), !lp.contains("/library/mobile documents") else { return false }
+        let rel = String(lp.dropFirst(lh.count + 1))
+        if rel.hasPrefix(".trash/") { return false }
+        if rel == "library" || rel.hasPrefix("library/") {
+            guard rel.hasPrefix("library/caches/") || rel.hasPrefix("library/logs/") else { return false }
+            if rel.hasPrefix("library/mobile documents") { return false }
+        }
+        // Qualquer componente que seja um pacote protegido bloqueia (inclusive o próprio nome do arquivo).
+        for comp in rel.split(separator: "/") {
+            if let dot = comp.lastIndex(of: "."), dot != comp.startIndex {
+                let ext = String(comp[comp.index(after: dot)...])
+                if Self.protectedPackageExtensions.contains(ext) { return false }
+            }
+        }
+        return !fs.isDirectory(path)
     }
 
     /// Verdadeiro só se `path` for um FILHO de uma raiz removível, dentro do home, sem `..`, sem link simbólico.
@@ -69,6 +112,7 @@ public struct CleanupPolicy {
         guard p == path, p.hasPrefix(home + "/"), !fs.isSymbolicLink(p) else { return false }
         let name = (p as NSString).lastPathComponent
         if protectedNames.contains(name) { return false }
+        if category == .userSelected { return canTrashUserFile(p, fs: fs) }
         for root in roots(for: category) where p.hasPrefix(root + "/") {
             return p.count > root.count + 1
         }
