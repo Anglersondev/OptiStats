@@ -22,9 +22,11 @@ final class DebloatTests: XCTestCase {
         XCTAssertEqual(p.enableCommand(siri)!, ["launchctl", "enable", "gui/501/com.apple.Siri.agent"])
         let fake = CatalogService(label: "com.apple.mDNSResponder", titleKey: "x", domain: .user, risk: .low)
         XCTAssertNil(p.disableCommand(fake))                       // fora do catálogo → nunca
-        let sys = CatalogService(label: "com.apple.siri.sys", titleKey: "x", domain: .system, risk: .low)
-        XCTAssertNil(p.disableCommand(sys))
-        XCTAssertEqual(p.manualCommand(sys, disable: true), "sudo launchctl disable system/com.apple.siri.sys")
+        let sys = ServiceCatalog.service("com.apple.analyticsd")!
+        XCTAssertNil(p.disableCommand(sys))                                    // nível usuário nunca toca o sistema
+        XCTAssertNil(p.disableCommand(siri, level: .auditOnly))
+        XCTAssertEqual(p.disableCommand(sys, level: .system)!, ["launchctl", "disable", "system/com.apple.analyticsd"])
+        XCTAssertEqual(p.manualCommand(sys, disable: true), "sudo launchctl disable system/com.apple.analyticsd")
     }
     func testCatalogExcludesCriticalAreas() {
         for s in ServiceCatalog.all {
