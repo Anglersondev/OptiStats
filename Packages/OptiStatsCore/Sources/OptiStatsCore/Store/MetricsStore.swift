@@ -153,9 +153,8 @@ public final class MetricsStore {
     private func locked<T>(_ body: () -> T) -> T { lock.lock(); defer { lock.unlock() }; return body() }
 
     private func append(_ id: SeriesID, _ t: TimeInterval, _ v: Double) {
-        var s = _series[id] ?? TimeSeries(capacity: seriesCapacity, retention: seriesRetention)
-        s.append(t: t, v: v)
-        _series[id] = s
+        // Modificar no dicionário evita compartilhar e copiar o buffer circular a cada amostra.
+        _series[id, default: TimeSeries(capacity: seriesCapacity, retention: seriesRetention)].append(t: t, v: v)
     }
 
     private func mutate(_ kind: MetricKind, _ body: (MetricsStore) -> Void) {
