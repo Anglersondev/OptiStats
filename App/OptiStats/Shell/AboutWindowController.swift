@@ -45,8 +45,8 @@ final class AboutWindowController: NSObject, NSWindowDelegate {
         let author = NSStackView.horizontal([NSTextField.label(L("about.by"), font: Theme.body(11), color: Theme.secondaryText),
                                              link("GitHub: Anglersondev", "https://github.com/Anglersondev"),
                                              link("anglerson.com.br", "https://anglerson.com.br")], spacing: 10)
-        // Frase de apoio em inglês (texto fixo, igual nos dois idiomas) com o link de doação.
-        let supportText = NSMutableAttributedString(string: "Enjoying OptiStats? Fuel the next update with a coffee ☕ ",
+        // Frase de apoio (segue o idioma do sistema/Ajustes) com o link de doação.
+        let supportText = NSMutableAttributedString(string: L("about.support") + " ",
                                                     attributes: [.font: Theme.body(11), .foregroundColor: NSColor.secondaryLabelColor])
         supportText.append(NSAttributedString(string: "pixgg.com/Anglerson", attributes: [
             .link: URL(string: "https://pixgg.com/Anglerson") as Any, .font: Theme.body(11), .foregroundColor: NSColor.linkColor]))
