@@ -27,7 +27,7 @@
 "fan.uninstall.confirmTitle" = "Desinstalar o helper de ventoinhas?";
 "fan.uninstall.confirmText" = "As ventoinhas voltam ao automático primeiro. O macOS vai pedir a senha de administrador para remover os arquivos e o serviço do helper.";
 "fan.uninstall.confirmAction" = "Desinstalar";
-"fan.manual.section" = "Controle manual";
+"fan.manual.section" = "Controle manual (experimental)";
 "fan.allow.title" = "Permitir controle manual";
 "fan.allow.note" = "Desligado por padrão. Enquanto estiver desligado, este app nunca pede ao helper para alterar uma ventoinha.";
 "fan.allow.confirmTitle" = "Permitir controle manual das ventoinhas?";
@@ -36,7 +36,7 @@
 "fan.mode.automatic" = "Automático";
 "fan.mode.manual" = "Manual";
 "fan.row.note" = "Escolher Automático devolve todas as ventoinhas ao macOS. Em Manual, o controle é limitado ao mínimo e máximo reais da ventoinha, e o valor é aplicado quando você solta.";
-"fan.test.section" = "Teste de controle";
+"fan.test.section" = "Teste de controle (experimental)";
 "fan.test.button" = "Testar controle";
 "fan.test.note" = "Sobe cada ventoinha em até cerca de 300 RPM (dentro dos limites) por 5 segundos, lê o resultado e restaura o automático. Só depois de passar o controle é marcado como validado para este Mac e esta versão do macOS.";
 "fan.test.confirmTitle" = "Rodar o teste de controle?";

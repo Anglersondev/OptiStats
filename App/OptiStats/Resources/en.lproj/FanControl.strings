@@ -27,7 +27,7 @@
 "fan.uninstall.confirmTitle" = "Uninstall the fan helper?";
 "fan.uninstall.confirmText" = "Fans are returned to automatic first. macOS will ask for your administrator password to remove the helper files and service.";
 "fan.uninstall.confirmAction" = "Uninstall";
-"fan.manual.section" = "Manual control";
+"fan.manual.section" = "Manual control (experimental)";
 "fan.allow.title" = "Allow manual control";
 "fan.allow.note" = "Off by default. While off, this app never asks the helper to change a fan.";
 "fan.allow.confirmTitle" = "Allow manual fan control?";
@@ -36,7 +36,7 @@
 "fan.mode.automatic" = "Automatic";
 "fan.mode.manual" = "Manual";
 "fan.row.note" = "Choosing Automatic returns all fans to macOS. In Manual, the slider is limited to the fan's real minimum and maximum, and the value is applied when you release it.";
-"fan.test.section" = "Control test";
+"fan.test.section" = "Control test (experimental)";
 "fan.test.button" = "Test control";
 "fan.test.note" = "Raises each fan by up to about 300 RPM (within its limits) for 5 seconds, reads the result back and restores automatic. Only after it passes is control marked as validated for this Mac and macOS version.";
 "fan.test.confirmTitle" = "Run the control test?";
