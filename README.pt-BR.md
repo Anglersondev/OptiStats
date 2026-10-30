@@ -2,7 +2,7 @@
 
 **Monitor nativo e leve para a barra de menus do Apple Silicon, com orientação de RAM, controle de ventoinhas e Debloat opcional.** Criado por [Anglerson](https://github.com/Anglersondev) em Swift e AppKit.
 
-[English](README.md) · [Relatar um bug](https://github.com/Anglersondev/OptiStats/issues)
+[Baixar 1.0](https://github.com/Anglersondev/OptiStats/releases/tag/v1.0) · [English](README.md) · [Relatar um bug](https://github.com/Anglersondev/OptiStats/issues)
 
 ## Recursos
 
@@ -16,7 +16,7 @@
 
 ## Download e requisitos
 
-A release pública em DMG está sendo preparada. Por enquanto, compile o app usando as instruções abaixo.
+[Baixar OptiStats 1.0 para macOS](https://github.com/Anglersondev/OptiStats/releases/download/v1.0/OptiStats-1.0.dmg). Abra o DMG e arraste o app para Aplicativos.
 
 Requer **macOS 13 ou posterior e Apple Silicon**. Sensores e controle das ventoinhas dependem do Mac. A versão usa assinatura ad-hoc e não é notarizada pela Apple; o macOS pode exigir aprovação em Ajustes do Sistema → Privacidade e Segurança. O helper é opcional, necessário apenas para controlar as ventoinhas.
 
