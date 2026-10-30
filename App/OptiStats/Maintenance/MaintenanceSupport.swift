@@ -4,6 +4,9 @@ import OptiStatsCore
 /// Execução de ferramentas do sistema (sem shell, sem sudo). Chamar SEMPRE fora da main.
 enum SystemTool {
     struct Result { let status: Int32; let out: String; let err: String }
+    private final class ErrorOutput {
+        var data = Data()
+    }
 
     static func run(_ path: String, _ args: [String]) -> Result {
         let p = Process()
@@ -14,12 +17,21 @@ enum SystemTool {
         p.standardError = errPipe
         p.standardInput = FileHandle.nullDevice
         do { try p.run() } catch { return Result(status: -1, out: "", err: String(describing: error)) }
+        // Drenar os dois pipes em paralelo: stderr cheio não pode bloquear o processo
+        // enquanto esperamos o fim de stdout (por exemplo durante diagnóstico ou manutenção).
+        let errorOutput = ErrorOutput()
+        let readers = DispatchGroup()
+        readers.enter()
+        DispatchQueue.global(qos: .utility).async {
+            errorOutput.data = errPipe.fileHandleForReading.readDataToEndOfFile()
+            readers.leave()
+        }
         let out = outPipe.fileHandleForReading.readDataToEndOfFile()
-        let err = errPipe.fileHandleForReading.readDataToEndOfFile()
         p.waitUntilExit()
+        readers.wait()
         return Result(status: p.terminationStatus,
                       out: String(data: out, encoding: .utf8) ?? "",
-                      err: String(data: err, encoding: .utf8) ?? "")
+                      err: String(data: errorOutput.data, encoding: .utf8) ?? "")
     }
 
     /// `launchctl print-disabled <domain>` (leitura; sem privilégio). nil se falhar.

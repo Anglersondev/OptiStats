@@ -89,6 +89,7 @@
 "fan.err.outOfRange" = "That speed is outside the fan's real minimum and maximum and was rejected.";
 "fan.err.smcUnavailable" = "The fan controller (SMC) is not accessible.";
 "fan.err.unsupportedHardware" = "This hardware has no supported way to set fan speed.";
+"fan.err.conflictingController" = "Another app already controls this fan. Return it to Automatic there before using OptiStats.";
 "fan.err.unlockFailed" = "macOS did not release fan control (manual mode refused). Automatic was restored.";
 "fan.err.writeFailed" = "The fan controller refused the write. Automatic was restored.";
 "fan.err.verifyFailed" = "The value read back did not match, so automatic was restored.";

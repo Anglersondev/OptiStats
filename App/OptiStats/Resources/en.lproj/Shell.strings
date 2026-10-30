@@ -29,6 +29,8 @@
 "shell.menu.refresh" = "Refresh Now";
 "shell.menu.preferences" = "Preferences…";
 "shell.menu.about" = "About OptiStats";
+"shell.menu.donate" = "Support Anglerson ☕";
+"shell.menu.aboutShort" = "About";
 "shell.menu.quit" = "Quit OptiStats";
 "shell.popover.unavailable" = "This panel is not available yet.";
 "about.title" = "About OptiStats";
@@ -36,12 +38,14 @@
 "about.tagline" = "A lightweight system monitor for the Mac menu bar, focused on low resource usage.";
 "about.privacy" = "No telemetry. Everything stays on this Mac. The only network use is the optional Debloat catalog update button, started by you.";
 "about.licenses" = "Licenses and notices";
+"about.openDetails" = "View details and licenses…";
 "prefs.window.title" = "OptiStats Preferences";
 "prefs.ok" = "OK";
 "prefs.cancel" = "Cancel";
 "prefs.add" = "Add";
 "prefs.remove" = "Remove";
 "prefs.tab.general" = "General";
+"prefs.tab.about" = "About";
 "prefs.tab.menubar" = "Menu Bar";
 "prefs.tab.sampling" = "Sampling";
 "prefs.tab.sensors" = "Sensors";
@@ -194,3 +198,4 @@
 "prefs.menubar.stackNone" = "None";
 "about.by" = "By Anglerson";
 "about.support" = "Enjoying OptiStats? Fuel the next update with a coffee ☕";
+"about.donateButton" = "Support Anglerson ☕";

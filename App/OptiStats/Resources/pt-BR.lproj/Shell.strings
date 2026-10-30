@@ -29,6 +29,8 @@
 "shell.menu.refresh" = "Atualizar agora";
 "shell.menu.preferences" = "Preferências…";
 "shell.menu.about" = "Sobre o OptiStats";
+"shell.menu.donate" = "Apoiar Anglerson ☕";
+"shell.menu.aboutShort" = "Sobre";
 "shell.menu.quit" = "Sair do OptiStats";
 "shell.popover.unavailable" = "Este painel ainda não está disponível.";
 "about.title" = "Sobre o OptiStats";
@@ -36,12 +38,14 @@
 "about.tagline" = "Um monitor de sistema leve para a barra de menus do Mac, focado em baixo consumo.";
 "about.privacy" = "Sem telemetria. Tudo permanece neste Mac. A única rede é o botão opcional de atualizar o catálogo do Debloat, iniciado por você.";
 "about.licenses" = "Licenças e avisos";
+"about.openDetails" = "Ver detalhes e licenças…";
 "prefs.window.title" = "Preferências do OptiStats";
 "prefs.ok" = "OK";
 "prefs.cancel" = "Cancelar";
 "prefs.add" = "Adicionar";
 "prefs.remove" = "Remover";
 "prefs.tab.general" = "Geral";
+"prefs.tab.about" = "Sobre";
 "prefs.tab.menubar" = "Barra de menus";
 "prefs.tab.sampling" = "Amostragem";
 "prefs.tab.sensors" = "Sensores";
@@ -194,3 +198,4 @@
 "prefs.menubar.stackNone" = "Nenhum";
 "about.by" = "Por Anglerson";
 "about.support" = "Curtindo o OptiStats? Pague um café ☕ e ajude a manter as próximas atualizações:";
+"about.donateButton" = "Apoiar Anglerson ☕";

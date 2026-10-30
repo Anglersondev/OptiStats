@@ -56,7 +56,9 @@ final class AboutWindowController: NSObject, NSWindowDelegate {
         support.lineBreakMode = .byWordWrapping
         support.maximumNumberOfLines = 0
         support.preferredMaxLayoutWidth = 420
-        let header = NSStackView.vertical([icon, name, ver, tagline, privacy, author, support], spacing: 6)
+        let donate = NSButton(title: L("about.donateButton"), target: self, action: #selector(donateTapped))
+        donate.bezelStyle = .rounded
+        let header = NSStackView.vertical([icon, name, ver, tagline, privacy, author, support, donate], spacing: 6)
         header.alignment = .centerX
 
         let licenseTitle = SectionHeaderView(L("about.licenses"))
@@ -82,7 +84,7 @@ final class AboutWindowController: NSObject, NSWindowDelegate {
         scroll.leadingAnchor.constraint(equalTo: column.leadingAnchor).isActive = true
         scroll.trailingAnchor.constraint(equalTo: column.trailingAnchor).isActive = true
 
-        let root = NSView(frame: NSRect(x: 0, y: 0, width: 460, height: 420))
+        let root = NSView(frame: NSRect(x: 0, y: 0, width: 460, height: 500))
         root.addSubview(column)
         NSLayoutConstraint.activate([
             column.topAnchor.constraint(equalTo: root.topAnchor, constant: 22),
@@ -101,6 +103,10 @@ final class AboutWindowController: NSObject, NSWindowDelegate {
         w.delegate = self
         w.center()
         return w
+    }
+
+    @objc private func donateTapped() {
+        if let url = URL(string: "https://pixgg.com/Anglerson") { NSWorkspace.shared.open(url) }
     }
 
     /// Avisos de terceiros em texto fixo (notas legais não são traduzidas).

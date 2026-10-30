@@ -13,7 +13,7 @@ final class PreferencesWindowController: NSObject, NSWindowDelegate {
     var onOpenMemoryOptimizer: (() -> Void)?
 
     /// Posição das abas na barra de ferramentas.
-    enum Tab: Int { case general = 0, diskCleanup = 8, memoryAdvanced = 9, debloat = 10 }
+    enum Tab: Int { case general = 0, diskCleanup = 8, memoryAdvanced = 9, debloat = 10, about = 11 }
 
     init(env: AppEnvironment) {
         self.env = env
@@ -36,7 +36,7 @@ final class PreferencesWindowController: NSObject, NSWindowDelegate {
         return [GeneralPrefsPane(env: env), MenuBarPrefsPane(env: env), SamplingPrefsPane(env: env),
                 SensorsPrefsPane(env: env), OptimizerPrefsPane(env: env), FansPrefsPane(env: env),
                 DiagnosticsPrefsPane(env: env), PrivacyPrefsPane(env: env),
-                DiskCleanupPane(env: env), ram, DebloatPane(env: env)]
+                DiskCleanupPane(env: env), ram, DebloatPane(env: env), AboutPrefsPane(env: env)]
     }
 
     private func buildWindow(selectedIndex: Int) {
@@ -100,6 +100,30 @@ final class PreferencesWindowController: NSObject, NSWindowDelegate {
         tabs = nil
         sidebar = nil
         onClose?()
+    }
+}
+
+/// Aba Sobre sempre acessível na lista lateral de Preferências.
+final class AboutPrefsPane: PrefsPaneViewController {
+    override var paneTitle: String { L("prefs.tab.about") }
+    override var symbolName: String { "info.circle" }
+
+    override func build() {
+        addSection(L("about.title"))
+        let version = (Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String) ?? "1.0"
+        addNote(L("about.version", version))
+        addNote(L("about.tagline"))
+        addNote(L("about.by"))
+
+        addSection(L("about.donateButton"))
+        addNote(L("about.support"))
+        stack.addArrangedSubview(button(L("about.donateButton")) {
+            if let url = URL(string: "https://pixgg.com/Anglerson") { NSWorkspace.shared.open(url) }
+        })
+        addNote("pixgg.com/Anglerson")
+
+        addSection(L("about.licenses"))
+        stack.addArrangedSubview(button(L("about.openDetails")) { [weak self] in self?.env.openAbout?() })
     }
 }
 

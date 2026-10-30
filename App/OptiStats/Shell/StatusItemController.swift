@@ -255,12 +255,11 @@ final class StatusItemController: NSObject {
         add(L("shell.menu.preferences"), #selector(menuPreferences), ",")
         add(L("shell.menu.maintenance"), #selector(menuMaintenance))
         add(L("shell.menu.about"), #selector(menuAbout))
+        add(L("shell.menu.donate"), #selector(menuDonate))
         menu.addItem(.separator())
         add(L("shell.menu.quit"), #selector(menuQuit), "q")
-        // Truque padrão: associa o menu só durante o clique, para que o clique esquerdo continue abrindo o painel.
-        entry.item.menu = menu
-        entry.item.button?.performClick(nil)
-        entry.item.menu = nil
+        guard let event = NSApp.currentEvent, let button = entry.item.button else { return }
+        NSMenu.popUpContextMenu(menu, with: event, for: button)
     }
 
     @objc private func menuRefresh() {
@@ -271,6 +270,9 @@ final class StatusItemController: NSObject {
     }
     @objc private func menuPreferences() { onOpenPreferences?() }
     @objc private func menuAbout() { onOpenAbout?() }
+    @objc private func menuDonate() {
+        if let url = URL(string: "https://pixgg.com/Anglerson") { NSWorkspace.shared.open(url) }
+    }
     @objc private func menuMaintenance() { onOpenMaintenance?() }
     @objc private func menuQuit() { NSApp.terminate(nil) }
 

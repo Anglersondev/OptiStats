@@ -7,7 +7,7 @@ import Foundation
 public enum FanHelperConstants {
     public static let protocolVersion = 1
     /// Versão do binário do helper (informada em `hello`). Incrementar quando o comportamento mudar.
-    public static let helperBuild = 1
+    public static let helperBuild = 3
     public static let label = "dev.optistats.helper"
     public static let socketPath = "/var/run/dev.optistats.helper.sock"
     public static let helperPath = "/Library/PrivilegedHelperTools/dev.optistats.helper"
@@ -39,7 +39,7 @@ public struct FanHelperRequest: Codable, Equatable {
 
 public enum FanHelperErrorCode: String, Codable, Equatable {
     case badRequest, unsupportedVersion, noSuchFan, limitsUnknown, outOfRange
-    case smcUnavailable, unsupportedHardware, unlockFailed, writeFailed, verifyFailed, internalError
+    case smcUnavailable, unsupportedHardware, conflictingController, unlockFailed, writeFailed, verifyFailed, internalError
 }
 
 public struct FanHelperFanState: Codable, Equatable {

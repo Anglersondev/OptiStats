@@ -82,6 +82,12 @@ final class SMCFanDriver {
             return .failure(Failure(code: .unsupportedHardware, message: "tipo da chave de alvo não suportado"))
         }
 
+        // Não assumir uma ventoinha já posta em manual por outro controlador.
+        // Nesse caso não há nada nosso para restaurar.
+        if smc.read(modeKey(fan))?.bytes.first == 1 && !manualFans.contains(fan) {
+            return .failure(Failure(code: .conflictingController, message: "ventoinha já está em manual por outro controlador"))
+        }
+
         // 1) modo manual (com destravamento Ftst se necessário)
         manualFans.insert(fan)   // registrar ANTES: se algo falhar, a restauração cobre esta ventoinha
         if let failure = enterManual(fan: fan) { return failAndRestore(failure) }
@@ -204,8 +210,13 @@ final class SMCFanDriver {
             if !writeWithRetry(FanSMCKeys.unlockKey, bytes: off, size: ftst.size) { ok = false }
         }
         // Confirmação por leitura de volta (só do que é nosso).
-        for i in manualFans where smc.read(modeKey(i))?.bytes.first == 1 { ok = false }
-        if ftstEngaged, let ftst = smc.read(FanSMCKeys.unlockKey), (ftst.bytes.first ?? 0) != 0 { ok = false }
+        for i in manualFans {
+            // Ausência de leitura não confirma que o SMC voltou ao automático.
+            guard let mode = smc.read(modeKey(i))?.bytes.first, mode != 1 else { ok = false; continue }
+        }
+        if ftstEngaged {
+            if smc.read(FanSMCKeys.unlockKey)?.bytes.first != 0 { ok = false }
+        }
         if ok { manualFans.removeAll(); ftstEngaged = false }
         restorePending = !ok
         if !ok { HelperLog.write("restauração não confirmada; nova tentativa em breve") }

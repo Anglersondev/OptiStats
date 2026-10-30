@@ -14,7 +14,7 @@ final class FanHelperProtocolTests: XCTestCase {
         let decoded = FanHelperCodec.decodeRequest(data.dropLast())
         XCTAssertEqual(try decoded.get(), req)
 
-        let resp = FanHelperResponse(id: 7, ok: true, helperBuild: 1, supported: true,
+        let resp = FanHelperResponse(id: 7, ok: true, helperBuild: FanHelperConstants.helperBuild, supported: true,
                                      fans: [FanHelperFanState(index: 0, rpm: 1200, minRPM: 1000, maxRPM: 6000, manual: false)])
         let rd = try XCTUnwrap(FanHelperCodec.encodeLine(resp))
         XCTAssertEqual(FanHelperCodec.decodeResponse(rd.dropLast()), resp)

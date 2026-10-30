@@ -89,6 +89,7 @@
 "fan.err.outOfRange" = "Essa velocidade está fora do mínimo e máximo reais da ventoinha e foi rejeitada.";
 "fan.err.smcUnavailable" = "O controlador de ventoinhas (SMC) não está acessível.";
 "fan.err.unsupportedHardware" = "Este hardware não tem forma suportada de definir a velocidade.";
+"fan.err.conflictingController" = "Outra aplicação já controla esta ventoinha. Volte-a ao Automático no outro app antes de usar o OptiStats.";
 "fan.err.unlockFailed" = "O macOS não liberou o controle das ventoinhas (modo manual recusado). O automático foi restaurado.";
 "fan.err.writeFailed" = "O controlador de ventoinhas recusou a escrita. O automático foi restaurado.";
 "fan.err.verifyFailed" = "O valor lido de volta não confere, então o automático foi restaurado.";

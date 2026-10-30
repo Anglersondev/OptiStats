@@ -23,7 +23,7 @@ final class FansPrefsPane: PrefsPaneViewController {
     private var manager: FanControlManager { env.fanControl }
 
     /// Helper instalado de uma versão anterior do app: precisa ser atualizado (reinstalar) antes de testar.
-    private var helperOutdated: Bool { helperInfo.state == .running && HelperInstaller.installedMatchesBundled() == false }
+    private var helperOutdated: Bool { helperInfo.state == .running && helperInfo.matchesBundled == false }
     private var helperRunning: Bool { helperInfo.state == .running && helperInfo.supported != false }
 
     override func build() {

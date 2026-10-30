@@ -21,6 +21,8 @@ struct HelperHello: Equatable {
 /// - `capability` fica em `.experimentalUnvalidated` até o teste de controle passar neste Mac.
 final class HelperFanActuator: FanActuator {
     private let lock = NSLock()
+    /// A interface lê a capacidade sem esperar uma troca com o SMC (que pode levar até 40 s).
+    private let capabilityLock = NSLock()
     private var fd: Int32 = -1 { didSet { mirrorLock.lock(); fdMirror = fd; mirrorLock.unlock() } }
     /// Cópia do descritor, protegida por trava própria, para `emergencyDisconnect()` não esperar uma troca em andamento.
     private let mirrorLock = NSLock()
@@ -39,7 +41,7 @@ final class HelperFanActuator: FanActuator {
     // MARK: FanActuator
 
     var capability: FanControlCapability {
-        lock.lock(); let reason = unsupportedReason; lock.unlock()
+        capabilityLock.lock(); let reason = unsupportedReason; capabilityLock.unlock()
         if HelperInstaller.state() == .notInstalled { return .unavailable(reason: L("fan.cap.notInstalled")) }
         if let reason { return .unavailable(reason: reason) }
         return settings.isValidatedForThisMac ? .validated : .experimentalUnvalidated
@@ -90,7 +92,7 @@ final class HelperFanActuator: FanActuator {
     func hello() -> Result<HelperHello, FanClientFailure> {
         exchange(.hello, timeout: 4).flatMap { (r: FanHelperResponse) -> Result<HelperHello, FanClientFailure> in
             guard let build = r.helperBuild else { return .failure(.versionMismatch) }
-            lock.lock(); unsupportedReason = (r.supported == false) ? L("fan.cap.unsupportedHardware") : nil; lock.unlock()
+            capabilityLock.lock(); unsupportedReason = (r.supported == false) ? L("fan.cap.unsupportedHardware") : nil; capabilityLock.unlock()
             return .success(HelperHello(build: build, supported: r.supported ?? false, manualActive: r.manualActive ?? false))
         }
     }
