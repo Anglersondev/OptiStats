@@ -2,7 +2,7 @@
 
 **A native, lightweight menu bar monitor for Apple Silicon, with RAM guidance, fan controls and optional Debloat.** Built by [Anglerson](https://github.com/Anglersondev) in Swift and AppKit.
 
-[Português brasileiro](README.pt-BR.md) · [Report a bug](https://github.com/Anglersondev/OptiStats/issues)
+[Download 1.0](https://github.com/Anglersondev/OptiStats/releases/tag/v1.0) · [Português brasileiro](README.pt-BR.md) · [Report a bug](https://github.com/Anglersondev/OptiStats/issues)
 
 ## What it does
 
@@ -16,7 +16,7 @@
 
 ## Download and requirements
 
-A public DMG release is being prepared. Build from source using the instructions below in the meantime.
+[Download OptiStats 1.0 for macOS](https://github.com/Anglersondev/OptiStats/releases/download/v1.0/OptiStats-1.0.dmg). Open the DMG and drag OptiStats to Applications.
 
 Requires **macOS 13 or later and Apple Silicon**. Sensor availability and fan control depend on the Mac. The release is ad-hoc signed, not Apple notarized; macOS may require approval in System Settings → Privacy & Security. Install the optional fan helper only if you want write control.
 
