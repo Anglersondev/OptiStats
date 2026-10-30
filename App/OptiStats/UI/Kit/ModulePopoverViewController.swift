@@ -53,6 +53,7 @@ class ModulePopoverViewController: NSViewController {
     // MARK: Menu "…" (Preferências, Manutenção, Sobre, Sair)
 
     private let moreButton = NSButton()
+    private let aboutButton = NSButton()
 
     @objc private func moreTapped() {
         let menu = NSMenu()
@@ -64,6 +65,7 @@ class ModulePopoverViewController: NSViewController {
         add(L("shell.menu.preferences"), #selector(menuPreferences))
         add(L("shell.menu.maintenance"), #selector(menuMaintenance))
         add(L("shell.menu.about"), #selector(menuAbout))
+        add(L("shell.menu.donate"), #selector(menuDonate))
         menu.addItem(.separator())
         add(L("shell.menu.quit"), #selector(menuQuit))
         menu.popUp(positioning: nil, at: NSPoint(x: 0, y: moreButton.bounds.height + 2), in: moreButton)
@@ -71,6 +73,9 @@ class ModulePopoverViewController: NSViewController {
     @objc private func menuPreferences() { env.openPreferences?() }
     @objc private func menuMaintenance() { env.openMaintenance?() }
     @objc private func menuAbout() { env.openAbout?() }
+    @objc private func menuDonate() {
+        if let url = URL(string: "https://pixgg.com/Anglerson") { NSWorkspace.shared.open(url) }
+    }
     @objc private func menuQuit() { NSApp.terminate(nil) }
 
     // MARK: Layout
@@ -101,9 +106,17 @@ class ModulePopoverViewController: NSViewController {
         moreButton.setAccessibilityLabel(L("common.more"))
         moreButton.translatesAutoresizingMaskIntoConstraints = false
 
+        aboutButton.title = L("shell.menu.aboutShort")
+        aboutButton.isBordered = false
+        aboutButton.font = Theme.body(11)
+        aboutButton.toolTip = L("shell.menu.about")
+        aboutButton.target = self
+        aboutButton.action = #selector(menuAbout)
+        aboutButton.translatesAutoresizingMaskIntoConstraints = false
+
         let spacer = NSView(); spacer.translatesAutoresizingMaskIntoConstraints = false
         spacer.setContentHuggingPriority(.defaultLow, for: .horizontal)
-        let header = NSStackView.horizontal([title, spacer] + headerAccessories() + [moreButton, refreshButton], spacing: 8)
+        let header = NSStackView.horizontal([title, spacer] + headerAccessories() + [aboutButton, moreButton, refreshButton], spacing: 8)
 
         buildContent()
         content.edgeInsets = NSEdgeInsets(top: 4, left: 0, bottom: 4, right: 0)
