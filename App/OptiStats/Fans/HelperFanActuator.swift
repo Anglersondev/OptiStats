@@ -115,7 +115,7 @@ final class HelperFanActuator: FanActuator {
     }
 
     func heartbeat() -> Result<Void, FanClientFailure> {
-        exchange(.heartbeat, timeout: 4).map { _ in () }
+        exchange(.heartbeat, timeout: 55).map { _ in () }
     }
 
     /// Fecha a conexão. O helper restaura o automático ao ver a desconexão.

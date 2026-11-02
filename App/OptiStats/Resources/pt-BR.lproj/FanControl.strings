@@ -74,7 +74,7 @@
 "fan.err.writeFailed" = "O controlador de ventoinhas recusou a escrita. O automático foi restaurado.";
 "fan.err.verifyFailed" = "O valor lido de volta não confere, então o automático foi restaurado.";
 "fan.err.internalError" = "Erro interno do helper.";
-"fan.helper.outdatedBanner" = "O helper instalado é de uma versão anterior do OptiStats. Clique em \"Atualizar helper\" (pede a senha uma vez) antes de testar o controle.";
+"fan.helper.outdatedBanner" = "O helper instalado é de uma versão anterior do OptiStats. Clique em \"Atualizar helper\" (pede a senha uma vez) antes de usar o controle.";
 "fan.helper.update" = "Atualizar helper";
 "fan.cap.available" = "Helper disponível";
 "fan.resume.note" = "A velocidade manual e 100% são lembrados para este Mac e reaplicados ao abrir o OptiStats ou despertar o Mac. Ative Iniciar no login em Geral para retomar após entrar na sessão. Automático apaga a escolha salva.";
