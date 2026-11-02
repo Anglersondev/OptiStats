@@ -19,7 +19,7 @@
 - Fan acquisition now falls back to `Ftst` when a direct mode write is accepted without taking effect. Automatic explicitly resets every mode and target owned by OptiStats.
 - CPU temperatures prefer the firmware die average/maximum (`TCMb` / `TCMz`); implausible CPU/GPU readings are discarded and HID fallback is selected per zone class. Fan updates no longer refresh old temperature timestamps.
 - RAM reviews use workspace activity notifications, with no extra polling loop or Dusty runtime dependency. No app is closed automatically; healthy memory stays labelled healthy.
-- Version remains **1.0**, internal build **2**, helper build **4**. Existing installations must update the helper once in **Preferences → Fans**. Enable **General → Launch at login** to resume saved fan targets after signing in. Choosing Automatic clears them.
+- Version remains **1.0**, helper build **4**. Existing installations must update the helper once in **Preferences → Fans**. Enable **General → Launch at login** to resume saved fan targets after signing in. Choosing Automatic clears them.
 
 ## Download and requirements
 

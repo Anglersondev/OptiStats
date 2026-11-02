@@ -1,4 +1,4 @@
-# Verificação da versão 1.0, build 2
+# Verificação da versão 1.0
 
 Data: 2 de novembro de 2026. Código em Swift/AppKit, sem novas dependências de runtime.
 
@@ -18,6 +18,8 @@ MacBook Pro com Apple M4 Pro, modelo Mac16,8, macOS 27.2. Os comandos foram envi
 3. Com intenção 100% temporariamente salva, reabrir o app aplicou alvos 7.826 RPM às duas ventoinhas; leituras reais ficaram próximas de 7.818 RPM.
 4. As preferências anteriores foram restauradas depois do ensaio. O teste não deixa controle manual ligado por padrão.
 5. CPU: chaves antigas Tp01/Tp05 retornavam 2,2/1,5 e contaminavam a média. Com validação e agregados do firmware, uma leitura registrou média 56,83 °C e máxima 73,58 °C; GPU média 45,23 °C. Temperaturas variam com carga e resfriamento.
+
+O ensaio contínuo de 75 segundos com o Mac mantido acordado confirmou alvos e modos manuais próximos do máximo; ao sair, ambos retornaram ao modo automático 3, Ftst=0 e alvos=0. Em ensaios sem impedir o repouso o sistema devolveu o controle ao macOS.
 
 Não foi realizado reboot completo nem suspend/resume físico. A retomada após despertar usa o mesmo caminho de leitura dos limites/aplicação usado na abertura, mas exige validação física separada. Outros modelos não foram testados. A inspeção visual automatizada da interface não ficou disponível nesta sessão; compilação e testes não substituem revisão visual no Mac.
 

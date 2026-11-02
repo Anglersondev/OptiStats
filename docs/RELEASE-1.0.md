@@ -1,4 +1,4 @@
-# OptiStats 1.0 — build 2
+# OptiStats 1.0
 
 ## Português brasileiro
 
@@ -13,7 +13,7 @@ Monitor leve de sistema para macOS e Apple Silicon: CPU, GPU, RAM, temperatura, 
 - Catálogo Debloat conferido com o projeto original; atualização manual do GitHub preservada.
 - Português brasileiro e inglês; README e site bilíngue com metadados SEO atualizados.
 
-**Atualização:** substitua o app e abra **Preferências → Ventoinhas → Atualizar helper** uma vez. Continua na versão **1.0**, build interno **2**, helper **4**. macOS 13+, Apple Silicon. Assinatura ad-hoc, sem notarização Apple.
+**Atualização:** substitua o app e abra **Preferências → Ventoinhas → Atualizar helper** uma vez. Continua na versão **1.0**, helper **4**. macOS 13+, Apple Silicon. Assinatura ad-hoc, sem notarização Apple.
 
 **Verificação:** 199 testes do núcleo passaram em macOS e Linux, além das regressões de SMC simulado. Em um MacBook Pro M4 Pro (Mac16,8, macOS 27.2), ventoinhas inicialmente paradas atingiram cerca de 7.820 RPM ao pedir o máximo de 7.826 RPM. A retomada na abertura e a devolução ao automático foram verificadas no hardware. O resultado depende do modelo; não representa validação de todos os Macs. Detalhes e limites em `docs/FINAL-REVIEW.md`.
 
@@ -29,7 +29,7 @@ Lightweight macOS menu bar system monitor for Apple Silicon, with CPU, GPU, RAM,
 - Dusty-inspired idle-app memory review with user selection, normal quit requests and protected background workloads; no added daemon or runtime dependency.
 - Upstream Debloat catalog verified, manual GitHub catalog updates preserved. Updated bilingual documentation and SEO metadata.
 
-**Upgrade:** replace the app, then update the helper once in Preferences → Fans. Public version stays **1.0**, internal build **2**, helper build **4**. macOS 13+, Apple Silicon; ad-hoc signed, not Apple notarized.
+**Upgrade:** replace the app, then update the helper once in Preferences → Fans. Public version stays **1.0**, helper build **4**. macOS 13+, Apple Silicon; ad-hoc signed, not Apple notarized.
 
 Core tests passed on macOS and Linux. Cold-fan acceleration, launch-time resume and restoration to macOS Automatic were checked on one M4 Pro; other hardware still needs its own verification. See `docs/FINAL-REVIEW.md` for measurement scope.
 

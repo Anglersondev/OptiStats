@@ -19,7 +19,7 @@
 - O controle tenta o destravamento `Ftst` quando a escrita direta é aceita sem assumir o controle. A restauração zera explicitamente modos e alvos das ventoinhas controladas pelo OptiStats.
 - A temperatura da CPU prioriza a média e a máxima do firmware (`TCMb` / `TCMz`), descarta valores implausíveis e usa HID por classe de zona. Leituras de ventoinhas deixam de atualizar a idade de temperaturas antigas.
 - A revisão de RAM acompanha notificações de atividade dos apps, sem outro loop de consulta nem dependência do Dusty. Nenhum app fecha sozinho; memória saudável continua identificada como saudável.
-- Continua na versão **1.0**, build interno **2**, helper build **4**. Quem já usa deve atualizar o helper uma vez em **Preferências → Ventoinhas**. Ative **Geral → Iniciar no login** para retomar a escolha após entrar na sessão. Automático apaga os alvos salvos.
+- Continua na versão **1.0**, helper build **4**. Quem já usa deve atualizar o helper uma vez em **Preferências → Ventoinhas**. Ative **Geral → Iniciar no login** para retomar a escolha após entrar na sessão. Automático apaga os alvos salvos.
 
 ## Download e requisitos
 

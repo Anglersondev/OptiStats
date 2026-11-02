@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.0 — build 2 (2026-11-02)
+## 1.0 (2026-11-02)
 
 - Remove o teste beta e o bloqueio de controle; mantém instalação opcional do helper e permissão manual explícita.
 - Lembra Manual/100% por modelo e macOS e reaplica na abertura e após repouso. Automático apaga a escolha salva.
