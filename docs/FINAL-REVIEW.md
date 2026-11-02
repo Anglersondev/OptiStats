@@ -36,4 +36,4 @@ A meta de 85–88 MB e 0,2–0,4% depende de indicadores, janelas e perfil. RSS 
 - [Dusty](https://github.com/yagcioglutoprak/dusty): orientação por footprint e apps inativos, sem encerramento automático.
 - [mac-os-debloat](https://github.com/OleksandrKrupko/mac-os-debloat): catálogo embutido coincide com commit `1f3b1c82ddb12c0e333310c0d6c675f792320d12`; não foi executado nenhum preset Debloat neste ensaio.
 
-O histórico Git é preservado. A atualização substitui o pacote da release 1.0 e mantém a numeração pública solicitada.
+O conteúdo dos commits é preservado; a autoria automática e os trailers de coautoria foram removidos a pedido do dono, com cópia de segurança local do histórico anterior. A atualização substitui o pacote da release 1.0 e mantém a numeração pública solicitada.
