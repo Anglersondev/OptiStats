@@ -16,6 +16,7 @@ final class FakeSMC: SMCFanIO {
     var ignoreDirectMode = false
     var failTargetWrite = false
     var failTargetReset = false
+    var failModeReset = false
     var missingModeOnRestore = false
     init() {
         byte("FNum", 2); byte("F0Md", 0); byte("F1Md", 0); byte("Ftst", 0)
@@ -37,6 +38,7 @@ final class FakeSMC: SMCFanIO {
     func write(_ key: String, bytes: [UInt8], size: Int) -> Bool {
         writes.append((key, bytes))
         if failTargetWrite && key.hasSuffix("Tg") && bytes.contains(where: { $0 != 0 }) { return false }
+        if failModeReset && key.hasSuffix("Md") && bytes.first == 0 { return false }
         if failTargetReset && key.hasSuffix("Tg") && bytes.allSatisfy({ $0 == 0 }) { return false }
         if ignoreDirectMode && key.hasSuffix("Md") && bytes.first == 1 && values["Ftst"]?.bytes.first != 1 { return true }
         guard var value = values[key], size == value.size, bytes.count == size else { return false }
@@ -74,9 +76,9 @@ do {
 }
 do {
     let smc = FakeSMC(); let d = driver(smc)
-    _ = d.setTarget(fan: 0, rpm: 4000); smc.failTargetReset = true
-    expect(!d.restoreAutomatic() && d.restorePending, "a failed target reset cannot report success")
-    smc.failTargetReset = false
+    _ = d.setTarget(fan: 0, rpm: 4000); smc.failTargetReset = true; smc.failModeReset = true
+    expect(!d.restoreAutomatic() && d.restorePending, "remaining in manual mode cannot report success")
+    smc.failTargetReset = false; smc.failModeReset = false
     expect(d.restoreAutomatic() && !d.restorePending, "pending restoration recovers")
 }
 do {
@@ -114,4 +116,24 @@ do {
     s.savedTargets = [:]
     expect(resumed.savedTargets.isEmpty, "Automatic clears saved intent")
 }
+
+do {
+    let smc = FakeSMC(); let d = driver(smc)
+    _ = d.setTarget(fan: 0, rpm: 4000)
+    smc.byte("F0Md", 3); smc.failModeReset = true
+    expect(d.restoreAutomatic(), "firmware auto3 readback wins over an intermediate rejected mode write")
+    expect(!d.restorePending, "confirmed automatic does not leave a false pending fault")
+}
+
+do {
+    let smc = FakeSMC(); let d = driver(smc)
+    _ = d.setTarget(fan: 0, rpm: 6000)
+    smc.byte("F0Md", 3); smc.number("F0Tg", 1200)
+    expect(succeeds(d.maintainManualTargets()), "heartbeat reconciles firmware target drift")
+    expect(smc.values["F0Md"]?.bytes.first == 1 && smc.values["F0Tg"]?.number == 6000, "saved manual target is maintained")
+    _ = d.restoreAutomatic()
+    let writes = smc.writes.count
+    expect(succeeds(d.maintainManualTargets()) && smc.writes.count == writes, "Automatic cancels heartbeat target reconciliation")
+}
+
 print("Hardware/settings regressions: \(checks) checks passed (simulated hardware, no SMC writes).")

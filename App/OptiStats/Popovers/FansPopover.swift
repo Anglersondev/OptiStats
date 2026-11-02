@@ -60,7 +60,7 @@ final class FanRowView: NSStackView {
         guard let lo = fan.minRPM, let hi = fan.maxRPM, hi > lo else { controls.isHidden = true; return }
         controls.isHidden = false
         slider.minValue = lo.rounded(.up); slider.maxValue = hi.rounded(.down)
-        mode.setEnabled(available || manualRPM != nil, forSegment: 0)
+        mode.setEnabled(true, forSegment: 0)
         mode.setEnabled(available, forSegment: 1)
         fullSpeed.isEnabled = available
         mode.toolTip = available ? nil : unavailableReason
@@ -91,6 +91,7 @@ final class FansPopover: StatPopover {
     private let boostCheckbox = NSButton(checkboxWithTitle: "", target: nil, action: nil)
     private let boostNote = Fmt.note(lines: 6)
     private let setup = NSButton(title: "", target: nil, action: nil)
+    private let restoreAll = NSButton(title: "", target: nil, action: nil)
     private let controlNote = Fmt.note(lines: 3)
     private var chartSection: NSStackView!
     private static let palette: [NSColor] = [NSColor.controlAccentColor, NSColor.systemTeal, NSColor.systemPurple, NSColor.systemOrange]
@@ -114,11 +115,22 @@ final class FansPopover: StatPopover {
         body.addFullWidth(makeSection(L("fans.section.control"), [boostCheckbox, boostNote]))
         setup.title = L("fan.setup")
         setup.target = self; setup.action = #selector(openFanSettings)
-        body.addFullWidth(setup)
+        restoreAll.title = L("fan.restore.button")
+        restoreAll.target = self; restoreAll.action = #selector(restoreAutomatic)
+        body.addFullWidth(NSStackView.horizontal([restoreAll, setup], spacing: 8))
         chart.fixedRange = nil
     }
 
     @objc private func openFanSettings() { env.openFanPreferences?() }
+
+    @objc private func restoreAutomatic() {
+        env.fanControl.restoreAutomatic { [weak self] error in
+            guard let self else { return }
+            self.controlNote.setText(error ?? "")
+            self.controlNote.isHidden = error == nil
+            self.render()
+        }
+    }
 
     private func modeText(_ m: FanMode) -> String {
         switch m {

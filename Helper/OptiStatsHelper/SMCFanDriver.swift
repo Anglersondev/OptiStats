@@ -16,6 +16,7 @@ final class SMCFanDriver {
     private var modeKeyIsLower: Bool?
     /// Ventoinhas que ESTE helper colocou em modo manual.
     private(set) var manualFans = Set<Int>()
+    private var desiredTargets: [Int: Double] = [:]
     private var ftstEngaged = false
     /// Verdadeiro quando uma restauração falhou e precisa ser repetida.
     private(set) var restorePending = false
@@ -122,6 +123,19 @@ final class SMCFanDriver {
         if modeNow != 1 {
             HelperLog.write("aviso: alvo \(Int(rpm)) aceito na ventoinha \(fan), mas o modo lê \(modeNow.map(String.init) ?? "?"); validação pelo RPM real")
         }
+        desiredTargets[fan] = rpm
+        return .success(())
+    }
+
+    /// Firmware can return a fan to automatic during a shared Ftst hand-off.
+    /// Reconcile only our active targets, using the existing heartbeat rather than another timer.
+    func maintainManualTargets() -> Result<Void, Failure> {
+        for (fan, rpm) in desiredTargets.sorted(by: { $0.key < $1.key }) {
+            let mode = smc.read(modeKey(fan))?.bytes.first
+            let target = smc.read(FanSMCKeys.target(fan))?.number
+            if mode == 1 && SMCFanTargetEncoding.matches(readBack: target, requested: rpm) { continue }
+            if case .failure(let failure) = setTarget(fan: fan, rpm: rpm) { return .failure(failure) }
+        }
         return .success(())
     }
 
@@ -193,41 +207,43 @@ final class SMCFanDriver {
 
     /// Devolve o controle ao macOS SOMENTE nas ventoinhas que este helper pôs em manual (e desliga o Ftst só se foi ele que ligou).
     /// Não mexe em ventoinhas controladas por outro app (Stats, Macs Fan Control...). O modo "automático" de fábrica pode ser 3;
-    /// aqui escrevemos 0 como o Stats, e qualquer valor diferente de 1 conta como devolvido.
+    /// aqui escrevemos 0 como o Stats, e confirmamos somente os modos automáticos conhecidos (0 ou 3).
     /// true somente se a leitura de volta confirmar. Se falhar, `restorePending` fica ativo para nova tentativa.
     @discardableResult
     func restoreAutomatic() -> Bool {
         guard isSupportedArchitecture else { restorePending = false; manualFans.removeAll(); return true }
         guard isManualActive else { return true }   // nada nosso para devolver
         guard smc.open() else { restorePending = isManualActive; return !restorePending }
-        var ok = true
+        // Writes can be refused during the thermalmonitord hand-off and still take effect
+        // when Ftst is released. The final hardware state, not an intermediate error, is decisive.
         for i in manualFans.sorted() {
             let key = modeKey(i)
-            if let mode = smc.read(key), !mode.bytes.isEmpty {
-                if mode.bytes.first != 0,
-                   !writeWithRetry(key, bytes: { var b = mode.bytes; b[0] = 0; return b }(), size: mode.size) { ok = false }
-            } else { ok = false }
-            // Como no Stats (setFanMode automático): zerar o alvo.
+            if let mode = smc.read(key), !mode.bytes.isEmpty, mode.bytes.first != 0 {
+                _ = writeWithRetry(key, bytes: { var b = mode.bytes; b[0] = 0; return b }(), size: mode.size)
+            }
             if let tg = smc.read(FanSMCKeys.target(i)),
                let zero = SMCFanTargetEncoding.encode(type: tg.type, rpm: 0, size: tg.size) {
-                if !writeWithRetry(FanSMCKeys.target(i), bytes: zero, size: tg.size) { ok = false }
-            } else { ok = false }
+                _ = writeWithRetry(FanSMCKeys.target(i), bytes: zero, size: tg.size)
+            }
         }
-        if ftstEngaged, let ftst = smc.read(FanSMCKeys.unlockKey), ftst.size > 0, (ftst.bytes.first ?? 0) != 0 {
+        if ftstEngaged, let ftst = smc.read(FanSMCKeys.unlockKey), !ftst.bytes.isEmpty, ftst.bytes.first != 0 {
             var off = ftst.bytes; off[0] = 0
-            if !writeWithRetry(FanSMCKeys.unlockKey, bytes: off, size: ftst.size) { ok = false }
+            _ = writeWithRetry(FanSMCKeys.unlockKey, bytes: off, size: ftst.size)
         }
-        // Confirmação por leitura de volta (só do que é nosso).
-        for i in manualFans {
-            // Ausência de leitura não confirma que o SMC voltou ao automático.
-            guard let mode = smc.read(modeKey(i))?.bytes.first, mode != 1 else { ok = false; continue }
+        for attempt in 0..<15 {
+            if attempt > 0 { delay(100_000) }
+            let automatic = manualFans.allSatisfy {
+                guard let mode = smc.read(modeKey($0))?.bytes.first else { return false }
+                return mode == 0 || mode == 3
+            }
+            let unlocked = !ftstEngaged || smc.read(FanSMCKeys.unlockKey)?.bytes.first == 0
+            if automatic && unlocked {
+                manualFans.removeAll(); desiredTargets.removeAll(); ftstEngaged = false; restorePending = false
+                return true
+            }
         }
-        if ftstEngaged {
-            if smc.read(FanSMCKeys.unlockKey)?.bytes.first != 0 { ok = false }
-        }
-        if ok { manualFans.removeAll(); ftstEngaged = false }
-        restorePending = !ok
-        if !ok { HelperLog.write("restauração não confirmada; nova tentativa em breve") }
-        return ok
+        restorePending = true
+        HelperLog.write("restauração não confirmada; nova tentativa em breve")
+        return false
     }
 }

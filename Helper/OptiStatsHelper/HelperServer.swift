@@ -183,7 +183,14 @@ final class HelperServer {
         case .readFans:
             send(FanHelperResponse(id: request.id, ok: true, fans: driver.readFans(), manualActive: driver.isManualActive))
         case .heartbeat:
-            send(FanHelperResponse(id: request.id, ok: true, manualActive: driver.isManualActive))
+            switch driver.maintainManualTargets() {
+            case .success:
+                if driver.isManualActive { watchdog.arm(at: now) }
+                send(FanHelperResponse(id: request.id, ok: true, manualActive: driver.isManualActive))
+            case .failure(let failure):
+                restoreNow(reason: "alvo manual alterado pelo firmware")
+                send(.failure(id: request.id, failure.code, failure.message))
+            }
         case .restoreAutomatic:
             if driver.restoreAutomatic() {
                 watchdog.disarm()

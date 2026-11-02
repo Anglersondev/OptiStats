@@ -4,6 +4,7 @@
 
 - Remove o teste beta e o bloqueio de controle; mantém instalação opcional do helper e permissão manual explícita.
 - Lembra Manual/100% por modelo e macOS e reaplica na abertura e após repouso. Automático apaga a escolha salva.
+- Mantém os alvos manuais usando o heartbeat já existente caso o firmware os altere; Automático cancela essa manutenção.
 - Tenta Ftst quando a escrita de modo é aceita sem assumir controle; restaura modos 0/3 e alvos próprios, detectando falhas de escrita.
 - Corrige médias de CPU contaminadas por valores 1,5/2,2; prioriza TCMb/TCMz e separa fallback HID por classe de zona.
 - Preserva idade real das temperaturas quando ventoinhas ou sensores elétricos publicam dados.
