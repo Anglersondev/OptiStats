@@ -9,10 +9,17 @@
 - Indicadores personalizáveis de CPU, GPU, RAM, temperaturas, potência, ventoinhas, disco, rede e bateria.
 - Gráficos de histórico, sensores e processos agrupados por aplicativo.
 - Perfis Econômico, Equilibrado, Tempo Real e Personalizado. Fontes ocultas param de ser consultadas; os coletores compartilham um agendador.
-- Análise da pressão de memória e recomendações antes de escolher quais apps fechar. Sem promessa de liberar RAM e sem forçar o encerramento.
-- Leitura de ventoinhas por padrão. Automático, Manual, **100%** e Smart Boost opcionais exigem instalar o helper, permitir controle e aprovar o teste de validação neste Mac.
+- Análise da pressão de memória e revisão de apps grandes que ficaram uma hora em segundo plano. Inspirado no Dusty: footprint agrupado, apps protegidos, encerramento normal e resultado medido.
+- Leitura de ventoinhas por padrão. Automático, Manual, **100%** e Smart Boost opcionais usam o helper privilegiado. As escolhas manuais são lembradas e reaplicadas ao abrir e despertar, mesmo com o Mac frio. Sem etapa de teste beta.
 - Ferramentas de disco/cache e gerenciamento opcional de serviços do macOS pelo Debloat.
 - Inglês e português brasileiro com troca em tempo de execução. Versão, créditos e doação em **Preferências → Sobre**.
+
+## Novidades da 1.0: ventoinhas, temperaturas e memória
+
+- O controle tenta o destravamento `Ftst` quando a escrita direta é aceita sem assumir o controle. A restauração zera explicitamente modos e alvos das ventoinhas controladas pelo OptiStats.
+- A temperatura da CPU prioriza a média e a máxima do firmware (`TCMb` / `TCMz`), descarta valores implausíveis e usa HID por classe de zona. Leituras de ventoinhas deixam de atualizar a idade de temperaturas antigas.
+- A revisão de RAM acompanha notificações de atividade dos apps, sem outro loop de consulta nem dependência do Dusty. Nenhum app fecha sozinho; memória saudável continua identificada como saudável.
+- Continua na versão **1.0**, build interno **2**, helper build **4**. Quem já usa deve atualizar o helper uma vez em **Preferências → Ventoinhas**. Ative **Geral → Iniciar no login** para retomar a escolha após entrar na sessão. Automático apaga os alvos salvos.
 
 ## Download e requisitos
 
@@ -34,7 +41,11 @@ A aba consulta serviços presentes no Mac e permite revisar os presets Telemetri
 
 A atualização do catálogo é **manual**: o botão baixa o catálogo do repositório original por HTTPS. O monitoramento permanece local, sem telemetria. As licenças MIT estão preservadas nos [avisos de terceiros](THIRD_PARTY_NOTICES.md).
 
+A revisão de memória adapta ideias do [Dusty, de Toprak Yagcioglu](https://github.com/yagcioglutoprak/dusty), como revisar apps grandes e inativos em vez de prometer ganhos de RAM. A implementação fica dentro do OptiStats; o Dusty não é instalado nem executado.
+
 ## Compilar e validar
+
+Com somente Command Line Tools, use `scripts/build_app.sh`. Para regressões de SMC simulado e preferências, use `scripts/check_hardware_regressions.sh` (sem privilégios de administrador nem escrita física nas ventoinhas).
 
 No macOS com Xcode 15 ou posterior:
 

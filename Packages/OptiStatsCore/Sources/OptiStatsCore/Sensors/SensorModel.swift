@@ -82,6 +82,12 @@ public enum SensorValidator {
     public static func reading(_ d: SensorDescriptor, raw: Double?, at t: TimeInterval,
                                quality: MetricQuality = .observed) -> SensorReading {
         if let v = validate(raw, kind: d.kind) {
+            // Existing CPU keys can return coefficients (1.5, 2.2...) on newer firmware.
+            let die = [SensorRole.cpuEfficiencyZone, .cpuPerformanceZone, .cpuSuperZone, .gpuZone].contains(d.role)
+                || (d.source == .smc && ["TCMb", "TCMz"].contains(d.key))
+            if d.kind == .temperature, die, !(10...125).contains(v) {
+                return SensorReading(descriptor: d, value: nil, quality: .unavailable, timestamp: t)
+            }
             return SensorReading(descriptor: d, value: v, quality: quality, timestamp: t)
         }
         return SensorReading(descriptor: d, value: nil, quality: .unavailable, timestamp: t)
@@ -90,11 +96,19 @@ public enum SensorValidator {
 
 /// Agregações calculadas (média/mais quente). Rotuladas como `.calculated` e nunca como sensor físico.
 public enum SensorAggregator {
+    /// Prefer one source per zone class; a working E cluster must not hide HID P-cluster readings.
+    private static func preferred(_ r: [SensorReading], roles: [SensorRole]) -> [SensorReading] {
+        roles.flatMap { role -> [SensorReading] in
+            let valid = r.filter { $0.descriptor.kind == .temperature && $0.descriptor.role == role && $0.value != nil }
+            let smc = valid.filter { $0.descriptor.source == .smc }
+            return smc.isEmpty ? valid.filter { $0.descriptor.source == .hid } : smc
+        }
+    }
     public static func cpuZones(_ r: [SensorReading]) -> [SensorReading] {
-        r.filter { [.cpuEfficiencyZone, .cpuPerformanceZone, .cpuSuperZone].contains($0.descriptor.role) && $0.value != nil }
+        preferred(r, roles: [.cpuEfficiencyZone, .cpuPerformanceZone, .cpuSuperZone])
     }
     public static func gpuZones(_ r: [SensorReading]) -> [SensorReading] {
-        r.filter { $0.descriptor.role == .gpuZone && $0.value != nil }
+        preferred(r, roles: [.gpuZone])
     }
 
     public static func average(_ r: [SensorReading]) -> Double? {
@@ -110,7 +124,11 @@ public enum SensorAggregator {
             return SensorReading(descriptor: d, value: value, quality: .calculated, timestamp: t)
         }
         let cpu = cpuZones(readings), gpu = gpuZones(readings)
-        return [make("avg-cpu", "Average CPU", average(cpu)), make("max-cpu", "Hottest CPU", hottest(cpu)),
+        func firmware(_ key: String) -> Double? {
+            readings.first { $0.descriptor.source == .smc && $0.descriptor.kind == .temperature && $0.descriptor.key == key }?.value
+        }
+        return [make("avg-cpu", "Average CPU", firmware("TCMb") ?? average(cpu)),
+                make("max-cpu", "Hottest CPU", firmware("TCMz") ?? hottest(cpu)),
                 make("avg-gpu", "Average GPU", average(gpu)), make("max-gpu", "Hottest GPU", hottest(gpu))].compactMap { $0 }
     }
 }

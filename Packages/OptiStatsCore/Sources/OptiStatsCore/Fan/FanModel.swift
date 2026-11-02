@@ -30,9 +30,8 @@ public struct FanReading: Equatable {
 
 public enum FanControlCapability: Equatable {
     case unavailable(reason: String)
-    /// Existe um caminho de escrita, mas NÃO foi validado neste hardware/macOS. Bloqueado por padrão.
-    case experimentalUnvalidated
-    case validated
+    /// Helper installed; each command still verifies hardware limits and readback.
+    case available
 }
 
 public enum FanCommand: Equatable {
@@ -45,7 +44,7 @@ public enum ActuatorResult: Equatable {
     case ok, unsupported, denied, failed(String)
 }
 
-/// Fronteira com o hardware. Nesta versão só existe a implementação "indisponível" (somente leitura).
+/// Fronteira com o hardware e o helper opcional.
 public protocol FanActuator: AnyObject {
     var capability: FanControlCapability { get }
     func apply(_ command: FanCommand) -> ActuatorResult

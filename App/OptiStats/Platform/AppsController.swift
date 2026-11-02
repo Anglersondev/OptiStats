@@ -8,6 +8,10 @@ final class MacAppController: AppController, FrontmostAppProviding {
     private let lock = NSLock()
     private var frontmostID: String?
     private var observer: NSObjectProtocol?
+    private var terminationObserver: NSObjectProtocol?
+    private var launchObserver: NSObjectProtocol?
+    private let activityStartedAt = ProcessInfo.processInfo.systemUptime
+    private var lastActive: [String: TimeInterval] = [:]
 
     init() {
         frontmostID = NSWorkspace.shared.frontmostApplication?.bundleIdentifier
@@ -15,17 +19,44 @@ final class MacAppController: AppController, FrontmostAppProviding {
         observer = NSWorkspace.shared.notificationCenter.addObserver(
             forName: NSWorkspace.didActivateApplicationNotification, object: nil, queue: nil) { [weak self] note in
             let app = note.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication
-            self?.lock.lock(); self?.frontmostID = app?.bundleIdentifier; self?.lock.unlock()
+            guard let self else { return }
+            self.lock.lock()
+            if let previous = self.frontmostID { self.lastActive[previous] = ProcessInfo.processInfo.systemUptime }
+            self.frontmostID = app?.bundleIdentifier
+            if self.lastActive.count > 128, let oldest = self.lastActive.min(by: { $0.value < $1.value })?.key {
+                self.lastActive.removeValue(forKey: oldest)
+            }
+            self.lock.unlock()
+        }
+        launchObserver = NSWorkspace.shared.notificationCenter.addObserver(
+            forName: NSWorkspace.didLaunchApplicationNotification, object: nil, queue: nil) { [weak self] note in
+            guard let self, let app = note.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication,
+                  let id = app.bundleIdentifier else { return }
+            self.lock.lock(); self.lastActive[id] = ProcessInfo.processInfo.systemUptime; self.lock.unlock()
+        }
+        terminationObserver = NSWorkspace.shared.notificationCenter.addObserver(
+            forName: NSWorkspace.didTerminateApplicationNotification, object: nil, queue: nil) { [weak self] note in
+            guard let self, let app = note.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication,
+                  let id = app.bundleIdentifier else { return }
+            self.lock.lock(); self.lastActive.removeValue(forKey: id); self.lock.unlock()
         }
     }
 
     deinit {
         if let observer { NSWorkspace.shared.notificationCenter.removeObserver(observer) }
+        if let terminationObserver { NSWorkspace.shared.notificationCenter.removeObserver(terminationObserver) }
+        if let launchObserver { NSWorkspace.shared.notificationCenter.removeObserver(launchObserver) }
     }
 
     var frontmostBundleIdentifier: String? {
         lock.lock(); defer { lock.unlock() }
         return frontmostID
+    }
+
+    func backgroundIdleSeconds(bundleIdentifier: String) -> TimeInterval? {
+        lock.lock(); defer { lock.unlock() }
+        guard bundleIdentifier != frontmostID else { return 0 }
+        return max(0, ProcessInfo.processInfo.systemUptime - (lastActive[bundleIdentifier] ?? activityStartedAt))
     }
 
     func liveIdentity(matching identity: ProcessIdentity) -> ProcessIdentity? {

@@ -6,6 +6,7 @@ public struct AdvisorConfig: Equatable {
     public var sustainedPressureSeconds: TimeInterval = 120
     public var activeSwapOutsPerSecond: Double = 5
     public var candidateMinFootprint: UInt64 = 300 * 1024 * 1024
+    public var minimumIdleSeconds: TimeInterval = 3600
     public var maxCandidates = 6
     public init() {}
 }
@@ -67,7 +68,9 @@ public struct OptimizationAdvisor {
     ///   - history: fotos recentes de memória (mais antiga → mais nova) para avaliar persistência.
     ///   - frontmostBundleID: app em primeiro plano agora.
     public func advise(history: [MemorySnapshot], groups: [AppGroup], growth: (String) -> GrowthSuspicion?,
-                       frontmostBundleID: String?) -> Advice {
+                       frontmostBundleID: String?,
+                       idleSeconds: ((AppGroup) -> TimeInterval?)? = nil,
+                       reviewIdleApps: Bool = false) -> Advice {
         guard let latest = history.last, latest.pressure != nil else {
             return Advice(assessment: .insufficientData, candidates: [], protectedTop: [])
         }
@@ -104,6 +107,9 @@ public struct OptimizationAdvisor {
                 continue
             }
             guard g.footprintBytes >= config.candidateMinFootprint else { continue }
+            if let idleSeconds {
+                guard let idle = idleSeconds(g), idle.isFinite, idle >= config.minimumIdleSeconds else { continue }
+            }
             var risks: [RiskNote] = [.mayLoseUnsavedWork]
             if g.processCount > 4 { risks.append(.manyHelpersShared) }
             if suspicion != nil { risks.append(.growthSuspected) }
@@ -127,7 +133,7 @@ public struct OptimizationAdvisor {
         }
         // Sem pressão sustentada, não há candidatos "recomendados".
         let shown: [ReclaimCandidate]
-        if case .actionRecommended = assessment { shown = candidates } else { shown = [] }
+        if case .actionRecommended = assessment { shown = candidates } else { shown = reviewIdleApps ? candidates : [] }
         return Advice(assessment: assessment, candidates: shown, protectedTop: protectedTop)
     }
 

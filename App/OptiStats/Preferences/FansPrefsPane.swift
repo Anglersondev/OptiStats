@@ -18,7 +18,6 @@ final class FansPrefsPane: PrefsPaneViewController {
     private var rows: [FanRow] = []
     private var helperInfo = HelperInfo(state: HelperInstaller.state())
     private var statusLabel: NSTextField?
-    private var lastTestText: String?
 
     private var manager: FanControlManager { env.fanControl }
 
@@ -36,7 +35,6 @@ final class FansPrefsPane: PrefsPaneViewController {
         addSection(L("prefs.fans.status"))
         let warning = addNote(L("fan.warning.main"), color: Theme.warn)
         warning.font = Theme.body(12)
-        addNote(L("fan.warning.untested"), color: Theme.warn)
         addRow(L("prefs.fans.control"), capabilityLabel())
         stack.addArrangedSubview(NSStackView.horizontal([button(L("fan.restore.button")) { [weak self] in self?.restoreAll() }], spacing: 8))
         if let message = manager.lastMessage { addNote(message, color: Theme.warn) }
@@ -58,17 +56,6 @@ final class FansPrefsPane: PrefsPaneViewController {
 
         guard let settings = manager.settings else { addNote(L("fan.err.notInstalled"), color: Theme.tertiaryText); return }
 
-        if settings.isUnsupportedForThisMac {
-            addSection(L("fan.manual.section"))
-            addNote(L("fan.unsupported.note"), color: Theme.secondaryText)
-            stack.addArrangedSubview(NSStackView.horizontal([button(L("fan.unsupported.retry")) { [weak self] in
-                self?.manager.settings?.markUnsupported(false)
-                self?.rebuildSoon()
-            }], spacing: 8))
-            addReadingsSection(fans: fans, settings: settings)
-            return
-        }
-
         // 3) Permissão
         addSection(L("fan.manual.section"))
         stack.addArrangedSubview(checkbox(L("fan.allow.title"), isOn: settings.manualAllowed) { [weak self] on in
@@ -76,29 +63,23 @@ final class FansPrefsPane: PrefsPaneViewController {
         })
         addNote(L("fan.allow.note"))
 
-        // 4) Teste de controle
-        addSection(L("fan.test.section"))
-        let test = button(L("fan.test.button")) { [weak self] in self?.confirmTest() }
-        test.isEnabled = settings.manualAllowed && helperRunning && !helperOutdated && !manager.busy && !manager.isEngaged
-        stack.addArrangedSubview(NSStackView.horizontal([test], spacing: 8))
-        addNote(L("fan.test.note"))
-        if let text = lastTestText { addNote(text, color: Theme.secondaryText) }
+        addNote(L("fan.resume.note"))
 
         // 5) Smart Boost
         addSection(L("fan.boost.section"))
-        var validated = false
-        if case .validated = manager.capability { validated = true }
+        var helperAvailable = false
+        if case .available = manager.capability { helperAvailable = true }
         let boost = checkbox(L("fan.boost.title"), isOn: settings.smartBoostEnabled) { [weak self] on in self?.setSmartBoost(on) }
-        boost.isEnabled = settings.manualAllowed && validated && helperRunning && !manager.busy
+        boost.isEnabled = settings.manualAllowed && helperAvailable && helperRunning && !manager.busy
         stack.addArrangedSubview(boost)
-        addNote(validated ? L("fan.boost.note") : L("fan.boost.needsValidation"))
+        addNote(L("fan.boost.note"))
         if settings.smartBoostEnabled { addNote(smartBoostStateText(), color: Theme.secondaryText) }
 
         // 6) Ventoinhas
         addReadingsSection(fans: fans, settings: settings)
     }
 
-    /// Leituras atuais (RPM, mín–máx). Sempre visíveis; o controle por ventoinha só existe se permitido e validado.
+    /// Leituras atuais (RPM, mín–máx). Sempre visíveis; o controle por ventoinha só existe se permitido e disponível.
     private func addReadingsSection(fans: [FanReading], settings: FanControlSettings) {
         addSection(L("prefs.fans.readings"))
         if fans.isEmpty {
@@ -106,9 +87,9 @@ final class FansPrefsPane: PrefsPaneViewController {
             addNote(ModulePopoverViewController.message(for: state) ?? L("prefs.fans.none"), color: Theme.tertiaryText)
             return
         }
-        var validated = false
-        if case .validated = manager.capability { validated = true }
-        let canControl = validated && !settings.isUnsupportedForThisMac && settings.manualAllowed
+        var helperAvailable = false
+        if case .available = manager.capability { helperAvailable = true }
+        let canControl = helperAvailable && settings.manualAllowed
             && helperRunning && !helperOutdated && !settings.smartBoostEnabled && !manager.busy
         for fan in fans { addFanRow(fan, canControl: canControl) }
         addNote(L("fan.row.note"))
@@ -121,8 +102,7 @@ final class FansPrefsPane: PrefsPaneViewController {
         let text: String
         switch manager.capability {
         case .unavailable(let reason): text = L("prefs.fans.capability.unavailable", reason)
-        case .experimentalUnvalidated: text = L("fan.cap.experimental")
-        case .validated: text = L("fan.cap.validated")
+        case .available: text = L("fan.cap.available")
         }
         let label = NSTextField.label(text, color: Theme.secondaryText, lines: 0)
         label.preferredMaxLayoutWidth = 400
@@ -278,39 +258,6 @@ final class FansPrefsPane: PrefsPaneViewController {
                 if let error { self?.showError(error) }
                 self?.helperInfo = HelperInfo(state: HelperInstaller.state())
                 self?.refreshHelperStatus()
-                self?.rebuildSoon()
-            }
-        }
-    }
-
-    /// Outros apps que controlam ventoinhas (e seguram o modo manual) invalidam o teste.
-    private static let otherFanApps: [(bundleID: String, name: String)] = [
-        ("eu.exelban.Stats", "Stats"), ("com.crystalidea.macsfancontrol", "Macs Fan Control"),
-        ("com.tunabellysoftware.tgpro", "TG Pro"), ("com.crystalidea.MacsFanControl", "Macs Fan Control")
-    ]
-
-    private func otherFanControllersRunning() -> [String] {
-        var names: [String] = []
-        for (id, name) in Self.otherFanApps where !NSRunningApplication.runningApplications(withBundleIdentifier: id).isEmpty && !names.contains(name) {
-            names.append(name)
-        }
-        return names
-    }
-
-    private func confirmTest() {
-        let others = otherFanControllersRunning()
-        if !others.isEmpty {
-            MaintUI.inform(window: view.window, title: L("fan.test.otherApp.title"), text: L("fan.test.otherApp.text", others.joined(separator: ", ")))
-            return
-        }
-        MaintUI.confirm(window: view.window, title: L("fan.test.confirmTitle"), text: L("fan.test.confirmText"),
-                        action: L("fan.test.confirmAction")) { [weak self] ok in
-            guard ok, let self else { return }
-            self.lastTestText = L("fan.test.running")
-            self.rebuildSoon()
-            self.manager.runControlTest { [weak self] report in
-                self?.lastTestText = report.message
-                MaintUI.inform(window: self?.view.window, title: report.passed ? L("fan.test.passed") : L("fan.test.failed"), text: report.message)
                 self?.rebuildSoon()
             }
         }

@@ -15,6 +15,7 @@ final class HIDTemperatureSensors {
     private static let eventTypeTemperature: Int64 = 15
     private static let fieldTemperatureLevel: Int32 = Int32(15 << 16)
 
+    private let library: UnsafeMutableRawPointer?
     private let create: CreateFn?
     private let setMatching: SetMatchingFn?
     private let copyServices: CopyServicesFn?
@@ -28,6 +29,7 @@ final class HIDTemperatureSensors {
 
     init() {
         let handle = dlopen("/System/Library/Frameworks/IOKit.framework/IOKit", RTLD_NOW)
+        library = handle
         func sym<T>(_ name: String, as _: T.Type) -> T? {
             guard let handle, let p = dlsym(handle, name) else { return nil }
             return unsafeBitCast(p, to: T.self)
@@ -40,7 +42,7 @@ final class HIDTemperatureSensors {
         floatValue = sym("IOHIDEventGetFloatValue", as: FloatValueFn.self)
     }
 
-    deinit { release() }
+    deinit { release(); if let library { dlclose(library) } }
 
     var isAvailable: Bool {
         create != nil && setMatching != nil && copyServices != nil && copyProperty != nil && copyEvent != nil && floatValue != nil
@@ -76,7 +78,7 @@ final class HIDTemperatureSensors {
         }
         guard let services = cachedServices else { return [] }
         var out: [(String, Double)] = []
-        for i in 0..<CFArrayGetCount(services) where i < cachedProducts.count && !cachedProducts[i].isEmpty {
+        for i in 0..<CFArrayGetCount(services) where i < cachedProducts.count && SMCCatalog.hidRole(forProductName: cachedProducts[i]) != nil {
             guard let sp = CFArrayGetValueAtIndex(services, i),
                   let rawEvent = copyEvent(UnsafeMutableRawPointer(mutating: sp), Self.eventTypeTemperature, 0, 0) else { continue }
             let value = floatValue(rawEvent, Self.fieldTemperatureLevel)

@@ -39,6 +39,12 @@ public protocol SelfUsageMeasuring: AnyObject {
 
 public protocol FrontmostAppProviding: AnyObject {
     var frontmostBundleIdentifier: String? { get }
+    /// Nil means activity is unknown; never treat it as proven inactivity.
+    func backgroundIdleSeconds(bundleIdentifier: String) -> TimeInterval?
+}
+
+public extension FrontmostAppProviding {
+    func backgroundIdleSeconds(bundleIdentifier: String) -> TimeInterval? { nil }
 }
 
 /// Fronteira com tudo que é específico do macOS. Implementada pela camada `Platform` do app.

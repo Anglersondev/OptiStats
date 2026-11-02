@@ -13,7 +13,7 @@ final class PreferencesWindowController: NSObject, NSWindowDelegate {
     var onOpenMemoryOptimizer: (() -> Void)?
 
     /// Posição das abas na barra de ferramentas.
-    enum Tab: Int { case general = 0, diskCleanup = 8, memoryAdvanced = 9, debloat = 10, about = 11 }
+    enum Tab: Int { case general = 0, fans = 5, diskCleanup = 8, memoryAdvanced = 9, debloat = 10, about = 11 }
 
     init(env: AppEnvironment) {
         self.env = env

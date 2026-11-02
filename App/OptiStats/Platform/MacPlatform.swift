@@ -11,7 +11,7 @@ final class MacPlatform: PlatformServices {
     private let meter = MacSelfMeter()
     /// Atuador de ventoinhas: fala com o helper privilegiado (se o usuário o instalou). Sem helper → `.unavailable`.
     private lazy var actuator: FanActuator = HelperFanActuator(settings: FanControlSettings(modelKey: { [unowned self] in
-        // Flag de validação por modelo de hardware E versão principal do macOS (uma atualização maior exige novo teste).
+        // Saved intent is scoped to hardware model and macOS major version.
         let model = self.readSystemProfile().modelIdentifier ?? "unknown"
         return "\(model)|macOS\(ProcessInfo.processInfo.operatingSystemVersion.majorVersion)"
     }))
