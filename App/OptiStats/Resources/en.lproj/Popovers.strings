@@ -249,3 +249,6 @@
 "opt.noManualApps" = "No eligible apps in this snapshot. Protected apps are listed below. Click Choose apps again to refresh the list.";
 "opt.noRecommendations" = "No apps meet this analysis’s filters. Use Choose apps to make your own selection without waiting for one hour of inactivity.";
 "opt.protectionSettingsHint" = "Protections still apply. To allow an app from a protected category, use Preferences → Optimizer → Default protections I released. Essential components remain blocked.";
+"opt.selectionNone" = "No apps selected";
+"opt.selectionCount" = "%ld selected · %@ in use";
+"mem.details" = "Memory details";

@@ -249,3 +249,6 @@
 "opt.noManualApps" = "Não há apps elegíveis nesta leitura. Os apps protegidos são listados abaixo. A lista pode ser atualizada clicando em Escolher apps novamente.";
 "opt.noRecommendations" = "Nenhum app atende aos filtros desta análise. Use Escolher apps para montar sua própria seleção sem esperar uma hora de inatividade.";
 "opt.protectionSettingsHint" = "As proteções continuam valendo. Para liberar um app de uma categoria protegida, use Preferências → Otimizador → Proteções padrão que liberei. Componentes essenciais permanecem bloqueados.";
+"opt.selectionNone" = "Nenhum app selecionado";
+"opt.selectionCount" = "%ld selecionado(s) · %@ em uso";
+"mem.details" = "Detalhes da memória";

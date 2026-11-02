@@ -4,11 +4,12 @@ import OptiStatsCore
 /// Linguagem visual: cores semânticas do sistema (Claro/Escuro automáticos), tipografia nativa e
 /// cores moderadas. Nada de assets de terceiros.
 enum Theme {
-    static let popoverWidth: CGFloat = 340
-    static let maxPopoverHeight: CGFloat = 560
-    static let padding: CGFloat = 14
-    static let rowSpacing: CGFloat = 6
-    static let sectionSpacing: CGFloat = 14
+    static let popoverWidth: CGFloat = 380
+    static let maxPopoverHeight: CGFloat = 600
+    static let padding: CGFloat = 16
+    static let cardPadding: CGFloat = 12
+    static let rowSpacing: CGFloat = 7
+    static let sectionSpacing: CGFloat = 12
 
     static let primaryText = NSColor.labelColor
     static let secondaryText = NSColor.secondaryLabelColor
@@ -52,6 +53,32 @@ enum Theme {
         case ..<90: return warn
         default: return bad
         }
+    }
+}
+
+/// A static native surface: no layers, blur, animations or timers.
+final class PanelSectionView: NSStackView {
+    init() {
+        super.init(frame: .zero)
+        orientation = .vertical
+        alignment = .leading
+        spacing = Theme.rowSpacing
+        edgeInsets = NSEdgeInsets(top: 12, left: Theme.cardPadding, bottom: 12, right: Theme.cardPadding)
+        translatesAutoresizingMaskIntoConstraints = false
+    }
+    required init(coder: NSCoder) { fatalError("init(coder:) não suportado") }
+
+    override func draw(_ dirtyRect: NSRect) {
+        let path = NSBezierPath(roundedRect: bounds.insetBy(dx: 0.5, dy: 0.5), xRadius: 10, yRadius: 10)
+        NSColor.controlBackgroundColor.withAlphaComponent(0.65).setFill()
+        path.fill()
+        Theme.separator.withAlphaComponent(0.45).setStroke()
+        path.lineWidth = 1
+        path.stroke()
+    }
+    override func viewDidChangeEffectiveAppearance() {
+        super.viewDidChangeEffectiveAppearance()
+        needsDisplay = true
     }
 }
 

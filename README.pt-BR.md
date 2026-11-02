@@ -21,6 +21,10 @@
 - A revisão de RAM acompanha notificações de atividade dos apps, sem outro loop de consulta nem dependência do Dusty. Nenhum app fecha sozinho; memória saudável continua identificada como saudável.
 - Continua na versão **1.0**, helper build **4**. Quem já usa deve atualizar o helper uma vez em **Preferências → Ventoinhas**. Ative **Geral → Iniciar no login** para retomar a escolha após entrar na sessão. Automático apaga os alvos salvos.
 
+## Interface e seleção manual de apps
+
+Painéis com seções visuais, cabeçalhos mais claros e títulos fixos nas preferências. Em Memória, use **Escolher apps → marcar a seleção → Encerrar selecionados**, sem exigir uma hora de inatividade ou pressão de memória. Apps protegidos continuam de fora. Os detalhes da memória expandem sob demanda; a frequência de coleta permanece igual.
+
 ## Download e requisitos
 
 [Baixar OptiStats 1.0 para macOS](https://github.com/Anglersondev/OptiStats/releases/download/v1.0/OptiStats-1.0.dmg). Abra o DMG e arraste o app para Aplicativos.

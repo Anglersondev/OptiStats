@@ -14,6 +14,7 @@ final class MemoryOptimizerPanel: NSStackView {
     private let reviewButton = NSButton(title: L("opt.reviewIdle"), target: nil, action: nil)
     private let chooseButton = NSButton(title: L("opt.chooseApps"), target: nil, action: nil)
     private let selectionHint = Fmt.note(L("opt.selectionHint"), lines: 4, size: 10.5)
+    private let selectionCount = NSTextField.label(font: Theme.caption(), color: Theme.secondaryText)
     private let detail = NSStackView.vertical(spacing: 6)
     private let closeButton = NSButton(title: L("opt.closeSelected"), target: nil, action: nil)
     private let cancelButton = NSButton(title: L("opt.cancel"), target: nil, action: nil)
@@ -42,12 +43,17 @@ final class MemoryOptimizerPanel: NSStackView {
         closeButton.action = #selector(closeSelectedTapped)
         cancelButton.action = #selector(cancelTapped)
         closeButton.isEnabled = false
+        chooseButton.image = NSImage(systemSymbolName: "checklist", accessibilityDescription: nil)
+        chooseButton.imagePosition = .imageLeading
+        closeButton.contentTintColor = Theme.accent
         cancelButton.isHidden = true
 
         addFullWidth(intro)
         addArrangedSubview(NSStackView.horizontal([chooseButton, closeButton], spacing: 8))
         addArrangedSubview(NSStackView.horizontal([analyzeButton, reviewButton, cancelButton], spacing: 8))
         addFullWidth(selectionHint)
+        addFullWidth(selectionCount)
+        updateSelectionCount()
         addFullWidth(detail)
     }
     required init(coder: NSCoder) { fatalError("init(coder:) não suportado") }
@@ -79,6 +85,13 @@ final class MemoryOptimizerPanel: NSStackView {
 
     @objc private func checkChanged() {
         closeButton.isEnabled = !running && checks.contains { $0.button.state == .on }
+        updateSelectionCount()
+    }
+
+    private func updateSelectionCount() {
+        let selected = checks.filter { $0.button.state == .on }
+        let bytes = selected.reduce(UInt64(0)) { $0 + $1.candidate.estimatedReclaimBytes }
+        selectionCount.setText(selected.isEmpty ? L("opt.selectionNone") : L("opt.selectionCount", selected.count, Fmt.bytes(bytes)))
     }
 
     @objc private func closeSelectedTapped() {
@@ -129,6 +142,7 @@ final class MemoryOptimizerPanel: NSStackView {
         cancelButton.isHidden = true
         closeButton.isEnabled = false
         checks = []
+        updateSelectionCount()
         showReport(report)
     }
 
@@ -144,6 +158,7 @@ final class MemoryOptimizerPanel: NSStackView {
     private func showAdvice(_ advice: Advice, manualSelection: Bool = false) {
         clearDetail()
         checks = []
+        updateSelectionCount()
         closeButton.isEnabled = false
 
         let headline = Fmt.note("", lines: 5, size: 12)
@@ -170,12 +185,19 @@ final class MemoryOptimizerPanel: NSStackView {
             detail.addFullWidth(Fmt.note(L("opt.candidatesNote"), lines: 4, size: 10))
             for c in advice.candidates {
                 let title = L("opt.candidateTitle", c.group.displayName, Fmt.bytes(c.estimatedReclaimBytes))
-                let box = NSButton(checkboxWithTitle: title, target: self, action: #selector(checkChanged))
+                let box = NSButton(checkboxWithTitle: c.group.displayName, target: self, action: #selector(checkChanged))
                 box.state = .off
                 box.font = Theme.body(12)
+                box.toolTip = title
+                box.setAccessibilityLabel(title)
+                box.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
                 box.translatesAutoresizingMaskIntoConstraints = false
                 checks.append((box, c))
-                detail.addFullWidth(box)
+                let footprint = NSTextField.label(Fmt.bytes(c.estimatedReclaimBytes), font: Theme.number(12, weight: .medium), alignment: .right)
+                footprint.setContentHuggingPriority(.required, for: .horizontal)
+                let spacer = NSView()
+                spacer.setContentHuggingPriority(.defaultLow, for: .horizontal)
+                detail.addFullWidth(NSStackView.horizontal([box, spacer, footprint], spacing: 8))
                 var lines = c.risks.map { riskText($0) }
                 if let g = c.growth {
                     lines.append(L("opt.growth", Fmt.bytes(UInt64(max(0, g.bytesPerMinute))), growthConfidenceText(g.confidence)))

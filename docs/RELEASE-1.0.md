@@ -2,6 +2,8 @@
 
 ## Português brasileiro
 
+- **Interface renovada e nativa:** painéis com seções visuais, cabeçalhos com ícones e preferências com títulos fixos e navegação mais legível. Detalhes técnicos da RAM ficam recolhíveis; seleção mostra quantidade de apps e memória em uso. Sem novas bibliotecas, timers ou animações contínuas.
+
 Monitor leve de sistema para macOS e Apple Silicon: CPU, GPU, RAM, temperatura, ventoinhas, bateria, rede e disco na barra de menus.
 
 - **Ventoinhas a 100%, mesmo com o Mac frio:** destravamento corrigido para assumir o controle sem esperar carga pesada.
@@ -19,6 +21,8 @@ Monitor leve de sistema para macOS e Apple Silicon: CPU, GPU, RAM, temperatura, 
 **Verificação:** 199 testes do núcleo passaram em macOS e Linux, além das regressões de SMC simulado. Em um MacBook Pro M4 Pro (Mac16,8, macOS 27.2), ventoinhas inicialmente paradas atingiram cerca de 7.820 RPM ao pedir o máximo de 7.826 RPM. A retomada na abertura e a devolução ao automático foram verificadas no hardware. O resultado depende do modelo; não representa validação de todos os Macs. Detalhes e limites em `docs/FINAL-REVIEW.md`.
 
 ## English
+
+- Refreshed native interface: grouped panel sections, icon headers, clearer preferences navigation and fixed pane titles. RAM details expand on request; manual app selection shows counts and memory in use. No added runtime libraries, polling or continuous animation.
 
 Lightweight macOS menu bar system monitor for Apple Silicon, with CPU, GPU, RAM, temperatures, fan control, battery, disk and network.
 

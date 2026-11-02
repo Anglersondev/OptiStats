@@ -1,7 +1,9 @@
 # Changelog
 
-## 1.0 — seleção manual de apps
+## 1.0 — interface e seleção manual de apps
 
+- Painéis com cartões nativos, cabeçalhos com ícones e tipografia consistente; preferências com títulos fixos e navegação mais legível.
+- Detalhes técnicos da memória recolhíveis e seleção com quantidade/consumo dos apps, sem novos coletores, timers ou dependências.
 - Corrige a ausência da ação de encerrar quando nenhum app atende aos filtros de recomendação.
 - Escolher apps lista aplicativos elegíveis sem exigir 300 MB, uma hora de inatividade ou pressão de memória.
 - Encerrar selecionados permanece visível; pede confirmação e encerramento normal, preservando proteções e revalidação de identidade.

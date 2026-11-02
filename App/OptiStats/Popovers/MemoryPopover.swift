@@ -26,6 +26,8 @@ final class MemoryPopover: StatPopover {
     private lazy var optimizer = MemoryOptimizerPanel(env: env)
     private var chartSection: NSStackView!
     private var activitySection: NSStackView!
+    private let technicalDetails = NSStackView.vertical(spacing: Theme.sectionSpacing)
+    private let detailsToggle = NSButton()
 
     init(env: AppEnvironment) {
         super.init(env: env, moduleID: "memory", title: L("ram.title"), collectors: [.memory, .processes], kinds: [.memory, .processes])
@@ -39,13 +41,21 @@ final class MemoryPopover: StatPopover {
         body.addFullWidth(makeSection(L("mem.section.usage"), [makeGaugeLayout(ring, [usedRow, availableRow, totalRow, swapRow])]))
         body.addFullWidth(makeSection(L("mem.section.pressure"), [pressureGauge]))
         body.addFullWidth(makeSection(L("opt.section"), [optimizer]))
-        body.addFullWidth(makeSection(L("mem.section.composition"), [
+        detailsToggle.setButtonType(.pushOnPushOff)
+        detailsToggle.bezelStyle = .disclosure
+        detailsToggle.setAccessibilityLabel(L("mem.details"))
+        detailsToggle.target = self
+        detailsToggle.action = #selector(toggleDetails)
+        body.addFullWidth(NSStackView.horizontal([detailsToggle, NSTextField.label(L("mem.details"), font: Theme.caption(11))], spacing: 6))
+        technicalDetails.isHidden = true
+        body.addFullWidth(technicalDetails)
+        technicalDetails.addFullWidth(makeSection(L("mem.section.composition"), [
             compositionBar, appRow, wiredRow, compressedRow, cachedRow, freeRow,
             Fmt.note(L("mem.formulaNote"), lines: 5, size: 10), altRow]))
         activitySection = makeSection(L("mem.section.activity"), [swapInRow, swapOutRow, compressRow])
-        body.addFullWidth(activitySection)
+        technicalDetails.addFullWidth(activitySection)
         chartSection = makeSection(L("mem.section.history"), [chart])
-        body.addFullWidth(chartSection)
+        technicalDetails.addFullWidth(chartSection)
         allProcessesButton.bezelStyle = .rounded
         allProcessesButton.controlSize = .small
         allProcessesButton.target = self
@@ -57,6 +67,11 @@ final class MemoryPopover: StatPopover {
     }
 
     @objc private func openAllProcesses() { env.openProcessBrowser?() }
+
+    @objc private func toggleDetails() {
+        technicalDetails.isHidden = detailsToggle.state != .on
+        updatePreferredSize()
+    }
 
     override func render() {
         guard let m = env.store.memory else { showEmpty(L("mem.empty")); return }

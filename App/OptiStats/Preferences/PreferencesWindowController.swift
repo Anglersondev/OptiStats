@@ -146,15 +146,52 @@ final class PrefsSidebarViewController: NSViewController, NSTableViewDataSource,
         table.addTableColumn(column)
         table.headerView = nil
         table.style = .sourceList
-        table.rowSizeStyle = .default
+        table.rowSizeStyle = .large
+        table.rowHeight = 34
+        table.intercellSpacing = NSSize(width: 0, height: 3)
+        table.backgroundColor = .clear
+        table.columnAutoresizingStyle = .lastColumnOnlyAutoresizingStyle
         table.allowsEmptySelection = false
         table.dataSource = self
         table.delegate = self
+
+        let root = NSView()
+        let icon = NSImageView(image: NSImage(systemSymbolName: "chart.bar.xaxis", accessibilityDescription: nil) ?? NSImage())
+        icon.contentTintColor = Theme.accent
+        icon.symbolConfiguration = NSImage.SymbolConfiguration(pointSize: 25, weight: .medium)
+        icon.translatesAutoresizingMaskIntoConstraints = false
+        icon.widthAnchor.constraint(equalToConstant: 32).isActive = true
+        icon.heightAnchor.constraint(equalToConstant: 32).isActive = true
+        let name = NSTextField.label("OptiStats", font: Theme.title(15))
+        let version = (Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String) ?? "1.0"
+        let versionLabel = NSTextField.label(version, font: Theme.number(11), color: Theme.secondaryText)
+        let masthead = NSStackView.horizontal([icon, NSStackView.vertical([name, versionLabel], spacing: 2)], spacing: 10)
+        let separator = NSBox()
+        separator.boxType = .separator
+        separator.translatesAutoresizingMaskIntoConstraints = false
         let scroll = NSScrollView()
         scroll.documentView = table
         scroll.hasVerticalScroller = true
+        scroll.autohidesScrollers = true
         scroll.drawsBackground = false
-        view = scroll
+        scroll.borderType = .noBorder
+        scroll.translatesAutoresizingMaskIntoConstraints = false
+        root.addSubview(masthead)
+        root.addSubview(separator)
+        root.addSubview(scroll)
+        NSLayoutConstraint.activate([
+            masthead.topAnchor.constraint(equalTo: root.topAnchor, constant: 18),
+            masthead.leadingAnchor.constraint(equalTo: root.leadingAnchor, constant: 14),
+            masthead.trailingAnchor.constraint(lessThanOrEqualTo: root.trailingAnchor, constant: -12),
+            separator.topAnchor.constraint(equalTo: masthead.bottomAnchor, constant: 16),
+            separator.leadingAnchor.constraint(equalTo: root.leadingAnchor, constant: 12),
+            separator.trailingAnchor.constraint(equalTo: root.trailingAnchor, constant: -12),
+            scroll.topAnchor.constraint(equalTo: separator.bottomAnchor, constant: 8),
+            scroll.leadingAnchor.constraint(equalTo: root.leadingAnchor, constant: 6),
+            scroll.trailingAnchor.constraint(equalTo: root.trailingAnchor, constant: -6),
+            scroll.bottomAnchor.constraint(equalTo: root.bottomAnchor, constant: -8)
+        ])
+        view = root
     }
 
     override func viewDidLoad() {
@@ -172,14 +209,18 @@ final class PrefsSidebarViewController: NSViewController, NSTableViewDataSource,
     func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
         let item = items[row]
         let image = NSImageView(image: NSImage(systemSymbolName: item.symbol, accessibilityDescription: nil) ?? NSImage())
-        image.contentTintColor = .secondaryLabelColor
-        let label = NSTextField(labelWithString: item.title)
-        label.lineBreakMode = .byTruncatingTail
+        image.contentTintColor = Theme.secondaryText
+        image.symbolConfiguration = NSImage.SymbolConfiguration(pointSize: 15, weight: .regular)
+        let label = NSTextField.label(item.title, font: Theme.body(12))
+        label.toolTip = item.title
+        label.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         let stack = NSStackView(views: [image, label])
         stack.orientation = .horizontal
+        stack.alignment = .centerY
         stack.spacing = 8
-        stack.edgeInsets = NSEdgeInsets(top: 2, left: 4, bottom: 2, right: 4)
+        stack.edgeInsets = NSEdgeInsets(top: 4, left: 5, bottom: 4, right: 5)
         image.widthAnchor.constraint(equalToConstant: 20).isActive = true
+        image.heightAnchor.constraint(equalToConstant: 20).isActive = true
         return stack
     }
 

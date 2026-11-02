@@ -67,7 +67,7 @@ enum Fmt {
     /// Nota explicativa de várias linhas (largura fixada para a quebra de linha funcionar).
     static func note(_ text: String = "", lines: Int = 4, size: CGFloat = 10.5) -> NSTextField {
         let f = NSTextField.label(text, font: Theme.body(size), color: Theme.secondaryText, lines: lines)
-        f.preferredMaxLayoutWidth = Theme.popoverWidth - 2 * Theme.padding
+        f.preferredMaxLayoutWidth = Theme.popoverWidth - 2 * (Theme.padding + Theme.cardPadding)
         return f
     }
 
@@ -148,7 +148,7 @@ extension NSTextField {
 
 /// Seção com cabeçalho em caixa-alta e linhas em largura total.
 func makeSection(_ title: String, _ views: [NSView]) -> NSStackView {
-    let s = NSStackView.vertical(spacing: Theme.rowSpacing)
+    let s = PanelSectionView()
     s.addFullWidth(SectionHeaderView(title))
     for v in views { s.addFullWidth(v) }
     return s
