@@ -22,9 +22,9 @@
 "debloat.presetAllTitle" = "Select ALL services?";
 "debloat.presetAllText" = "This includes services the author marks as risky. Disabling them can break: iCloud sign-in and sync, the App Store, macOS updates, AirPlay and passwords/keychain sync, among others. You can still review the list before applying.";
 "debloat.presetAllAction" = "Select all";
-"debloat.state.active" = "Active";
+"debloat.state.active" = "Enabled";
 "debloat.state.disabled" = "Disabled";
-"debloat.state.absent" = "Not present";
+"debloat.state.absent" = "Not found on this Mac";
 "debloat.risk.low" = "Low risk";
 "debloat.risk.medium" = "Medium risk";
 "debloat.risk.high" = "High risk";
@@ -40,7 +40,7 @@
 "debloat.warn.mobileAsset" = "May break downloads of system assets (dictionaries, languages, updates).";
 "debloat.warn.keychain" = "May break keychain / password sync.";
 "debloat.warn.airplay" = "May break AirPlay.";
-"debloat.apply" = "Apply (%ld)";
+"debloat.apply" = "Disable selected (%ld)";
 "debloat.restore" = "Restore";
 "debloat.reload" = "Reload";
 "debloat.revertNote" = "Apply disables the selected services (launchctl disable). Restore re-enables only what OptiStats changed.";
@@ -156,13 +156,13 @@
 "debloat.sec.mdm" = "Managed device (MDM) and managed apps services. Only for Macs without MDM enrollment.";
 "debloat.sec.replicator" = "Sync with paired devices (Replicator).";
 
-"debloat.header.done" = "%ld already disabled";
-"debloat.header.pending" = "%ld to go";
-"debloat.summary" = "On this Mac: %ld already disabled, %ld still active, %ld present in total.";
+"debloat.header.done" = "%ld disabled";
+"debloat.header.pending" = "%ld enabled";
+"debloat.summary" = "On this Mac: %ld disabled · %ld enabled · %ld found.";
 "debloat.filter.label" = "Show:";
 "debloat.filter.all" = "All";
-"debloat.filter.pending" = "Only what is left (%ld)";
-"debloat.filter.done" = "Already disabled (%ld)";
+"debloat.filter.pending" = "Enabled (%ld)";
+"debloat.filter.done" = "Disabled (%ld)";
 "debloat.presetSummary" = "Preset has %ld items: %ld already disabled, %ld selected to apply, %ld not present on this Mac.";
 "debloat.report.absent" = "not present on this Mac";
 "debloat.report.already" = "already disabled";
@@ -170,3 +170,6 @@
 "debloat.report.system" = "system service, skipped (enable system services to include)";
 "debloat.update.addedList" = "New:";
 "debloat.update.removedList" = "Removed:";
+"debloat.state.unknown" = "State not confirmed";
+"debloat.state.pendingSelection" = "Selected to disable";
+"debloat.stateLegend" = "Enabled means allowed by launchd, not necessarily running. Checking a box only selects a change; it takes effect after Disable selected and confirmation. Hover over a service for its catalog description, risks and known effects.";

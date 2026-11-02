@@ -45,6 +45,7 @@ final class DebloatPane: PrefsPaneViewController {
 
     override var paneTitle: String { L("debloat.tab") }
     override var symbolName: String { "slider.horizontal.3" }
+    override var maximumContentWidth: CGFloat? { 900 }
 
     private var level: DebloatPlanner.Level { allowSystem ? .system : .user }
     private var osMajor: Int { ProcessInfo.processInfo.operatingSystemVersion.majorVersion }
@@ -84,6 +85,7 @@ final class DebloatPane: PrefsPaneViewController {
         addSection(L("debloat.title"))
         addNote(L("debloat.intro"))
         addNote(L("debloat.timing"))
+        addNote(L("debloat.stateLegend"))
         addNote(L("debloat.credit"))
         if let n = notice { addNote(n, color: Theme.warn) }
 
@@ -151,7 +153,8 @@ final class DebloatPane: PrefsPaneViewController {
         let bal = button(L("debloat.presetBalanced")) { [weak self] in self?.selectPreset(.balanced) }
         let all = button(L("debloat.presetAll")) { [weak self] in self?.confirmPresetAll() }
         let clear = button(L("debloat.clear")) { [weak self] in self?.selected.removeAll(); self?.presetReport = nil; self?.refreshList() }
-        stack.addArrangedSubview(NSStackView.horizontal([tel, bal, all, clear], spacing: 8))
+        stack.addArrangedSubview(NSStackView.horizontal([tel, bal], spacing: 8))
+        stack.addArrangedSubview(NSStackView.horizontal([all, clear], spacing: 8))
 
         let apply = button(L("debloat.apply", 0)) { [weak self] in self?.confirmApply() }
         apply.bezelColor = Theme.accent
@@ -260,6 +263,7 @@ final class DebloatPane: PrefsPaneViewController {
         }
         listTargets.append(t)
         b.target = t; b.action = #selector(ActionTarget.fire(_:))
+        b.toolTip = DebloatSections.hint(for: sec.title) ?? sec.title
         list.addArrangedSubview(b)
     }
 
@@ -267,32 +271,44 @@ final class DebloatPane: PrefsPaneViewController {
         let item = e.item
         let box = NSButton(checkboxWithTitle: item.label, target: nil, action: nil)
         box.translatesAutoresizingMaskIntoConstraints = false
-        box.state = (selected.contains(item.label) || e.state == .disabled) ? .on : .off
+        box.state = selected.contains(item.label) ? .on : .off
         box.isEnabled = isSelectable(e)
         let t = ActionTarget { [weak self] c in
             guard let self else { return }
             if (c as? NSButton)?.state == .on { self.selected.insert(item.label) } else { self.selected.remove(item.label) }
-            self.updateApply(shown: nil)
+            DispatchQueue.main.async { [weak self] in self?.refreshList() }
         }
         listTargets.append(t)
         box.target = t; box.action = #selector(ActionTarget.fire(_:))
 
         let stateText: String
         switch e.state {
-        case .enabled: stateText = L("debloat.state.active")
+        case .enabled: stateText = selected.contains(item.label) ? L("debloat.state.pendingSelection") : L("debloat.state.active")
         case .disabled: stateText = "✓ " + L("debloat.state.disabled")
-        case .unknown: stateText = e.domain == nil ? L("debloat.state.absent") : "?"
+        case .unknown: stateText = e.domain == nil ? L("debloat.state.absent") : L("debloat.state.unknown")
         }
         var infoText = stateText + " · " + L("debloat.risk.\(item.risk.rawValue)")
-        if e.domain == .system { infoText += " · " + L("debloat.scopeSystem") }
+        if let domain = e.domain { infoText += " · " + L(domain == .system ? "debloat.scopeSystem" : "debloat.scopeUser") }
         let info = NSTextField.label(infoText, font: Theme.body(11),
                                      color: item.risk == .low ? Theme.secondaryText : Theme.warn, alignment: .right)
         info.setContentHuggingPriority(.required, for: .horizontal)
 
+        var explanation = [item.label, stateText, L("debloat.stateLegend")]
+        if let hint = DebloatSections.hint(for: item.sectionTitle) { explanation.append(hint) }
+        if !item.comment.isEmpty { explanation.append(L("debloat.authorSays") + " " + item.comment) }
+        explanation.append(L("debloat.risk.\(item.risk.rawValue)"))
+        for warning in item.warnings { explanation.append(L("debloat.warn.\(warning.rawValue)")) }
+        if item.sipOff { explanation.append(L("debloat.sipOff")) }
+        if e.domain == .system { explanation.append(L("debloat.needsSystem")) }
+        let tooltip = explanation.joined(separator: "\n\n")
+        box.toolTip = tooltip
+        info.toolTip = tooltip
+        box.setAccessibilityHelp(tooltip)
         var details: [NSView] = []
         func detail(_ text: String, _ color: NSColor = Theme.secondaryText) {
             let l = NSTextField.label(text, font: Theme.body(11), color: color, lines: 0)
             l.preferredMaxLayoutWidth = Self.contentSize.width - 90
+            l.toolTip = tooltip
             details.append(l)
         }
         if !item.comment.isEmpty { detail(L("debloat.authorSays") + " " + item.comment) }
@@ -302,6 +318,7 @@ final class DebloatPane: PrefsPaneViewController {
 
         let row = NSStackView.vertical([MaintUI.spread(box, [info])], spacing: 1)
         row.alignment = .leading
+        row.toolTip = tooltip
         let det = NSStackView.vertical(details, spacing: 1)
         det.edgeInsets = NSEdgeInsets(top: 0, left: 36, bottom: 4, right: 0)
         list.addFullWidth(row)

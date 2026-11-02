@@ -22,9 +22,9 @@
 "debloat.presetAllTitle" = "Selecionar TODOS os serviços?";
 "debloat.presetAllText" = "Isso inclui serviços que o autor marca como arriscados. Desativá-los pode quebrar: login e sincronização do iCloud, App Store, atualizações do macOS, AirPlay e sincronização de senhas/chaveiro, entre outros. Você ainda poderá revisar a lista antes de aplicar.";
 "debloat.presetAllAction" = "Selecionar tudo";
-"debloat.state.active" = "Ativo";
+"debloat.state.active" = "Habilitado";
 "debloat.state.disabled" = "Desativado";
-"debloat.state.absent" = "Não presente";
+"debloat.state.absent" = "Não encontrado neste Mac";
 "debloat.risk.low" = "Risco baixo";
 "debloat.risk.medium" = "Risco médio";
 "debloat.risk.high" = "Risco alto";
@@ -40,7 +40,7 @@
 "debloat.warn.mobileAsset" = "Pode quebrar o download de recursos do sistema (dicionários, idiomas, atualizações).";
 "debloat.warn.keychain" = "Pode quebrar a sincronização do chaveiro / senhas.";
 "debloat.warn.airplay" = "Pode quebrar o AirPlay.";
-"debloat.apply" = "Aplicar (%ld)";
+"debloat.apply" = "Desativar selecionados (%ld)";
 "debloat.restore" = "Restaurar";
 "debloat.reload" = "Recarregar";
 "debloat.revertNote" = "Aplicar desativa os serviços selecionados (launchctl disable). Restaurar reativa só o que o OptiStats mudou.";
@@ -156,13 +156,13 @@
 "debloat.sec.mdm" = "Serviços de dispositivo gerenciado (MDM) e apps gerenciados. Só para Macs sem MDM.";
 "debloat.sec.replicator" = "Sincronização com dispositivos pareados (Replicator).";
 
-"debloat.header.done" = "%ld já desativados";
-"debloat.header.pending" = "%ld faltam";
-"debloat.summary" = "Neste Mac: %ld já desativados, %ld ainda ativos, %ld presentes no total.";
+"debloat.header.done" = "%ld desativados";
+"debloat.header.pending" = "%ld habilitados";
+"debloat.summary" = "Neste Mac: %ld desativados · %ld habilitados · %ld encontrados.";
 "debloat.filter.label" = "Mostrar:";
 "debloat.filter.all" = "Todos";
-"debloat.filter.pending" = "Só o que falta (%ld)";
-"debloat.filter.done" = "Já desativados (%ld)";
+"debloat.filter.pending" = "Habilitados (%ld)";
+"debloat.filter.done" = "Desativados (%ld)";
 "debloat.presetSummary" = "O preset tem %ld itens: %ld já desativados, %ld selecionados para aplicar, %ld não existem neste Mac.";
 "debloat.report.absent" = "não existe neste Mac";
 "debloat.report.already" = "já desativado";
@@ -170,3 +170,6 @@
 "debloat.report.system" = "serviço de sistema, ignorado (ative serviços de sistema para incluir)";
 "debloat.update.addedList" = "Novos:";
 "debloat.update.removedList" = "Removidos:";
+"debloat.state.unknown" = "Estado não confirmado";
+"debloat.state.pendingSelection" = "Selecionado para desativar";
+"debloat.stateLegend" = "Habilitado significa permitido pelo launchd, não necessariamente em execução. Marcar a caixa apenas seleciona uma mudança; ela só vale após Desativar selecionados e a confirmação. Passe o mouse sobre um serviço para ver função, riscos e efeitos descritos no catálogo.";
