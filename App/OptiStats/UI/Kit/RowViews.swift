@@ -1,12 +1,12 @@
 import Cocoa
 import OptiStatsCore
 
-/// Cabeçalho de seção em caixa-alta, discreto.
+/// Section titles keep native casing and a clear text hierarchy.
 final class SectionHeaderView: NSTextField {
     convenience init(_ title: String) {
-        self.init(labelWithString: title.uppercased(with: Localizer.shared.locale))
-        font = Theme.caption(10)
-        textColor = Theme.secondaryText
+        self.init(labelWithString: title)
+        font = .systemFont(ofSize: 11, weight: .semibold)
+        textColor = Theme.primaryText
         translatesAutoresizingMaskIntoConstraints = false
     }
 }
@@ -166,7 +166,7 @@ extension NSStackView {
     /// Adiciona e estica a subview na largura da pilha vertical.
     func addFullWidth(_ view: NSView) {
         addArrangedSubview(view)
-        view.leadingAnchor.constraint(equalTo: leadingAnchor).isActive = true
-        view.trailingAnchor.constraint(equalTo: trailingAnchor).isActive = true
+        view.leadingAnchor.constraint(equalTo: leadingAnchor, constant: edgeInsets.left).isActive = true
+        view.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -edgeInsets.right).isActive = true
     }
 }

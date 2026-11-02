@@ -64,6 +64,27 @@ public struct OptimizationAdvisor {
         self.config = config; self.policy = policy
     }
 
+    /// Explicit user selection is independent of automated memory/idle recommendations.
+    /// Only identifiable apps can be offered; execution still revalidates the live PID and protections.
+    public func quitReview(groups: [AppGroup], frontmostBundleID: String?) -> Advice {
+        var candidates: [ReclaimCandidate] = []
+        var protected: [ProtectedEntry] = []
+        for group in groups {
+            guard group.leader != nil, group.bundlePath != nil, group.bundleIdentifier != nil else { continue }
+            let context = AppRuntimeContext(isFrontmost: group.bundleIdentifier == frontmostBundleID)
+            let verdict = policy.verdict(for: group, context: context)
+            if verdict.isProtected {
+                protected.append(ProtectedEntry(group: group, verdict: verdict))
+            } else {
+                candidates.append(ReclaimCandidate(group: group, estimatedReclaimBytes: group.footprintBytes,
+                                                   risks: [.mayLoseUnsavedWork], growth: nil))
+            }
+        }
+        candidates.sort { $0.estimatedReclaimBytes > $1.estimatedReclaimBytes }
+        protected.sort { $0.group.footprintBytes > $1.group.footprintBytes }
+        return Advice(assessment: .insufficientData, candidates: candidates, protectedTop: protected)
+    }
+
     /// - Parameters:
     ///   - history: fotos recentes de memória (mais antiga → mais nova) para avaliar persistência.
     ///   - frontmostBundleID: app em primeiro plano agora.

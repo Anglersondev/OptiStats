@@ -84,8 +84,16 @@ class ModulePopoverViewController: NSViewController {
         let root = NSView()
         root.translatesAutoresizingMaskIntoConstraints = false
 
-        let title = NSTextField.label(titleText, font: Theme.title(), lines: 1)
+        let title = NSTextField.label(titleText, font: Theme.title(16), lines: 1)
         title.setAccessibilityRole(.staticText)
+        let symbols = ["cpu": "cpu", "gpu": "square.3.layers.3d", "memory": "memorychip", "fans": "wind",
+                       "sensors": "thermometer.medium", "power": "bolt", "disk": "internaldrive",
+                       "network": "network", "battery": "battery.75percent"]
+        let icon = NSImageView(image: NSImage(systemSymbolName: symbols[moduleID] ?? "gauge.with.dots.needle.50percent", accessibilityDescription: nil) ?? NSImage())
+        icon.contentTintColor = Theme.accent
+        icon.translatesAutoresizingMaskIntoConstraints = false
+        icon.widthAnchor.constraint(equalToConstant: 20).isActive = true
+        icon.heightAnchor.constraint(equalToConstant: 20).isActive = true
         refreshButton.image = NSImage(systemSymbolName: "arrow.clockwise", accessibilityDescription: L("common.refreshNow"))
         refreshButton.isBordered = false
         refreshButton.bezelStyle = .regularSquare
@@ -116,7 +124,7 @@ class ModulePopoverViewController: NSViewController {
 
         let spacer = NSView(); spacer.translatesAutoresizingMaskIntoConstraints = false
         spacer.setContentHuggingPriority(.defaultLow, for: .horizontal)
-        let header = NSStackView.horizontal([title, spacer] + headerAccessories() + [aboutButton, moreButton, refreshButton], spacing: 8)
+        let header = NSStackView.horizontal([icon, title, spacer] + headerAccessories() + [aboutButton, moreButton, refreshButton], spacing: 8)
 
         buildContent()
         content.edgeInsets = NSEdgeInsets(top: 4, left: 0, bottom: 4, right: 0)
@@ -143,6 +151,7 @@ class ModulePopoverViewController: NSViewController {
 
         updatedLabel.stringValue = ""
         let footer = NSStackView.horizontal([updatedLabel], spacing: 6)
+        updatedLabel.textColor = Theme.secondaryText
 
         let separatorTop = NSBox(); separatorTop.boxType = .separator; separatorTop.translatesAutoresizingMaskIntoConstraints = false
         let separatorBottom = NSBox(); separatorBottom.boxType = .separator; separatorBottom.translatesAutoresizingMaskIntoConstraints = false

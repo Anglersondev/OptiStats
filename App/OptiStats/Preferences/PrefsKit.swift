@@ -35,6 +35,7 @@ class PrefsPaneViewController: NSViewController {
 
     var paneTitle: String { "" }
     var symbolName: String { "gearshape" }
+    var maximumContentWidth: CGFloat? { nil }
     /// Monta o conteúdo em `stack`. Chamado de novo em `rebuild()`.
     func build() {}
     func paneDidAppear() {}
@@ -43,11 +44,26 @@ class PrefsPaneViewController: NSViewController {
     // MARK: Ciclo de vida
 
     override func loadView() {
-        let scroll = NSScrollView(frame: NSRect(origin: .zero, size: Self.contentSize))
+        let root = NSView(frame: NSRect(origin: .zero, size: Self.contentSize))
+        let icon = NSImageView(image: NSImage(systemSymbolName: symbolName, accessibilityDescription: nil) ?? NSImage())
+        icon.contentTintColor = Theme.accent
+        icon.symbolConfiguration = NSImage.SymbolConfiguration(pointSize: 24, weight: .medium)
+        icon.translatesAutoresizingMaskIntoConstraints = false
+        icon.widthAnchor.constraint(equalToConstant: 32).isActive = true
+        icon.heightAnchor.constraint(equalToConstant: 32).isActive = true
+        let heading = NSTextField.label(paneTitle, font: Theme.title(21))
+        heading.setAccessibilityRole(.staticText)
+        let header = NSStackView.horizontal([icon, heading], spacing: 12)
+        let separator = NSBox()
+        separator.boxType = .separator
+        separator.translatesAutoresizingMaskIntoConstraints = false
+
+        let scroll = NSScrollView()
         scroll.drawsBackground = false
         scroll.hasVerticalScroller = true
         scroll.autohidesScrollers = true
         scroll.borderType = .noBorder
+        scroll.translatesAutoresizingMaskIntoConstraints = false
 
         let doc = FlippedView()
         doc.translatesAutoresizingMaskIntoConstraints = false
@@ -55,12 +71,35 @@ class PrefsPaneViewController: NSViewController {
         NSLayoutConstraint.activate([
             stack.topAnchor.constraint(equalTo: doc.topAnchor, constant: 20),
             stack.leadingAnchor.constraint(equalTo: doc.leadingAnchor, constant: 24),
-            stack.trailingAnchor.constraint(equalTo: doc.trailingAnchor, constant: -24),
+            stack.trailingAnchor.constraint(lessThanOrEqualTo: doc.trailingAnchor, constant: -24),
             stack.bottomAnchor.constraint(equalTo: doc.bottomAnchor, constant: -20)
         ])
+        if let maximumContentWidth {
+            stack.widthAnchor.constraint(lessThanOrEqualToConstant: maximumContentWidth).isActive = true
+            let preferred = stack.widthAnchor.constraint(equalToConstant: maximumContentWidth)
+            preferred.priority = .defaultLow
+            preferred.isActive = true
+        } else {
+            stack.trailingAnchor.constraint(equalTo: doc.trailingAnchor, constant: -24).isActive = true
+        }
         scroll.documentView = doc
         doc.widthAnchor.constraint(equalTo: scroll.contentView.widthAnchor).isActive = true
-        view = scroll
+        root.addSubview(header)
+        root.addSubview(separator)
+        root.addSubview(scroll)
+        NSLayoutConstraint.activate([
+            header.topAnchor.constraint(equalTo: root.topAnchor, constant: 20),
+            header.leadingAnchor.constraint(equalTo: root.leadingAnchor, constant: 24),
+            header.trailingAnchor.constraint(lessThanOrEqualTo: root.trailingAnchor, constant: -24),
+            separator.topAnchor.constraint(equalTo: header.bottomAnchor, constant: 18),
+            separator.leadingAnchor.constraint(equalTo: root.leadingAnchor, constant: 24),
+            separator.trailingAnchor.constraint(equalTo: root.trailingAnchor, constant: -24),
+            scroll.topAnchor.constraint(equalTo: separator.bottomAnchor),
+            scroll.leadingAnchor.constraint(equalTo: root.leadingAnchor),
+            scroll.trailingAnchor.constraint(equalTo: root.trailingAnchor),
+            scroll.bottomAnchor.constraint(equalTo: root.bottomAnchor)
+        ])
+        view = root
         build()
     }
 
@@ -97,12 +136,15 @@ class PrefsPaneViewController: NSViewController {
     }
 
     func addSection(_ title: String) {
-        if !stack.arrangedSubviews.isEmpty {
-            let spacer = NSView(); spacer.translatesAutoresizingMaskIntoConstraints = false
-            spacer.heightAnchor.constraint(equalToConstant: 6).isActive = true
-            stack.addArrangedSubview(spacer)
+        if let previous = stack.arrangedSubviews.last {
+            let separator = NSBox()
+            separator.boxType = .separator
+            separator.translatesAutoresizingMaskIntoConstraints = false
+            stack.setCustomSpacing(18, after: previous)
+            stack.addFullWidth(separator)
+            stack.setCustomSpacing(14, after: separator)
         }
-        stack.addFullWidth(SectionHeaderView(title))
+        stack.addFullWidth(NSTextField.label(title, font: Theme.title(12)))
     }
 
     @discardableResult

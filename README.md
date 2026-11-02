@@ -21,6 +21,10 @@
 - RAM reviews use workspace activity notifications, with no extra polling loop or Dusty runtime dependency. No app is closed automatically; healthy memory stays labelled healthy.
 - Version remains **1.0**, helper build **4**. Existing installations must update the helper once in **Preferences → Fans**. Enable **General → Launch at login** to resume saved fan targets after signing in. Choosing Automatic clears them.
 
+## Interface and manual app selection
+
+Native grouped panels, clearer headers and a fixed title for each preferences pane keep navigation consistent. In Memory, **Choose apps → check your selection → Quit selected** works without an idle-time or memory-pressure requirement. Protected apps remain excluded. Memory details expand on request; monitoring frequency is unchanged.
+
 ## Download and requirements
 
 [Download OptiStats 1.0 for macOS](https://github.com/Anglersondev/OptiStats/releases/download/v1.0/OptiStats-1.0.dmg). Open the DMG and drag OptiStats to Applications.

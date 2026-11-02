@@ -39,3 +39,11 @@ A meta de 85–88 MB e 0,2–0,4% depende de indicadores, janelas e perfil. RSS 
 - [mac-os-debloat](https://github.com/OleksandrKrupko/mac-os-debloat): catálogo embutido coincide com commit `1f3b1c82ddb12c0e333310c0d6c675f792320d12`; não foi executado nenhum preset Debloat neste ensaio.
 
 O conteúdo dos commits é preservado; a autoria automática e os trailers de coautoria foram removidos a pedido do dono, com cópia de segurança local do histórico anterior. A atualização substitui o pacote da release 1.0 e mantém a numeração pública solicitada.
+
+## Atualização da interface e seleção manual
+
+- 203 testes do núcleo passaram em macOS e Linux; builds Debug/Release passaram no CI da revisão `9c58155`.
+- O fluxo real de seleção manual e OptimizationCoordinator encerrou normalmente um app descartável de teste com 20 MB. Nenhum aplicativo do usuário foi encerrado no ensaio.
+- O teste de disco somente leitura passou para enumeração de arquivos/pastas, classificação, hash parcial e exclusão de links simbólicos. Usado + purgável + livre confere com a capacidade total do volume. `tmutil` retornou nenhum snapshot local. Não foram testadas exclusões reais de arquivos do usuário.
+- Painéis agora usam seções desenhadas por AppKit; preferências têm cabeçalhos fixos; Barra de menus usa blocos alinhados e largura limitada. Nenhuma dependência, coletor ou timer foi acrescentado.
+- A automação visual não conseguiu completar uma revisão consistente enquanto a interface era operada pelo usuário. A validação inclui compilação e integração, com revisão visual final ainda recomendada.

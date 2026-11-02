@@ -207,3 +207,4 @@
 "maint.disk2.report.scanned" = "Analisados: %ld arquivos (%@)";
 "maint.cat.userSelected" = "Arquivos que você escolheu";
 "maint.catdesc.userSelected" = "Arquivos individuais que você escolheu mover para a Lixeira.";
+"maint.disk2.overviewAnalysis" = "Análise dos arquivos";

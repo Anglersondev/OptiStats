@@ -207,3 +207,4 @@
 "maint.disk2.report.scanned" = "Analyzed: %ld files (%@)";
 "maint.cat.userSelected" = "Files you chose";
 "maint.catdesc.userSelected" = "Individual files you chose to move to the Trash.";
+"maint.disk2.overviewAnalysis" = "File analysis";
