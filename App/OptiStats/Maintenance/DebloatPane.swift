@@ -420,7 +420,6 @@ final class DebloatPane: PrefsPaneViewController {
             }
             let new = UpstreamCatalog.parse(block)
             let diff = catalog.map { UpstreamCatalog.diff(old: $0, new: new) } ?? CatalogDiff(added: new.items.map { $0.label }, removed: [])
-            let text = diff.isEmpty ? L("debloat.update.diffNone") : L("debloat.update.diffText", diff.added.count, diff.removed.count)
             do {
                 try DebloatCatalogStore.save(block: block)
                 var text = diff.isEmpty ? L("debloat.update.diffNone") : L("debloat.update.saved", diff.added.count, diff.removed.count)

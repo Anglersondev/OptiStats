@@ -54,7 +54,6 @@
 "fans.boost.active" = "Active: watches the fans and boosts them when needed.";
 "fans.boost.readOnly" = "Fan control is managed in Preferences > Fans. It is off by default and requires the helper.";
 "fans.boost.unavailable" = "Smart Boost is unavailable: %@";
-"fans.boost.unvalidated" = "Smart Boost is unavailable: the control path has not been validated on this hardware, so it stays blocked.";
 "fans.empty" = "Collecting fan data…";
 "fans.fanN" = "Fan %ld";
 "fans.mode.automatic" = "automatic (macOS)";
@@ -240,3 +239,6 @@
 "thermal.fair" = "Fair";
 "thermal.nominal" = "Nominal";
 "thermal.serious" = "Serious";
+"opt.reviewIdle" = "Review idle apps";
+"opt.idleNote" = "Lists apps using at least 300 MB that have remained in the background for one hour while OptiStats was open. Activity from before launch is unknown. Protected apps are excluded. Only selected apps receive a normal quit request.";
+"opt.cat.virtualMachine" = "virtual machines and containers";

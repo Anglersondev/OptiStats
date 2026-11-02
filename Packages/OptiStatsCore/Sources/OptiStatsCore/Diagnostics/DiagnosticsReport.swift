@@ -78,8 +78,7 @@ public enum DiagnosticsReport {
     private static func describe(_ c: FanControlCapability) -> String {
         switch c {
         case .unavailable(let r): return "indisponível (\(r))"
-        case .experimentalUnvalidated: return "experimental, não validado, bloqueado"
-        case .validated: return "validado"
+        case .available: return "helper disponível; comandos conferidos por leitura de volta"
         }
     }
 }

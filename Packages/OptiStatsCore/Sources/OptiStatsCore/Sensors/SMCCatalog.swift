@@ -82,6 +82,10 @@ public enum SMCCatalog {
 
         // Sistema (todas as gerações Apple Silicon)
         l += [
+            // Firmware CPU-die aggregates, independent of per-generation zone tables.
+            // TCMb/TCMz semantics cross-checked with OSHI SmcUtil and live M4 Pro readings.
+            general("TCMb", "CPU die average (firmware)", .temperature, .other),
+            general("TCMz", "CPU die maximum (firmware)", .temperature, .other),
             general("TaLP", "Airflow left", .temperature, .airflow),
             general("TaRF", "Airflow right", .temperature, .airflow),
             general("TH0x", "NAND", .temperature, .storage),

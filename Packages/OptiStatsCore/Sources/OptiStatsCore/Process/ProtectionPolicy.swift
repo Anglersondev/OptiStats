@@ -1,7 +1,7 @@
 import Foundation
 
 public enum ProtectedCategory: String, Codable, CaseIterable {
-    case browser, editorOrIDE, music, streaming, meeting, downloads, terminal, passwordManager, backup
+    case browser, editorOrIDE, music, streaming, meeting, downloads, terminal, passwordManager, backup, virtualMachine
 }
 
 public enum ProtectionReason: Equatable {
@@ -63,6 +63,11 @@ public struct ProtectionPolicy: Codable, Equatable {
         ("com.hnc.Discord", .meeting), ("com.tinyspeck.slackmacgap", .meeting), ("com.google.meet", .meeting),
         ("org.m0k.transmission", .downloads), ("com.folx.", .downloads), ("com.charliemonroe.Downie", .downloads),
         ("com.apple.Terminal", .terminal), ("com.googlecode.iterm2", .terminal), ("dev.warp.Warp", .terminal),
+        ("net.kovidgoyal.kitty", .terminal), ("com.github.wez.wezterm", .terminal),
+        ("org.alacritty", .terminal), ("io.alacritty", .terminal), ("com.mitchellh.ghostty", .terminal),
+        ("com.docker.", .virtualMachine), ("com.parallels.", .virtualMachine),
+        ("com.vmware.", .virtualMachine), ("com.utmapp.", .virtualMachine), ("dev.orbstack.", .virtualMachine),
+        ("com.protonpass.", .passwordManager), ("me.proton.Pass", .passwordManager),
         ("com.1password.", .passwordManager), ("com.agilebits.", .passwordManager), ("com.bitwarden.", .passwordManager),
         ("com.apple.TimeMachine", .backup), ("com.crashplan.", .backup), ("com.backblaze.", .backup)
     ]

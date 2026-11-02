@@ -11,6 +11,7 @@ final class MemoryOptimizerPanel: NSStackView {
 
     private let intro = Fmt.note(L("opt.intro"), lines: 5)
     private let analyzeButton = NSButton(title: L("opt.analyze"), target: nil, action: nil)
+    private let reviewButton = NSButton(title: L("opt.reviewIdle"), target: nil, action: nil)
     private let detail = NSStackView.vertical(spacing: 6)
     private let closeButton = NSButton(title: L("opt.closeSelected"), target: nil, action: nil)
     private let cancelButton = NSButton(title: L("opt.cancel"), target: nil, action: nil)
@@ -27,12 +28,13 @@ final class MemoryOptimizerPanel: NSStackView {
         spacing = 8
         translatesAutoresizingMaskIntoConstraints = false
 
-        for b in [analyzeButton, closeButton, cancelButton] {
+        for b in [analyzeButton, reviewButton, closeButton, cancelButton] {
             b.bezelStyle = .rounded
             b.controlSize = .small
             b.target = self
             b.translatesAutoresizingMaskIntoConstraints = false
         }
+        reviewButton.action = #selector(reviewIdleTapped)
         analyzeButton.action = #selector(analyzeTapped)
         closeButton.action = #selector(closeSelectedTapped)
         cancelButton.action = #selector(cancelTapped)
@@ -41,7 +43,7 @@ final class MemoryOptimizerPanel: NSStackView {
         cancelButton.isHidden = true
 
         addFullWidth(intro)
-        let buttons = NSStackView.horizontal([analyzeButton, closeButton, cancelButton], spacing: 8)
+        let buttons = NSStackView.horizontal([analyzeButton, reviewButton, closeButton, cancelButton], spacing: 8)
         addArrangedSubview(buttons)
         addFullWidth(detail)
     }
@@ -53,6 +55,13 @@ final class MemoryOptimizerPanel: NSStackView {
         guard !running else { return }
         let advice = env.currentAdvice()
         showAdvice(advice)
+    }
+
+    @objc private func reviewIdleTapped() {
+        guard !running else { return }
+        showAdvice(env.currentAdvice(reviewIdleApps: true))
+        detail.addFullWidth(Fmt.note(L("opt.idleNote"), lines: 5, size: 10.5))
+        onLayoutChange?()
     }
 
     @objc private func cancelTapped() {
@@ -83,6 +92,7 @@ final class MemoryOptimizerPanel: NSStackView {
     private func run(_ selected: [ReclaimCandidate]) {
         running = true
         analyzeButton.isEnabled = false
+        reviewButton.isEnabled = false
         closeButton.isEnabled = false
         cancelButton.isHidden = false
         cancelButton.isEnabled = true
@@ -104,6 +114,7 @@ final class MemoryOptimizerPanel: NSStackView {
         running = false
         cancelToken = nil
         analyzeButton.isEnabled = true
+        reviewButton.isEnabled = true
         analyzeButton.title = L("opt.analyzeAgain")
         cancelButton.isHidden = true
         closeButton.isHidden = true
@@ -253,6 +264,7 @@ final class MemoryOptimizerPanel: NSStackView {
         case .terminal: return L("opt.cat.terminal")
         case .passwordManager: return L("opt.cat.passwords")
         case .backup: return L("opt.cat.backup")
+        case .virtualMachine: return L("opt.cat.virtualMachine")
         }
     }
 

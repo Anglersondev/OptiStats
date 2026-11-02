@@ -18,7 +18,7 @@ struct HelperHello: Equatable {
 /// Cliente do helper por socket Unix (linhas JSON). Implementa `FanActuator` do Core.
 /// - Uma conexão persistente: se o app morrer ou fechar, o helper restaura o automático sozinho.
 /// - Todas as trocas são serializadas por trava; chamadas bloqueiam com tempo limite (nunca chamar na main, exceto restauração).
-/// - `capability` fica em `.experimentalUnvalidated` até o teste de controle passar neste Mac.
+/// - Availability never claims that physical fan response was tested.
 final class HelperFanActuator: FanActuator {
     private let lock = NSLock()
     /// A interface lê a capacidade sem esperar uma troca com o SMC (que pode levar até 40 s).
@@ -44,7 +44,7 @@ final class HelperFanActuator: FanActuator {
         capabilityLock.lock(); let reason = unsupportedReason; capabilityLock.unlock()
         if HelperInstaller.state() == .notInstalled { return .unavailable(reason: L("fan.cap.notInstalled")) }
         if let reason { return .unavailable(reason: reason) }
-        return settings.isValidatedForThisMac ? .validated : .experimentalUnvalidated
+        return .available
     }
 
     func apply(_ command: FanCommand) -> ActuatorResult {
@@ -103,7 +103,7 @@ final class HelperFanActuator: FanActuator {
 
     /// `setTarget` pode demorar (destravamento Ftst no Apple Silicon): tempo limite longo.
     func setTarget(fan: Int, rpm: Double) -> Result<Void, FanClientFailure> {
-        let r = exchange(.setTarget, fan: fan, rpm: rpm, timeout: 40)
+        let r = exchange(.setTarget, fan: fan, rpm: rpm, timeout: 55)
         if case .success = r { lock.lock(); manualEngaged = true; lock.unlock() }
         return r.map { _ in () }
     }

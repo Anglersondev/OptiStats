@@ -15,7 +15,7 @@ public protocol WorkExecutor: AnyObject {
 public final class QueueExecutor: WorkExecutor {
     private let queue: DispatchQueue
     public init(label: String, qos: DispatchQoS = .utility) {
-        queue = DispatchQueue(label: label, qos: qos)
+        queue = DispatchQueue(label: label, qos: qos, autoreleaseFrequency: .workItem)
     }
     public func execute(_ work: @escaping () -> Void) { queue.async(execute: work) }
 }

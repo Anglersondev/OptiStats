@@ -86,7 +86,8 @@ final class SMCReader {
         input.key = code
         input.data8 = Self.cmdGetKeyInfo
         guard call(&input, &output), output.keyInfo.dataSize > 0, output.keyInfo.dataSize <= 32 else {
-            missing.insert(code); return nil
+            if output.result == 0x84 { missing.insert(code) }
+            return nil
         }
         let info = (size: output.keyInfo.dataSize, type: typeString(output.keyInfo.dataType))
         infoCache[code] = info

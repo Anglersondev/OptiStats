@@ -110,3 +110,39 @@ final class SensorTests: XCTestCase {
         }
     }
 }
+
+final class TemperatureRegressionTests: XCTestCase {
+    func reading(_ key: String, _ role: SensorRole, _ value: Double, source: SensorSource = .smc, at t: TimeInterval = 1) -> SensorReading {
+        SensorValidator.reading(SensorDescriptor(key: key, name: key, kind: .temperature, role: role, source: source), raw: value, at: t)
+    }
+    func testBrokenM4CPUKeysDoNotDiluteAverage() {
+        let bad = reading("Tp01", .cpuPerformanceZone, 2.2)
+        XCTAssertNil(bad.value)
+        let readings = [bad, reading("Te05", .cpuEfficiencyZone, 60), reading("TCMb", .other, 65), reading("TCMz", .other, 78)]
+        let agg = SensorAggregator.aggregates(from: readings, at: 1)
+        XCTAssertEqual(agg.first { $0.descriptor.key == "avg-cpu" }?.value, 65)
+        XCTAssertEqual(agg.first { $0.descriptor.key == "max-cpu" }?.value, 78)
+    }
+    func testHIDFallbackIsPerClusterAndDoesNotDoubleCount() {
+        let readings = [reading("Te05", .cpuEfficiencyZone, 50),
+                        reading("eACC MTR Temp Sensor0", .cpuEfficiencyZone, 51, source: .hid),
+                        reading("Tp01", .cpuPerformanceZone, 1.5),
+                        reading("pACC MTR Temp Sensor0", .cpuPerformanceZone, 70, source: .hid)]
+        let zones = SensorAggregator.cpuZones(readings)
+        XCTAssertEqual(zones.count, 2)
+        XCTAssertEqual(SensorAggregator.average(zones), 60)
+    }
+    func testOrdinaryColdSensorsStillWork() {
+        XCTAssertEqual(reading("TaLP", .airflow, 5).value, 5)
+        XCTAssertNil(reading("Tg1U", .gpuZone, -4).value)
+        XCTAssertNil(reading("TCMb", .other, 2.2).value)
+    }
+    func testFanUpdatesDoNotRefreshOldTemperatureHistory() {
+        let store = MetricsStore(clock: ManualClock())
+        store.updateSensors(timestamp: 1, owner: "temperatures", readings: [reading("TCMb", .other, 65)])
+        store.updateSensors(timestamp: 100, owner: "fans", fans: [])
+        XCTAssertEqual(store.sensors?.aggregates.first?.timestamp, 1)
+        XCTAssertEqual(store.series(.tempCPU).count, 1)
+        XCTAssertEqual(store.series(.tempCPU).all.first?.t, 1)
+    }
+}

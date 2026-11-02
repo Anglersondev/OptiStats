@@ -25,14 +25,9 @@ final class TemperatureCollector: BaseCollector {
             let r = SensorValidator.reading(spec.descriptor(), raw: raw, at: t)
             if r.value != nil { readings.append(r) }
         }
-        let smcHasCPU = !SensorAggregator.cpuZones(readings).isEmpty
-        let smcHasGPU = !SensorAggregator.gpuZones(readings).isEmpty
-
         var seenKeys: [String: Int] = [:]
         for item in hid.readTemperatures() {
             guard let info = SMCCatalog.hidRole(forProductName: item.product) else { continue }
-            let isCPU = [SensorRole.cpuEfficiencyZone, .cpuPerformanceZone, .cpuSuperZone].contains(info.role)
-            if (isCPU && smcHasCPU) || (info.role == .gpuZone && smcHasGPU) { continue }
             let n = seenKeys[item.product, default: 0]; seenKeys[item.product] = n + 1
             let key = n == 0 ? item.product : "\(item.product)#\(n)"
             let d = SensorDescriptor(key: key, name: n == 0 ? info.label : "\(info.label) (\(n + 1))",

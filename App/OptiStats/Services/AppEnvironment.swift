@@ -25,6 +25,7 @@ final class AppEnvironment {
     /// Abre a janela com todos os processos (ligada pelo AppDelegate).
     var openProcessBrowser: (() -> Void)?
     /// Ações do menu "…" dos painéis (ligadas pelo AppDelegate).
+    var openFanPreferences: (() -> Void)?
     var openPreferences: (() -> Void)?
     var openMaintenance: (() -> Void)?
     var openAbout: (() -> Void)?
@@ -62,7 +63,7 @@ final class AppEnvironment {
             DispatchQueue.main.async { self?.handle(event) }
         }
         platform.events.start()
-        tokens.append(store.subscribe(.processes) { [weak self] in
+        tokens.append(store.subscribe(.processes, queue: .main) { [weak self] in
             guard let self, let snap = self.store.processes else { return }
             self.growth.record(groups: snap.byMemory, at: snap.timestamp)
         })
@@ -115,6 +116,7 @@ final class AppEnvironment {
             powerContext = platform.events.currentPowerContext()
             coordinator.setConfiguration(samplingConfiguration)
             coordinator.resume()
+            if case .didWake = event { fanControl.resumeSavedControl() }
         case .thermalChanged(let level):
             powerContext.thermal = level
             fanControl.thermalChanged(level)
@@ -152,12 +154,16 @@ final class AppEnvironment {
                                 ownBundleIdentifier: Bundle.main.bundleIdentifier ?? "app.optistats.OptiStats")
     }
 
-    func currentAdvice() -> Advice {
+    func currentAdvice(reviewIdleApps: Bool = false) -> Advice {
         OptimizationAdvisor(config: AdvisorConfig(), policy: protectionPolicy).advise(
             history: store.memoryHistory,
             groups: store.processes?.byMemory ?? [],
             growth: { [growth] id in growth.suspicion(for: id) },
-            frontmostBundleID: platform.apps.frontmostBundleIdentifier)
+            frontmostBundleID: platform.apps.frontmostBundleIdentifier,
+            idleSeconds: { [platform] group in
+                guard let id = group.bundleIdentifier else { return nil }
+                return platform.apps.backgroundIdleSeconds(bundleIdentifier: id)
+            }, reviewIdleApps: reviewIdleApps)
     }
 
     func makeOptimizer() -> OptimizationCoordinator {

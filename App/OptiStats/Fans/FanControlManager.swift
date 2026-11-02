@@ -9,12 +9,7 @@ struct HelperInfo: Equatable {
     var matchesBundled: Bool?
 }
 
-struct FanTestReport: Equatable {
-    var passed: Bool
-    var message: String
-}
-
-/// Orquestra o controle de ventoinhas no lado do app: estado manual, heartbeat, Smart Boost e teste de validação.
+/// Orquestra o controle de ventoinhas no lado do app: estado manual persistente, heartbeat e Smart Boost.
 /// Regras de segurança:
 /// - nada é escrito sem `settings.manualAllowed` (desligado por padrão);
 /// - qualquer falha, suspensão do sistema, estado térmico crítico, desinstalação ou saída do app devolve o automático;
@@ -36,6 +31,7 @@ final class FanControlManager {
     private var lastFanTimestamp: TimeInterval = -.infinity
     /// Invalida respostas de comandos anteriores a uma restauração ou encerramento.
     private var controlGeneration = 0
+    private var resumeAfterPendingCommand = false
 
     /// Chamado na main quando algo relevante para a interface mudou.
     var onChange: (() -> Void)?
@@ -52,16 +48,57 @@ final class FanControlManager {
 
     // MARK: Ciclo de vida
 
-    func start() {
-        guard let s = settings, s.smartBoostEnabled else { return }
-        // Smart Boost só retoma se continuar permitido e validado; caso contrário volta a desligado.
-        if s.manualAllowed, HelperInstaller.installedMatchesBundled() == true, case .validated = capability {
+    func start() { resumeSavedControl() }
+
+    /// One asynchronous pass on launch/wake. Never waits for a heavy workload to start the fans.
+    func resumeSavedControl() {
+        if busy { resumeAfterPendingCommand = true; return }
+        guard !engaged, let s = settings, s.manualAllowed,
+              env.powerContext.thermal != .critical else { return }
+        if s.smartBoostEnabled {
             startSmartBoost()
-        } else { s.smartBoostEnabled = false }
+            return
+        }
+        let saved = s.savedTargets
+        guard !saved.isEmpty, let client else { return }
+        let generation = controlGeneration
+        setBusy(true)
+        io.async { [weak self] in
+            var applied: [Int: Double] = [:]
+            var failure: String?
+            if HelperInstaller.installedMatchesBundled() != true {
+                failure = L("fan.helper.outdatedBanner")
+            } else {
+                switch client.readFans() {
+                case .failure(let f): failure = HelperFanActuator.describe(f)
+                case .success(let fans):
+                    for index in saved.keys.sorted() {
+                        guard let fan = fans.first(where: { $0.index == index }),
+                              let rpm = saved[index]?.resolve(min: fan.minRPM, max: fan.maxRPM) else {
+                            failure = L("fan.err.limitsUnknown"); break
+                        }
+                        if case .failure(let f) = client.setTarget(fan: index, rpm: rpm) {
+                            failure = HelperFanActuator.describe(f); break
+                        }
+                        applied[index] = rpm
+                    }
+                }
+            }
+            if failure != nil { _ = client.restoreAutomatic(); applied.removeAll() }
+            DispatchQueue.main.async {
+                guard let self, generation == self.controlGeneration else { return }
+                self.manualTargets = applied
+                self.engaged = !applied.isEmpty
+                self.lastMessage = failure
+                if self.engaged { self.startHeartbeat() }
+                self.setBusy(false)
+            }
+        }
     }
 
     /// Encerramento do app: restaura o automático e derruba a conexão (o helper também restaura ao ver a desconexão).
     func shutdown() {
+        resumeAfterPendingCommand = false
         controlGeneration += 1
         stopHeartbeat()
         fanToken?.cancel(); fanToken = nil
@@ -72,7 +109,8 @@ final class FanControlManager {
     }
 
     func systemWillSleep() {
-        _ = smartBoost.systemWillSleep()
+        resumeAfterPendingCommand = false
+        stopSmartBoostState()
         if engaged || busy || settings?.smartBoostEnabled == true { restoreInBackground(message: L("fan.msg.sleepRestored")) }
     }
 
@@ -102,8 +140,16 @@ final class FanControlManager {
 
     /// `done(nil)` em sucesso; senão, texto do erro para exibir.
     func installHelper(_ done: @escaping (String?) -> Void) {
+        controlGeneration += 1
+        stopHeartbeat()
+        stopSmartBoostState()
+        manualTargets.removeAll(); engaged = false
         setBusy(true)
-        io.async {
+        io.async { [weak self] in
+            if let client = self?.client {
+                _ = client.restoreAutomatic()
+                client.disconnect()
+            }
             var message: String?
             if let error = HelperInstaller.install() {
                 message = Self.text(for: error)
@@ -116,6 +162,7 @@ final class FanControlManager {
             DispatchQueue.main.async { [weak self] in
                 self?.setBusy(false)
                 done(message)
+                if message == nil { self?.resumeSavedControl() }
             }
         }
     }
@@ -125,6 +172,8 @@ final class FanControlManager {
         setBusy(true)
         stopHeartbeat()
         stopSmartBoostState()
+        settings?.savedTargets = [:]
+        settings?.smartBoostEnabled = false
         manualTargets.removeAll(); engaged = false
         io.async { [weak self] in
             // Antes de remover: restaurar o automático (o bootout também faz o helper restaurar via SIGTERM).
@@ -152,7 +201,7 @@ final class FanControlManager {
         guard env.powerContext.thermal != .critical else { done(L("fan.msg.thermalRestored")); return }
         guard let client, let s = settings, s.manualAllowed else { done(L("fan.err.notAllowed")); return }
         guard HelperInstaller.installedMatchesBundled() == true else { done(L("fan.helper.outdatedBanner")); return }
-        guard case .validated = capability, !s.isUnsupportedForThisMac else { done(L("fan.err.needsValidation")); return }
+        guard case .available = capability else { done(L("fan.err.notInstalled")); return }
         guard !s.smartBoostEnabled else { done(L("fan.err.smartBoostActive")); return }
         guard !busy else { done(L("fan.err.busy")); return }
         let generation = controlGeneration
@@ -167,6 +216,8 @@ final class FanControlManager {
                 switch result {
                 case .success:
                     self.manualTargets[fan] = rpm
+                    let maximum = self.env.store.sensors?.fans.first(where: { $0.index == fan })?.maxRPM
+                    s.savedTargets[fan] = maximum.map { abs($0.rounded(.down) - rpm) <= 1 } == true ? .maximum : .rpm(rpm)
                     self.engaged = true
                     self.startHeartbeat()
                     done(nil)
@@ -183,7 +234,9 @@ final class FanControlManager {
 
     /// Botão "Restaurar automático": restaura TUDO e desliga o Smart Boost.
     func restoreAutomatic(_ done: ((String?) -> Void)? = nil) {
+        resumeAfterPendingCommand = false
         settings?.smartBoostEnabled = false
+        settings?.savedTargets = [:]
         stopSmartBoostState()
         restoreInBackground(message: nil, done)
     }
@@ -214,7 +267,13 @@ final class FanControlManager {
         }
     }
 
-    private func setBusy(_ value: Bool) { busy = value; onChange?() }
+    private func setBusy(_ value: Bool) {
+        busy = value; onChange?()
+        if !value, resumeAfterPendingCommand {
+            resumeAfterPendingCommand = false
+            DispatchQueue.main.async { [weak self] in self?.resumeSavedControl() }
+        }
+    }
 
     // MARK: Heartbeat (somente com controle manual ativo)
 
@@ -264,8 +323,9 @@ final class FanControlManager {
         guard env.powerContext.thermal != .critical else { return L("fan.msg.thermalRestored") }
         guard s.manualAllowed else { return L("fan.err.notAllowed") }
         guard HelperInstaller.installedMatchesBundled() == true else { return L("fan.helper.outdatedBanner") }
-        guard case .validated = capability else { return L("fan.err.needsValidation") }
+        guard case .available = capability else { return L("fan.err.notInstalled") }
         guard manualTargets.isEmpty else { return L("fan.err.manualActive") }
+        s.savedTargets = [:]
         s.smartBoostEnabled = true
         startSmartBoost()
         onChange?()
@@ -349,92 +409,4 @@ final class FanControlManager {
         }
     }
 
-    // MARK: Teste de controle
-
-    /// Ciclo curto e seguro: cada ventoinha sobe até ~+300 RPM (dentro de [min, max]) por 5 s, lê de volta e restaura.
-    /// Só depois de passar o Mac fica `.validated`.
-    func runControlTest(_ done: @escaping (FanTestReport) -> Void) {
-        guard env.powerContext.thermal != .critical else {
-            done(FanTestReport(passed: false, message: L("fan.msg.thermalRestored"))); return
-        }
-        guard let client, let s = settings else { done(FanTestReport(passed: false, message: L("fan.err.notInstalled"))); return }
-        guard s.manualAllowed else { done(FanTestReport(passed: false, message: L("fan.err.notAllowed"))); return }
-        guard HelperInstaller.installedMatchesBundled() == true else {
-            done(FanTestReport(passed: false, message: L("fan.helper.outdatedBanner"))); return
-        }
-        guard !engaged, !s.smartBoostEnabled, !busy else { done(FanTestReport(passed: false, message: L("fan.test.busy"))); return }
-        let generation = controlGeneration
-        setBusy(true)
-        io.async { [weak self] in
-            let report = Self.performTest(client: client)
-            DispatchQueue.main.async {
-                guard let self else { return }
-                guard generation == self.controlGeneration else {
-                    done(FanTestReport(passed: false, message: self.lastMessage ?? L("fan.test.failed")))
-                    return
-                }
-                // Falha de teste também pode ser transitória (outro app, SMC ocupado, RPM já alto).
-                // Só um teste aprovado autoriza escrita; uma falha não prova incompatibilidade do Mac.
-                if report.passed { s.markValidated(true); s.markUnsupported(false) }
-                else { s.markValidated(false) }
-                self.setBusy(false)
-                done(report)
-            }
-        }
-    }
-
-    private static func performTest(client: HelperFanActuator) -> FanTestReport {
-        func fail(_ text: String) -> FanTestReport { FanTestReport(passed: false, message: text) }
-        let fans: [FanHelperFanState]
-        switch client.readFans() {
-        case .failure(let f): return fail(HelperFanActuator.describe(f))
-        case .success(let list): fans = list
-        }
-        var plans: [(index: Int, start: Double, target: Double)] = []
-        for fan in fans {
-            guard let rpm = fan.rpm, let target = FanControlTestPlan.target(current: rpm, min: fan.minRPM, max: fan.maxRPM) else { continue }
-            plans.append((fan.index, rpm, target))
-        }
-        guard !plans.isEmpty else { return fail(L("fan.test.inconclusive")) }
-
-        // A partir daqui, SEMPRE restaurar o automático ao sair.
-        var restored = false
-        func restore() -> Bool {
-            if restored { return true }
-            var ok = false
-            for _ in 0..<2 { if case .success = client.restoreAutomatic() { ok = true; break } }
-            restored = ok
-            return ok
-        }
-        defer { _ = restore() }
-
-        for plan in plans {
-            if case .failure(let f) = client.setTarget(fan: plan.index, rpm: plan.target) {
-                _ = restore()
-                return fail(L("fan.test.writeFailed", HelperFanActuator.describe(f)))
-            }
-        }
-        // Segura ~5 s mantendo o heartbeat.
-        Thread.sleep(forTimeInterval: FanControlTestPlan.holdSeconds / 2)
-        _ = client.heartbeat()
-        Thread.sleep(forTimeInterval: FanControlTestPlan.holdSeconds / 2)
-
-        var lines: [String] = []
-        var allPassed = true
-        if case .success(let after) = client.readFans() {
-            for plan in plans {
-                let observed = after.first(where: { $0.index == plan.index })?.rpm
-                let ok = FanControlTestPlan.passed(start: plan.start, target: plan.target, observed: observed)
-                if !ok { allPassed = false }
-                lines.append(L("fan.test.line", plan.index + 1, Int(plan.start), Int(plan.target),
-                               observed.map { String(Int($0)) } ?? "—"))
-            }
-        } else {
-            allPassed = false
-            lines.append(L("fan.test.readFailed"))
-        }
-        guard restore() else { return fail(L("fan.test.restoreFailed")) }
-        let summary = allPassed ? L("fan.test.passed") : L("fan.test.failed")
-        return FanTestReport(passed: allPassed, message: summary + "\n" + lines.joined(separator: "\n"))
-    }
 }

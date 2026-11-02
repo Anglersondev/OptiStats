@@ -141,16 +141,22 @@ final class FanHelperProtocolTests: XCTestCase {
         XCTAssertFalse(w.armed)
     }
 
-    // MARK: Teste de controle
+}
 
-    func testControlTestPlan() {
-        XCTAssertEqual(FanControlTestPlan.target(current: 2000, min: 1200, max: 6000), 2300)
-        XCTAssertEqual(FanControlTestPlan.target(current: 5900, min: 1200, max: 6000), 6000)   // limitado pelo máximo
-        XCTAssertNil(FanControlTestPlan.target(current: 5950, min: 1200, max: 6000))            // sem margem conclusiva
-        XCTAssertNil(FanControlTestPlan.target(current: 2000, min: nil, max: 6000))
-        XCTAssertEqual(FanControlTestPlan.target(current: 500, min: 1200, max: 6000), 1200)   // nunca abaixo do mínimo
-        XCTAssertTrue(FanControlTestPlan.passed(start: 2000, target: 2300, observed: 2200))
-        XCTAssertFalse(FanControlTestPlan.passed(start: 2000, target: 2300, observed: 2050))
-        XCTAssertFalse(FanControlTestPlan.passed(start: 2000, target: 2300, observed: nil))
+final class SavedFanTargetTests: XCTestCase {
+    func testMaximumUsesFreshLimitsAndManualRPMIsStrict() throws {
+        XCTAssertEqual(SavedFanTarget.maximum.resolve(min: 1200, max: 7826), 7826)
+        XCTAssertEqual(SavedFanTarget.maximum.resolve(min: 1200, max: 6500), 6500)
+        XCTAssertNil(SavedFanTarget.maximum.resolve(min: nil, max: 6500))
+        XCTAssertNil(SavedFanTarget.rpm(4000).resolve(min: 4500, max: 6500))
+        let targets: [Int: SavedFanTarget] = [0: .maximum, 1: .rpm(5000)]
+        XCTAssertEqual(try JSONDecoder().decode([Int: SavedFanTarget].self, from: JSONEncoder().encode(targets)), targets)
+    }
+    func testPaddedTargetPayloadMatchesKeySize() throws {
+        let bytes = try XCTUnwrap(SMCFanTargetEncoding.encode(type: "fpe2", rpm: 6000, size: 4))
+        XCTAssertEqual(bytes.count, 4)
+        XCTAssertEqual(SMCDecoder.decode(type: "fpe2", bytes: bytes), 6000)
+        XCTAssertNil(SMCFanTargetEncoding.encode(type: "flt ", rpm: .greatestFiniteMagnitude, size: 4))
+        XCTAssertNil(SMCFanTargetEncoding.encode(type: "flt ", rpm: 6000, size: 33))
     }
 }

@@ -64,3 +64,29 @@ IN THE SOFTWARE.
 
 A sequência de escrita das ventoinhas no SMC do `Helper/OptiStatsHelper` (chaves `F{i}Md`, `F{i}Tg`, `Ftst`, comandos de escrita e leitura de volta) foi adaptada do
 estudo de `SMC/smc.swift` do Stats (MIT, aviso acima), reescrita com limites de segurança, watchdog e leitura de confirmação próprios.
+
+## Dusty — https://github.com/yagcioglutoprak/dusty (MIT)
+
+Memory review design reference: large idle apps, workspace activation history, protected background workloads and normal quit requests. OptiStats implements these inside its own AppKit app and scheduler; no Dusty binary or runtime is bundled.
+
+MIT License
+
+Copyright (c) 2026 Toprak Yagcioglu (toprak.sh)
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
