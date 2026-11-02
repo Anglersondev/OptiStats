@@ -211,3 +211,31 @@ final class OptimizationCoordinatorTests: XCTestCase {
         XCTAssertEqual(report.results.map(\.outcome), [.requestFailed])
     }
 }
+
+final class IdleMemoryReviewTests: XCTestCase {
+    let app = appGroup("IdleApp", bundle: "dev.test.IdleApp", footprint: 800 * MiB)
+    func advice(idle: TimeInterval?, pressure: MemoryPressureLevel = .warning, review: Bool = false) -> Advice {
+        let history = stride(from: 0, through: 150, by: 10).map { memorySnapshot(t: Double($0), pressure: pressure) }
+        return OptimizationAdvisor().advise(history: history, groups: [app], growth: { _ in nil },
+                                             frontmostBundleID: nil, idleSeconds: { _ in idle }, reviewIdleApps: review)
+    }
+    func testOnlyKnownIdleAppsAreSuggestedUnderPressure() {
+        XCTAssertTrue(advice(idle: nil).candidates.isEmpty)
+        XCTAssertTrue(advice(idle: 300).candidates.isEmpty)
+        XCTAssertEqual(advice(idle: 3600).candidates.count, 1)
+    }
+    func testHealthyMemoryRequiresExplicitIdleReview() {
+        XCTAssertTrue(advice(idle: 3600, pressure: .normal).candidates.isEmpty)
+        let review = advice(idle: 3600, pressure: .normal, review: true)
+        XCTAssertEqual(review.assessment, .healthy)
+        XCTAssertEqual(review.candidates.count, 1)
+    }
+    func testRelaunchDoesNotInheritGrowthHistory() {
+        let detector = GrowthDetector()
+        detector.record(groups: [app], at: 1)
+        let restarted = appGroup("IdleApp", bundle: "dev.test.IdleApp", footprint: 2 * GiB, pid: 2000)
+        detector.record(groups: [restarted], at: 20)
+        XCTAssertEqual(detector.history(for: app.id).count, 1)
+        XCTAssertNil(detector.suspicion(for: app.id))
+    }
+}

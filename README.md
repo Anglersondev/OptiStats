@@ -9,10 +9,17 @@
 - Monitor CPU, GPU, RAM, temperatures, power, fans, disk, network and battery from customizable menu bar indicators.
 - Open history charts, sensor readings and processes grouped by application.
 - Choose Economy, Balanced, Real-time or Custom sampling. Hidden sources stop sampling; collectors share one scheduler.
-- Analyze memory pressure and review app recommendations before choosing what to close. No guaranteed RAM savings or forced app termination.
-- Read fan speeds by default. Optional Automatic, Manual, **100%** and Smart Boost controls require installing the helper, allowing control and passing a validation test on the current Mac.
+- Analyze memory pressure and review large apps that have stayed in the background for an hour. Inspired by Dusty: grouped physical footprints, protected apps, normal quit requests and measured results.
+- Read fan speeds by default. Optional Automatic, Manual, **100%** and Smart Boost controls use the privileged helper. Manual targets are remembered and reapplied on launch and wake, even with a cold Mac. No beta test step.
 - Manage disk/cache maintenance and selected macOS services with optional Debloat tools.
 - Switch between English and Brazilian Portuguese at runtime. Find the version, credits and donation link in **Preferences → About**.
+
+## Updated 1.0: fans, temperatures and memory
+
+- Fan acquisition now falls back to `Ftst` when a direct mode write is accepted without taking effect. Automatic explicitly resets every mode and target owned by OptiStats.
+- CPU temperatures prefer the firmware die average/maximum (`TCMb` / `TCMz`); implausible CPU/GPU readings are discarded and HID fallback is selected per zone class. Fan updates no longer refresh old temperature timestamps.
+- RAM reviews use workspace activity notifications, with no extra polling loop or Dusty runtime dependency. No app is closed automatically; healthy memory stays labelled healthy.
+- Version remains **1.0**, internal build **2**, helper build **4**. Existing installations must update the helper once in **Preferences → Fans**. Enable **General → Launch at login** to resume saved fan targets after signing in. Choosing Automatic clears them.
 
 ## Download and requirements
 
@@ -45,11 +52,15 @@ swift test --package-path Packages/OptiStatsCore
 python3 scripts/check_localization.py
 ```
 
+For a Command Line Tools-only build, run `scripts/build_app.sh`. Simulated SMC and preference regressions run with `scripts/check_hardware_regressions.sh` without administrator privileges or physical SMC writes.
+
 The pure Swift core is tested on Linux and macOS in CI; CI also builds the macOS app and DMG. Automated checks do not validate physical fan response. Fan behavior and resource usage must be checked on the target Mac. The app is not sandboxed because its monitoring and optional control use macOS system interfaces.
 
 ## Measure performance
 
 With the app open and the Mac idle, run `scripts/benchmark.sh 300 OptiStats`. Compare identical enabled features and sampling profiles when measuring another monitor. CPU and memory figures are measurements for that configuration, not universal guarantees.
+
+The memory review adapts ideas from [Dusty by Toprak Yagcioglu](https://github.com/yagcioglutoprak/dusty), including reviewing large idle apps instead of promising RAM savings. The implementation stays inside OptiStats; Dusty is not installed or run.
 
 ## Credits and support
 

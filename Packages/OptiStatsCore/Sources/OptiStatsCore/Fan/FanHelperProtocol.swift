@@ -7,7 +7,7 @@ import Foundation
 public enum FanHelperConstants {
     public static let protocolVersion = 1
     /// Versão do binário do helper (informada em `hello`). Incrementar quando o comportamento mudar.
-    public static let helperBuild = 3
+    public static let helperBuild = 4
     public static let label = "dev.optistats.helper"
     public static let socketPath = "/var/run/dev.optistats.helper.sock"
     public static let helperPath = "/Library/PrivilegedHelperTools/dev.optistats.helper"
@@ -201,13 +201,15 @@ public enum SMCFanTargetEncoding {
         guard rpm.isFinite, rpm >= 0 else { return nil }
         switch type {
         case "flt ":
-            guard size >= 4 else { return nil }
+            guard size >= 4, size <= 32 else { return nil }
             let bits = Float(rpm).bitPattern
+            guard Float(rpm).isFinite else { return nil }
             return [UInt8(bits & 0xff), UInt8((bits >> 8) & 0xff), UInt8((bits >> 16) & 0xff), UInt8((bits >> 24) & 0xff)]
+                + Array(repeating: 0, count: size - 4)
         case "fpe2":
-            guard size >= 2, rpm <= 16383 else { return nil }
+            guard size >= 2, size <= 32, rpm <= 16383 else { return nil }
             let v = Int(rpm.rounded())
-            return [UInt8(v >> 6), UInt8((v << 2) & 0xff)]
+            return [UInt8(v >> 6), UInt8((v << 2) & 0xff)] + Array(repeating: 0, count: size - 2)
         default:
             return nil
         }
@@ -239,30 +241,4 @@ public struct FanWatchdog: Equatable {
     public func isExpired(at now: TimeInterval) -> Bool { armed && now - lastBeat > timeout }
     /// Quanto falta para expirar (para o timeout do poll); nil se desarmado.
     public func remaining(at now: TimeInterval) -> TimeInterval? { armed ? max(0, timeout - (now - lastBeat)) : nil }
-}
-
-// MARK: - Teste de validação de controle
-
-public enum FanControlTestPlan {
-    public static let boostRPM: Double = 300
-    public static let holdSeconds: TimeInterval = 5
-    /// Fração mínima do aumento planejado que o RPM real precisa atingir para o teste passar.
-    public static let requiredFraction = 0.3
-    /// Aumento mínimo para o teste ser conclusivo.
-    public static let minimumDelta: Double = 100
-
-    /// Alvo do teste: até +300 RPM acima do atual, dentro de [min, max]. nil se não houver margem conclusiva.
-    public static func target(current: Double, min: Double?, max: Double?) -> Double? {
-        guard current.isFinite, let hi = FanRPMPolicy.clampForUI(.greatestFiniteMagnitude, min: min, max: max),
-              let lo = FanRPMPolicy.clampForUI(0, min: min, max: max) else { return nil }
-        let target = Swift.min(hi, Swift.max(lo, (current + boostRPM).rounded()))
-        guard target - current >= minimumDelta else { return nil }
-        return target
-    }
-
-    /// O RPM observado subiu o suficiente em direção ao alvo?
-    public static func passed(start: Double, target: Double, observed: Double?) -> Bool {
-        guard let o = observed, o.isFinite, target > start else { return false }
-        return o >= start + requiredFraction * (target - start)
-    }
 }

@@ -21,6 +21,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         statusController = controller
         // A barra reage a mudanças de preferências (visibilidade, ordem, rótulos, unidade...).
         env.openProcessBrowser = { [weak self] in self?.showProcessBrowser() }
+        env.openFanPreferences = { [weak self] in self?.showPreferences(tab: .fans) }
         env.openPreferences = { [weak self] in self?.showPreferences() }
         env.openMaintenance = { [weak self] in self?.showMaintenance() }
         env.openAbout = { [weak self] in self?.showAbout() }

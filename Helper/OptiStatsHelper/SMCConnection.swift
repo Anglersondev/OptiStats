@@ -6,7 +6,7 @@ import OptiStatsCore
 /// Layout da estrutura de chamada e comandos (kernel index 2; 5 = ler bytes, 6 = escrever bytes, 9 = info da chave)
 /// adaptados de `SMC/smc.swift` do Stats (exelban/stats, MIT; ver THIRD_PARTY_NOTICES.md).
 /// A escrita só aceita chaves da lista fixa `FanSMCKeys.writableKeys` (verificação no nível mais baixo).
-final class SMCConnection {
+final class SMCConnection: SMCFanIO {
     private typealias Bytes32 = (UInt8, UInt8, UInt8, UInt8, UInt8, UInt8, UInt8, UInt8,
                                  UInt8, UInt8, UInt8, UInt8, UInt8, UInt8, UInt8, UInt8,
                                  UInt8, UInt8, UInt8, UInt8, UInt8, UInt8, UInt8, UInt8,
@@ -29,13 +29,7 @@ final class SMCConnection {
                               0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
     }
 
-    struct Value {
-        var key: String
-        var type: String
-        var size: Int
-        var bytes: [UInt8]   // exatamente `size` bytes
-        var number: Double? { SMCDecoder.decode(type: type, bytes: bytes) }
-    }
+    typealias Value = SMCFanValue
 
     private static let handleYPCEvent: UInt32 = 2
     private static let cmdReadKey: UInt8 = 5

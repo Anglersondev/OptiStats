@@ -1,39 +1,36 @@
-# OptiStats 1.0
-
-## English
-
-Native macOS menu bar monitoring for Apple Silicon, built in Swift and AppKit by Anglerson.
-
-- CPU, GPU, memory, temperatures, fans, power, disk, network and battery indicators.
-- Adaptive sampling with shared collectors and bounded history.
-- Optional Automatic, Manual, 100% and Smart Boost fan controls, gated by helper installation and validation on the current Mac.
-- Preferences → About with credits and a donation link.
-- RAM guidance, disk/cache maintenance and optional Debloat service management.
-- Improvements that avoid UI waits on helper communication, reduce history copying and prevent output-pipe deadlocks during maintenance.
-- English and Brazilian Portuguese, with bilingual documentation and website.
-
-Inspired by [Stats by exelban](https://github.com/exelban/stats), with its own sampling architecture and additional maintenance tools. Debloat uses the service catalog, comments and presets from [mac-os-debloat by Oleksandr Krupko](https://github.com/OleksandrKrupko/mac-os-debloat). Third-party MIT notices are preserved.
-
-**Requirements:** macOS 13 or later, Apple Silicon. Open the DMG and drag OptiStats to Applications. This build is ad-hoc signed and not Apple notarized.
-
-**Validation:** the app and helper compile locally in Release mode, and targeted history, simulated SMC restoration and process-output regression checks pass. Complete CI needs to be rerun after GitHub access is restored. Physical fan response and whole-app CPU/RAM consumption still require testing on the target Mac. See `docs/FINAL-REVIEW.md` for exact scope and measurements.
+# OptiStats 1.0 — build 2
 
 ## Português brasileiro
 
-Monitor nativo para a barra de menus do macOS em Apple Silicon, feito em Swift e AppKit por Anglerson.
+Monitor leve de sistema para macOS e Apple Silicon: CPU, GPU, RAM, temperatura, ventoinhas, bateria, rede e disco na barra de menus.
 
-- Indicadores de CPU, GPU, memória, temperaturas, ventoinhas, potência, disco, rede e bateria.
-- Amostragem adaptativa, coletores compartilhados e histórico limitado.
-- Automático, Manual, 100% e Smart Boost opcionais para ventoinhas, após instalar o helper e validar o controle neste Mac.
-- Preferências → Sobre com créditos e doação.
-- Orientação de RAM, manutenção de disco/cache e Debloat opcional.
-- Ajustes para evitar esperas da interface pelo helper, reduzir cópias do histórico e impedir bloqueio dos canais de saída na manutenção.
-- Inglês e português brasileiro, com site e documentação nos dois idiomas.
+- **Ventoinhas a 100%, mesmo com o Mac frio:** destravamento corrigido para assumir o controle sem esperar carga pesada.
+- **Manual/100% persistentes:** a escolha é reaplicada ao abrir o app e após despertar. Ative **Geral → Iniciar no login** para retomar após entrar na sessão.
+- **Voltar ao Automático:** disponível em cada ventoinha e no botão **Restaurar automático**, no painel rápido e nas preferências. Apaga os alvos salvos e devolve o controle ao macOS. Sair, suspender ou perder a comunicação também devolve o controle.
+- Removidos o botão de teste beta e seu bloqueio de uso. Permanecem a instalação opcional do helper, a permissão manual e os limites reais do hardware.
+- **Temperatura da CPU corrigida:** prioriza média e máxima do firmware e descarta chaves que retornam valores implausíveis. Corrigidos o fallback HID e a idade do histórico térmico.
+- **Revisão de RAM inspirada no Dusty:** apps grandes e inativos, com seleção e confirmação antes do encerramento normal. Sem outro serviço ou dependência; terminais e máquinas virtuais protegidos.
+- Catálogo Debloat conferido com o projeto original; atualização manual do GitHub preservada.
+- Português brasileiro e inglês; README e site bilíngue com metadados SEO atualizados.
 
-Inspirado no [Stats, de exelban](https://github.com/exelban/stats), com arquitetura própria de amostragem e ferramentas adicionais. O Debloat usa o catálogo, comentários e presets do [mac-os-debloat, de Oleksandr Krupko](https://github.com/OleksandrKrupko/mac-os-debloat). Os avisos MIT de terceiros estão preservados.
+**Atualização:** substitua o app e abra **Preferências → Ventoinhas → Atualizar helper** uma vez. Continua na versão **1.0**, build interno **2**, helper **4**. macOS 13+, Apple Silicon. Assinatura ad-hoc, sem notarização Apple.
 
-**Requisitos:** macOS 13 ou posterior, Apple Silicon. Abra o DMG e arraste o app para Aplicativos. A assinatura é ad-hoc; o app não é notarizado pela Apple.
+**Verificação:** 199 testes do núcleo passaram em macOS e Linux, além das regressões de SMC simulado. Em um MacBook Pro M4 Pro (Mac16,8, macOS 27.2), ventoinhas inicialmente paradas atingiram cerca de 7.820 RPM ao pedir o máximo de 7.826 RPM. A retomada na abertura e a devolução ao automático foram verificadas no hardware. O resultado depende do modelo; não representa validação de todos os Macs. Detalhes e limites em `docs/FINAL-REVIEW.md`.
 
-**Validação:** app e helper compilam localmente em Release e passaram nas verificações específicas de histórico, restauração SMC simulada e saída de comandos. O CI completo precisa ser reexecutado quando o acesso ao GitHub voltar. A resposta física das ventoinhas e o consumo total de CPU/RAM ainda dependem de teste no Mac de destino. O escopo e as medições estão em `docs/FINAL-REVIEW.md`.
+## English
 
-[Support / Apoiar Anglerson ☕](https://pixgg.com/Anglerson)
+Lightweight macOS menu bar system monitor for Apple Silicon, with CPU, GPU, RAM, temperatures, fan control, battery, disk and network.
+
+- Fixed cold-fan acquisition; 100% no longer has to wait for a heavy workload.
+- Manual/100% choices resume on launch and wake. Enable Launch at login to resume after signing in.
+- Automatic is available per fan and through Restore automatic in the quick panel and preferences. It clears saved targets and hands control back to macOS.
+- Removed the beta test button and validation gate. The optional privileged helper, explicit manual permission and hardware limits remain.
+- Corrected CPU die average/maximum selection, implausible readings, HID fallback and thermal history timestamps.
+- Dusty-inspired idle-app memory review with user selection, normal quit requests and protected background workloads; no added daemon or runtime dependency.
+- Upstream Debloat catalog verified, manual GitHub catalog updates preserved. Updated bilingual documentation and SEO metadata.
+
+**Upgrade:** replace the app, then update the helper once in Preferences → Fans. Public version stays **1.0**, internal build **2**, helper build **4**. macOS 13+, Apple Silicon; ad-hoc signed, not Apple notarized.
+
+Core tests passed on macOS and Linux. Cold-fan acceleration, launch-time resume and restoration to macOS Automatic were checked on one M4 Pro; other hardware still needs its own verification. See `docs/FINAL-REVIEW.md` for measurement scope.
+
+Built by [Anglerson](https://github.com/Anglersondev). References: [Stats](https://github.com/exelban/stats), [mac-os-debloat](https://github.com/OleksandrKrupko/mac-os-debloat), [Dusty](https://github.com/yagcioglutoprak/dusty). MIT notices preserved.

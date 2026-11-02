@@ -28,6 +28,7 @@ public struct GrowthConfig: Equatable {
 public final class GrowthDetector {
     private let config: GrowthConfig
     private var series: [String: [(t: TimeInterval, bytes: Double)]] = [:]
+    private var leaders: [String: ProcessIdentity] = [:]
 
     public init(config: GrowthConfig = GrowthConfig()) { self.config = config }
 
@@ -36,12 +37,16 @@ public final class GrowthDetector {
         let top = groups.sorted { $0.footprintBytes > $1.footprintBytes }.prefix(config.maxTrackedGroups)
         let alive = Set(top.map(\.id))
         for g in top {
+            if leaders[g.id] != g.leader { series[g.id] = nil }
+            leaders[g.id] = g.leader
             var s = series[g.id, default: []]
+            guard s.last.map({ t > $0.t }) ?? true else { continue }
             s.append((t, Double(g.footprintBytes)))
             if s.count > config.maxSeriesPoints { s.removeFirst(s.count - config.maxSeriesPoints) }
             series[g.id] = s
         }
         for key in series.keys where !alive.contains(key) { series.removeValue(forKey: key) }
+        leaders = leaders.filter { alive.contains($0.key) }
     }
 
     /// Série em memória do grupo (segundos, bytes) para gráficos; vazia se não houver dados. Nunca vai a disco.

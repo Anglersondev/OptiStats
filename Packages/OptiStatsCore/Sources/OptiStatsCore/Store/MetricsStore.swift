@@ -101,10 +101,14 @@ public final class MetricsStore {
             if let new = readings { store._sensorsByOwner[owner] = new }
             if let f = fans { store._fans = f }
             let merged = store._sensorsByOwner.keys.sorted().flatMap { key in store._sensorsByOwner[key] ?? [] }
-            let aggregates = SensorAggregator.aggregates(from: merged, at: timestamp)
+            let temperatureTime = merged.filter { $0.descriptor.kind == .temperature }.map(\.timestamp).max() ?? timestamp
+            let aggregates = SensorAggregator.aggregates(from: merged, at: temperatureTime)
             store._sensors = SensorsSnapshot(timestamp: timestamp, readings: merged, aggregates: aggregates, fans: store._fans)
-            if let v = aggregates.first(where: { $0.descriptor.key == "avg-cpu" })?.value { store.append(.tempCPU, timestamp, v) }
-            if let v = aggregates.first(where: { $0.descriptor.key == "avg-gpu" })?.value { store.append(.tempGPU, timestamp, v) }
+            // Fan/electrical updates must not stamp old temperatures as freshly measured.
+            if readings != nil, owner == "temperatures" {
+                if let v = aggregates.first(where: { $0.descriptor.key == "avg-cpu" })?.value { store.append(.tempCPU, temperatureTime, v) }
+                if let v = aggregates.first(where: { $0.descriptor.key == "avg-gpu" })?.value { store.append(.tempGPU, temperatureTime, v) }
+            }
             for f in fans ?? [] { if let r = f.rpm { store.append(.fan(f.index), timestamp, r) } }
         }
     }

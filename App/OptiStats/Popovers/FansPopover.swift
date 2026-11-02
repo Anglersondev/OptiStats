@@ -60,7 +60,7 @@ final class FanRowView: NSStackView {
         guard let lo = fan.minRPM, let hi = fan.maxRPM, hi > lo else { controls.isHidden = true; return }
         controls.isHidden = false
         slider.minValue = lo.rounded(.up); slider.maxValue = hi.rounded(.down)
-        mode.setEnabled(available || manualRPM != nil, forSegment: 0)
+        mode.setEnabled(true, forSegment: 0)
         mode.setEnabled(available, forSegment: 1)
         fullSpeed.isEnabled = available
         mode.toolTip = available ? nil : unavailableReason
@@ -84,12 +84,14 @@ final class FanRowView: NSStackView {
     }
 }
 
-/// Ventoinhas: leituras e controles opcionais pelo helper validado neste Mac.
+/// Ventoinhas: leituras e controles opcionais pelo helper disponível neste Mac.
 final class FansPopover: StatPopover {
     private let fanPool = ViewPool<FanRowView>(spacing: 10) { FanRowView() }
     private let chart = LineChartView(height: 56)
     private let boostCheckbox = NSButton(checkboxWithTitle: "", target: nil, action: nil)
     private let boostNote = Fmt.note(lines: 6)
+    private let setup = NSButton(title: "", target: nil, action: nil)
+    private let restoreAll = NSButton(title: "", target: nil, action: nil)
     private let controlNote = Fmt.note(lines: 3)
     private var chartSection: NSStackView!
     private static let palette: [NSColor] = [NSColor.controlAccentColor, NSColor.systemTeal, NSColor.systemPurple, NSColor.systemOrange]
@@ -111,7 +113,23 @@ final class FansPopover: StatPopover {
         boostCheckbox.action = #selector(boostChanged)
         boostCheckbox.translatesAutoresizingMaskIntoConstraints = false
         body.addFullWidth(makeSection(L("fans.section.control"), [boostCheckbox, boostNote]))
+        setup.title = L("fan.setup")
+        setup.target = self; setup.action = #selector(openFanSettings)
+        restoreAll.title = L("fan.restore.button")
+        restoreAll.target = self; restoreAll.action = #selector(restoreAutomatic)
+        body.addFullWidth(NSStackView.horizontal([restoreAll, setup], spacing: 8))
         chart.fixedRange = nil
+    }
+
+    @objc private func openFanSettings() { env.openFanPreferences?() }
+
+    @objc private func restoreAutomatic() {
+        env.fanControl.restoreAutomatic { [weak self] error in
+            guard let self else { return }
+            self.controlNote.setText(error ?? "")
+            self.controlNote.isHidden = error == nil
+            self.render()
+        }
     }
 
     private func modeText(_ m: FanMode) -> String {
@@ -128,9 +146,7 @@ final class FansPopover: StatPopover {
         switch env.platform.fanActuator.capability {
         case .unavailable(let reason):
             return L("fans.boost.unavailable", reason)
-        case .experimentalUnvalidated:
-            return L("fans.boost.unvalidated")
-        case .validated:
+        case .available:
             return settings?.smartBoostEnabled == true ? L("fans.boost.active") : L("fans.boost.available")
         }
     }
@@ -146,7 +162,7 @@ final class FansPopover: StatPopover {
     override func render() {
         let settings = env.fanControl.settings
         boostCheckbox.state = settings?.smartBoostEnabled == true ? .on : .off
-        if case .validated = env.platform.fanActuator.capability {
+        if case .available = env.platform.fanActuator.capability {
             boostCheckbox.isEnabled = settings?.manualAllowed == true && !env.fanControl.busy
                 && env.fanControl.manualTargets.isEmpty
         } else {
@@ -181,15 +197,14 @@ final class FansPopover: StatPopover {
             row.configure(name: name, rpmText: Fmt.number(fan.rpm, decimals: 0, unit: "RPM") + percent,
                           fraction: fan.percentOfRange, detailText: range + " · " + displayedMode)
             let settings = env.fanControl.settings
-            var validated = false
-            if case .validated = env.platform.fanActuator.capability { validated = true }
-            let available = validated && (settings?.manualAllowed ?? false) && !(settings?.smartBoostEnabled ?? false)
-                && !(settings?.isUnsupportedForThisMac ?? true) && !env.fanControl.busy
+            var helperAvailable = false
+            if case .available = env.platform.fanActuator.capability { helperAvailable = true }
+            let available = helperAvailable && (settings?.manualAllowed ?? false) && !(settings?.smartBoostEnabled ?? false)
+                && !env.fanControl.busy
             let reason: String
             if case .unavailable(let unavailable) = env.platform.fanActuator.capability { reason = unavailable }
             else if settings?.manualAllowed != true { reason = L("fan.err.notAllowed") }
-            else if settings?.isUnsupportedForThisMac == true { reason = L("fan.err.needsValidation") }
-            else if !validated { reason = L("fan.err.needsValidation") }
+            else if !helperAvailable { reason = L("fan.err.notInstalled") }
             else if settings?.smartBoostEnabled == true { reason = L("fan.err.smartBoostActive") }
             else { reason = L("fan.err.busy") }
             row.configureControl(fan: fan, available: available, manualRPM: env.fanControl.manualTargets[fan.index],
