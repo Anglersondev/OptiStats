@@ -5,6 +5,7 @@ import OptiStatsCore
 final class MenuBarPrefsPane: PrefsPaneViewController {
     override var paneTitle: String { L("prefs.tab.menubar") }
     override var symbolName: String { "menubar.rectangle" }
+    override var maximumContentWidth: CGFloat? { 720 }
 
     override func build() {
         let p = env.preferences.current
@@ -26,7 +27,7 @@ final class MenuBarPrefsPane: PrefsPaneViewController {
                 }
                 self?.rebuildSoon()
             }
-            enabled.widthAnchor.constraint(equalToConstant: 250).isActive = true
+            enabled.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
 
             let labelStyles = LabelStyle.allCases
             let labelPopup = popup(labelStyles.map { L("prefs.label.\($0.rawValue)") },
@@ -73,14 +74,23 @@ final class MenuBarPrefsPane: PrefsPaneViewController {
             up.isEnabled = index > 0
             down.isEnabled = index < widgets.count - 1
 
-            var rowViews: [NSView] = [enabled, labelPopup]
-            rowViews += contentViews
-            rowViews += [NSTextField.label(L("prefs.menubar.decimals"), font: Theme.body(11), color: Theme.secondaryText), decimalsPopup, up, down]
-            let row = NSStackView.horizontal(rowViews, spacing: 8)
-            stack.addArrangedSubview(row)
-            let stackRow = NSStackView.horizontal([NSTextField.label(L("prefs.menubar.stackWith"), font: Theme.body(11), color: Theme.secondaryText), stackPopup], spacing: 8)
-            stackRow.edgeInsets = NSEdgeInsets(top: 0, left: 24, bottom: 4, right: 0)
-            stack.addArrangedSubview(stackRow)
+            let card = PanelSectionView()
+            let spacer = NSView()
+            spacer.setContentHuggingPriority(.defaultLow, for: .horizontal)
+            card.addFullWidth(NSStackView.horizontal([enabled, spacer, up, down], spacing: 8))
+            func field(_ title: String, _ control: NSView, width: CGFloat) -> NSStackView {
+                control.widthAnchor.constraint(equalToConstant: width).isActive = true
+                return NSStackView.vertical([NSTextField.label(title, font: Theme.caption(10), color: Theme.secondaryText), control], spacing: 4)
+            }
+            var fields = [field(L("prefs.menubar.labelHeading"), labelPopup, width: 150)]
+            if let content = contentViews.first { fields.append(field(L("prefs.menubar.contentHeading"), content, width: 150)) }
+            fields.append(field(L("prefs.menubar.decimals"), decimalsPopup, width: 64))
+            let settings = NSStackView.horizontal(fields, spacing: 14)
+            settings.alignment = .top
+            card.addArrangedSubview(settings)
+            stackPopup.widthAnchor.constraint(equalToConstant: 190).isActive = true
+            card.addArrangedSubview(NSStackView.horizontal([NSTextField.label(L("prefs.menubar.stackWith"), font: Theme.body(11), color: Theme.secondaryText), stackPopup], spacing: 8))
+            stack.addFullWidth(card)
         }
 
         addSection(L("prefs.menubar.compactSection"))

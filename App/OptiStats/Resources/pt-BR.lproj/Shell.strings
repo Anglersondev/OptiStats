@@ -199,3 +199,5 @@
 "about.by" = "Por Anglerson";
 "about.support" = "Curtindo o OptiStats? Pague um café ☕ e ajude a manter as próximas atualizações:";
 "about.donateButton" = "Apoiar Anglerson ☕";
+"prefs.menubar.labelHeading" = "Rótulo";
+"prefs.menubar.contentHeading" = "Mostrar";

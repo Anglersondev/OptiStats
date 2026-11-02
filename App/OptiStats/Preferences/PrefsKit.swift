@@ -35,6 +35,7 @@ class PrefsPaneViewController: NSViewController {
 
     var paneTitle: String { "" }
     var symbolName: String { "gearshape" }
+    var maximumContentWidth: CGFloat? { nil }
     /// Monta o conteúdo em `stack`. Chamado de novo em `rebuild()`.
     func build() {}
     func paneDidAppear() {}
@@ -70,9 +71,17 @@ class PrefsPaneViewController: NSViewController {
         NSLayoutConstraint.activate([
             stack.topAnchor.constraint(equalTo: doc.topAnchor, constant: 20),
             stack.leadingAnchor.constraint(equalTo: doc.leadingAnchor, constant: 24),
-            stack.trailingAnchor.constraint(equalTo: doc.trailingAnchor, constant: -24),
+            stack.trailingAnchor.constraint(lessThanOrEqualTo: doc.trailingAnchor, constant: -24),
             stack.bottomAnchor.constraint(equalTo: doc.bottomAnchor, constant: -20)
         ])
+        if let maximumContentWidth {
+            stack.widthAnchor.constraint(lessThanOrEqualToConstant: maximumContentWidth).isActive = true
+            let preferred = stack.widthAnchor.constraint(equalToConstant: maximumContentWidth)
+            preferred.priority = .defaultLow
+            preferred.isActive = true
+        } else {
+            stack.trailingAnchor.constraint(equalTo: doc.trailingAnchor, constant: -24).isActive = true
+        }
         scroll.documentView = doc
         doc.widthAnchor.constraint(equalTo: scroll.contentView.widthAnchor).isActive = true
         root.addSubview(header)

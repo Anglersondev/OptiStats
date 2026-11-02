@@ -229,7 +229,7 @@ final class DiskCleanupPane: PrefsPaneViewController {
             addNote(L("maint.disk2.tm.loading"))
         }
 
-        addSection(L("maint.disk2.sec.types"))
+        addSection(L("maint.disk2.overviewAnalysis"))
         guard let a = analysisHeader() else { return }
         if !analyzing { addTypeBreakdown(a) }
         if !analyzing {
