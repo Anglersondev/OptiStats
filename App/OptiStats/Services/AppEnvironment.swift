@@ -170,6 +170,11 @@ final class AppEnvironment {
         OptimizationCoordinator(apps: platform.apps, probe: platform.memoryProbe, policy: { [unowned self] in self.protectionPolicy })
     }
 
+    func manualQuitReview() -> Advice {
+        OptimizationAdvisor(policy: protectionPolicy).quitReview(
+            groups: store.processes?.byMemory ?? [], frontmostBundleID: platform.apps.frontmostBundleIdentifier)
+    }
+
     // MARK: Diagnóstico
 
     func diagnosticsText() -> String {

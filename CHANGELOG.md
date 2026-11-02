@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0 — seleção manual de apps
+
+- Corrige a ausência da ação de encerrar quando nenhum app atende aos filtros de recomendação.
+- Escolher apps lista aplicativos elegíveis sem exigir 300 MB, uma hora de inatividade ou pressão de memória.
+- Encerrar selecionados permanece visível; pede confirmação e encerramento normal, preservando proteções e revalidação de identidade.
+- Gerenciador de memória no início do painel, botões em duas linhas e explicação para listas vazias.
+
 ## 1.0 (2026-11-02)
 
 - Remove o teste beta e o bloqueio de controle; mantém instalação opcional do helper e permissão manual explícita.

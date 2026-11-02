@@ -9,6 +9,7 @@ Monitor leve de sistema para macOS e Apple Silicon: CPU, GPU, RAM, temperatura, 
 - **Voltar ao Automático:** disponível em cada ventoinha e no botão **Restaurar automático**, no painel rápido e nas preferências. Apaga os alvos salvos e devolve o controle ao macOS. Sair, suspender ou perder a comunicação também devolve o controle.
 - Removidos o botão de teste beta e seu bloqueio de uso. Permanecem a instalação opcional do helper, a permissão manual e os limites reais do hardware.
 - **Temperatura da CPU corrigida:** prioriza média e máxima do firmware e descarta chaves que retornam valores implausíveis. Corrigidos o fallback HID e a idade do histórico térmico.
+- **Encerrar apps pela RAM:** Escolher apps e Encerrar selecionados ficam visíveis no início do painel, com seleção manual sem esperar uma hora de inatividade. A confirmação, as proteções e o encerramento normal continuam valendo.
 - **Revisão de RAM inspirada no Dusty:** apps grandes e inativos, com seleção e confirmação antes do encerramento normal. Sem outro serviço ou dependência; terminais e máquinas virtuais protegidos.
 - Catálogo Debloat conferido com o projeto original; atualização manual do GitHub preservada.
 - Português brasileiro e inglês; README e site bilíngue com metadados SEO atualizados.
@@ -26,6 +27,7 @@ Lightweight macOS menu bar system monitor for Apple Silicon, with CPU, GPU, RAM,
 - Automatic is available per fan and through Restore automatic in the quick panel and preferences. It clears saved targets and hands control back to macOS.
 - Removed the beta test button and validation gate. The optional privileged helper, explicit manual permission and hardware limits remain.
 - Corrected CPU die average/maximum selection, implausible readings, HID fallback and thermal history timestamps.
+- Choose apps and Quit selected remain visible near the top of the memory panel. Manual selection has no idle-time or memory-pressure requirement; protections and confirmation still apply.
 - Dusty-inspired idle-app memory review with user selection, normal quit requests and protected background workloads; no added daemon or runtime dependency.
 - Upstream Debloat catalog verified, manual GitHub catalog updates preserved. Updated bilingual documentation and SEO metadata.
 

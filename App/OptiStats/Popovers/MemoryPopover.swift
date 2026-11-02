@@ -38,6 +38,7 @@ final class MemoryPopover: StatPopover {
         pressureGauge.labels = (L("mem.pressure.normal"), L("mem.pressure.attention"), L("mem.pressure.high"))
         body.addFullWidth(makeSection(L("mem.section.usage"), [makeGaugeLayout(ring, [usedRow, availableRow, totalRow, swapRow])]))
         body.addFullWidth(makeSection(L("mem.section.pressure"), [pressureGauge]))
+        body.addFullWidth(makeSection(L("opt.section"), [optimizer]))
         body.addFullWidth(makeSection(L("mem.section.composition"), [
             compositionBar, appRow, wiredRow, compressedRow, cachedRow, freeRow,
             Fmt.note(L("mem.formulaNote"), lines: 5, size: 10), altRow]))
@@ -50,7 +51,6 @@ final class MemoryPopover: StatPopover {
         allProcessesButton.target = self
         allProcessesButton.action = #selector(openAllProcesses)
         body.addFullWidth(makeSection(L("mem.section.top"), [appPool.stack, appNote, allProcessesButton]))
-        body.addFullWidth(makeSection(L("opt.section"), [optimizer]))
         chart.fixedRange = 0...100
         altRow.toolTip = L("mem.altFormulaTip")
         optimizer.onLayoutChange = { [weak self] in self?.updatePreferredSize() }

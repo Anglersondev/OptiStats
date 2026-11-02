@@ -142,7 +142,7 @@
 "opt.cat.passwords" = "password manager";
 "opt.cat.streaming" = "streaming";
 "opt.cat.terminal" = "terminal";
-"opt.closeSelected" = "Request quit…";
+"opt.closeSelected" = "Quit selected…";
 "opt.confidence.low" = "low";
 "opt.confidence.medium" = "medium";
 "opt.confirm.body" = "OptiStats only sends a normal quit request (like Cmd+Q) and never forces anything. Apps may ask you to save; unsaved work can be lost if you choose to discard it.";
@@ -152,7 +152,7 @@
 "opt.growth" = "growth of about %@/min (%@ confidence)";
 "opt.healthy" = "Your memory is healthy; no action is needed.";
 "opt.insufficient" = "Not enough reliable data yet (memory pressure is unavailable).";
-"opt.intro" = "Analyzes memory pressure and swap and, only if useful, suggests apps you can ask to quit. Nothing is closed without your confirmation.";
+"opt.intro" = "Analyze memory or choose apps to quit normally. Check your selection and confirm the request; no app closes automatically.";
 "opt.out.failed" = "the quit request could not be sent";
 "opt.out.quit" = "closed";
 "opt.out.stillRunning" = "still open (may be asking to save)";
@@ -242,3 +242,10 @@
 "opt.reviewIdle" = "Review idle apps";
 "opt.idleNote" = "Lists apps using at least 300 MB that have remained in the background for one hour while OptiStats was open. Activity from before launch is unknown. Protected apps are excluded. Only selected apps receive a normal quit request.";
 "opt.cat.virtualMachine" = "virtual machines and containers";
+"opt.chooseApps" = "Choose apps…";
+"opt.selectionHint" = "Click Choose apps, check the apps you want, then click Quit selected. Nothing is selected by default.";
+"opt.manualReviewNote" = "Choose which apps to quit. This list does not require one hour of inactivity or memory pressure. Each selected app receives a normal quit request, like Cmd+Q, after confirmation.";
+"opt.manualCandidates" = "Apps available for selection";
+"opt.noManualApps" = "No eligible apps in this snapshot. Protected apps are listed below. Click Choose apps again to refresh the list.";
+"opt.noRecommendations" = "No apps meet this analysis’s filters. Use Choose apps to make your own selection without waiting for one hour of inactivity.";
+"opt.protectionSettingsHint" = "Protections still apply. To allow an app from a protected category, use Preferences → Optimizer → Default protections I released. Essential components remain blocked.";

@@ -142,7 +142,7 @@
 "opt.cat.passwords" = "gerenciador de senhas";
 "opt.cat.streaming" = "streaming";
 "opt.cat.terminal" = "terminal";
-"opt.closeSelected" = "Pedir para encerrar…";
+"opt.closeSelected" = "Encerrar selecionados…";
 "opt.confidence.low" = "baixa";
 "opt.confidence.medium" = "média";
 "opt.confirm.body" = "O OptiStats apenas envia um pedido de encerramento normal (como Cmd+Q) e nunca força nada. Os apps podem pedir para você salvar; trabalho não salvo pode ser perdido se você optar por descartá-lo.";
@@ -152,7 +152,7 @@
 "opt.growth" = "crescimento de cerca de %@/min (confiança %@)";
 "opt.healthy" = "Sua memória está saudável; nenhuma ação é necessária.";
 "opt.insufficient" = "Ainda não há dados confiáveis suficientes (a pressão de memória não está disponível).";
-"opt.intro" = "Analisa a pressão de memória e o swap e, só se for útil, sugere apps que você pode pedir para encerrar. Nada é encerrado sem a sua confirmação.";
+"opt.intro" = "Analise a memória ou escolha apps para encerrar normalmente. Marque sua seleção e confirme o pedido; nenhum app é fechado automaticamente.";
 "opt.out.failed" = "não foi possível enviar o pedido";
 "opt.out.quit" = "encerrado";
 "opt.out.stillRunning" = "ainda aberto (pode estar pedindo para salvar)";
@@ -242,3 +242,10 @@
 "opt.reviewIdle" = "Revisar apps inativos";
 "opt.idleNote" = "Lista apps com pelo menos 300 MB que ficaram em segundo plano por uma hora com o OptiStats aberto. A atividade anterior à abertura é desconhecida. Apps protegidos ficam de fora. Só os apps selecionados recebem um pedido normal de encerramento.";
 "opt.cat.virtualMachine" = "máquinas virtuais e contêineres";
+"opt.chooseApps" = "Escolher apps…";
+"opt.selectionHint" = "Clique em Escolher apps, marque os apps desejados e depois em Encerrar selecionados. Nada vem marcado.";
+"opt.manualReviewNote" = "Escolha quais apps deseja encerrar. Esta lista não exige uma hora de inatividade nem pressão de memória. O pedido será normal, como Cmd+Q, após sua confirmação.";
+"opt.manualCandidates" = "Apps disponíveis para seleção";
+"opt.noManualApps" = "Não há apps elegíveis nesta leitura. Os apps protegidos são listados abaixo. A lista pode ser atualizada clicando em Escolher apps novamente.";
+"opt.noRecommendations" = "Nenhum app atende aos filtros desta análise. Use Escolher apps para montar sua própria seleção sem esperar uma hora de inatividade.";
+"opt.protectionSettingsHint" = "As proteções continuam valendo. Para liberar um app de uma categoria protegida, use Preferências → Otimizador → Proteções padrão que liberei. Componentes essenciais permanecem bloqueados.";

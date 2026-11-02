@@ -12,6 +12,8 @@ final class MemoryOptimizerPanel: NSStackView {
     private let intro = Fmt.note(L("opt.intro"), lines: 5)
     private let analyzeButton = NSButton(title: L("opt.analyze"), target: nil, action: nil)
     private let reviewButton = NSButton(title: L("opt.reviewIdle"), target: nil, action: nil)
+    private let chooseButton = NSButton(title: L("opt.chooseApps"), target: nil, action: nil)
+    private let selectionHint = Fmt.note(L("opt.selectionHint"), lines: 4, size: 10.5)
     private let detail = NSStackView.vertical(spacing: 6)
     private let closeButton = NSButton(title: L("opt.closeSelected"), target: nil, action: nil)
     private let cancelButton = NSButton(title: L("opt.cancel"), target: nil, action: nil)
@@ -28,23 +30,24 @@ final class MemoryOptimizerPanel: NSStackView {
         spacing = 8
         translatesAutoresizingMaskIntoConstraints = false
 
-        for b in [analyzeButton, reviewButton, closeButton, cancelButton] {
+        for b in [analyzeButton, reviewButton, chooseButton, closeButton, cancelButton] {
             b.bezelStyle = .rounded
             b.controlSize = .small
             b.target = self
             b.translatesAutoresizingMaskIntoConstraints = false
         }
         reviewButton.action = #selector(reviewIdleTapped)
+        chooseButton.action = #selector(chooseAppsTapped)
         analyzeButton.action = #selector(analyzeTapped)
         closeButton.action = #selector(closeSelectedTapped)
         cancelButton.action = #selector(cancelTapped)
         closeButton.isEnabled = false
-        closeButton.isHidden = true
         cancelButton.isHidden = true
 
         addFullWidth(intro)
-        let buttons = NSStackView.horizontal([analyzeButton, reviewButton, closeButton, cancelButton], spacing: 8)
-        addArrangedSubview(buttons)
+        addArrangedSubview(NSStackView.horizontal([chooseButton, closeButton], spacing: 8))
+        addArrangedSubview(NSStackView.horizontal([analyzeButton, reviewButton, cancelButton], spacing: 8))
+        addFullWidth(selectionHint)
         addFullWidth(detail)
     }
     required init(coder: NSCoder) { fatalError("init(coder:) não suportado") }
@@ -62,6 +65,11 @@ final class MemoryOptimizerPanel: NSStackView {
         showAdvice(env.currentAdvice(reviewIdleApps: true))
         detail.addFullWidth(Fmt.note(L("opt.idleNote"), lines: 5, size: 10.5))
         onLayoutChange?()
+    }
+
+    @objc private func chooseAppsTapped() {
+        guard !running else { return }
+        showAdvice(env.manualQuitReview(), manualSelection: true)
     }
 
     @objc private func cancelTapped() {
@@ -93,6 +101,7 @@ final class MemoryOptimizerPanel: NSStackView {
         running = true
         analyzeButton.isEnabled = false
         reviewButton.isEnabled = false
+        chooseButton.isEnabled = false
         closeButton.isEnabled = false
         cancelButton.isHidden = false
         cancelButton.isEnabled = true
@@ -115,9 +124,10 @@ final class MemoryOptimizerPanel: NSStackView {
         cancelToken = nil
         analyzeButton.isEnabled = true
         reviewButton.isEnabled = true
+        chooseButton.isEnabled = true
         analyzeButton.title = L("opt.analyzeAgain")
         cancelButton.isHidden = true
-        closeButton.isHidden = true
+        closeButton.isEnabled = false
         checks = []
         showReport(report)
     }
@@ -131,15 +141,16 @@ final class MemoryOptimizerPanel: NSStackView {
         }
     }
 
-    private func showAdvice(_ advice: Advice) {
+    private func showAdvice(_ advice: Advice, manualSelection: Bool = false) {
         clearDetail()
         checks = []
-        closeButton.isHidden = true
         closeButton.isEnabled = false
 
         let headline = Fmt.note("", lines: 5, size: 12)
         var reasons: [AssessmentReason] = []
-        switch advice.assessment {
+        if manualSelection {
+            headline.setText(L("opt.manualReviewNote"))
+        } else { switch advice.assessment {
         case .insufficientData:
             headline.setText(L("opt.insufficient"))
         case .healthy:
@@ -150,12 +161,12 @@ final class MemoryOptimizerPanel: NSStackView {
         case .actionRecommended(let r):
             headline.setText(L("opt.action")); reasons = r
             headline.textColor = Theme.warn
-        }
+        } }
         detail.addFullWidth(headline)
         for r in reasons { detail.addFullWidth(Fmt.note("• " + reasonText(r), lines: 3, size: 10.5)) }
 
         if !advice.candidates.isEmpty {
-            detail.addFullWidth(SectionHeaderView(L("opt.candidates")))
+            detail.addFullWidth(SectionHeaderView(L(manualSelection ? "opt.manualCandidates" : "opt.candidates")))
             detail.addFullWidth(Fmt.note(L("opt.candidatesNote"), lines: 4, size: 10))
             for c in advice.candidates {
                 let title = L("opt.candidateTitle", c.group.displayName, Fmt.bytes(c.estimatedReclaimBytes))
@@ -171,8 +182,9 @@ final class MemoryOptimizerPanel: NSStackView {
                 }
                 detail.addFullWidth(Fmt.note(lines.joined(separator: " · "), lines: 4, size: 10))
             }
-            closeButton.isHidden = false
             checkChanged()
+        } else {
+            detail.addFullWidth(Fmt.note(L(manualSelection ? "opt.noManualApps" : "opt.noRecommendations"), lines: 5, size: 11))
         }
 
         if !advice.protectedTop.isEmpty {
@@ -182,6 +194,7 @@ final class MemoryOptimizerPanel: NSStackView {
                 detail.addFullWidth(Fmt.note("• " + L("opt.protectedRow", p.group.displayName, Fmt.bytes(p.group.footprintBytes), why),
                                              lines: 3, size: 10))
             }
+            detail.addFullWidth(Fmt.note(L("opt.protectionSettingsHint"), lines: 4, size: 10.5))
         }
         onLayoutChange?()
     }
