@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0 — proteção do Spotlight
+
+- Protege com.apple.campo e com.apple.Spotlight por identidade, inclusive quando o app aparece como Siri AI.
+- Não permite encerrar esses componentes pelo gerenciador de RAM nem desativá-los no Debloat, inclusive em Selecionar tudo.
+- Mantém a opção de restaurar componentes anteriormente desativados. Assistente de voz e busca são tratados separadamente.
+
 ## 1.0 — interface e seleção manual de apps
 
 - Painéis com cartões nativos, cabeçalhos com ícones e tipografia consistente; preferências com títulos fixos e navegação mais legível.

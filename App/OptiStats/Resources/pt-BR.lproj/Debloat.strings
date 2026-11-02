@@ -173,3 +173,4 @@
 "debloat.state.unknown" = "Estado não confirmado";
 "debloat.state.pendingSelection" = "Selecionado para desativar";
 "debloat.stateLegend" = "Habilitado significa permitido pelo launchd, não necessariamente em execução. Marcar a caixa apenas seleciona uma mudança; ela só vale após Desativar selecionados e a confirmação. Passe o mouse sobre um serviço para ver função, riscos e efeitos descritos no catálogo.";
+"debloat.launcherProtected" = "Protegido: este componente abre a busca do ⌘ + Espaço. Para desligar a assistente de voz, use Ajustes do Sistema → Apple Intelligence e Siri; não encerre este app.";

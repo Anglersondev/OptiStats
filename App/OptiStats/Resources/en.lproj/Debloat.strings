@@ -173,3 +173,4 @@
 "debloat.state.unknown" = "State not confirmed";
 "debloat.state.pendingSelection" = "Selected to disable";
 "debloat.stateLegend" = "Enabled means allowed by launchd, not necessarily running. Checking a box only selects a change; it takes effect after Disable selected and confirmation. Hover over a service for its catalog description, risks and known effects.";
+"debloat.launcherProtected" = "Protected: this component opens Cmd-Space search. To turn off the voice assistant, use System Settings → Apple Intelligence & Siri; do not quit this app.";

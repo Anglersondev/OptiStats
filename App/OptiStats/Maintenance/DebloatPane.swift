@@ -297,6 +297,7 @@ final class DebloatPane: PrefsPaneViewController {
         if let hint = DebloatSections.hint(for: item.sectionTitle) { explanation.append(hint) }
         if !item.comment.isEmpty { explanation.append(L("debloat.authorSays") + " " + item.comment) }
         explanation.append(L("debloat.risk.\(item.risk.rawValue)"))
+        if ProtectionPolicy.essentialLauncherBundleIDs.contains(item.label) { explanation.append(L("debloat.launcherProtected")) }
         for warning in item.warnings { explanation.append(L("debloat.warn.\(warning.rawValue)")) }
         if item.sipOff { explanation.append(L("debloat.sipOff")) }
         if e.domain == .system { explanation.append(L("debloat.needsSystem")) }
@@ -312,6 +313,7 @@ final class DebloatPane: PrefsPaneViewController {
             details.append(l)
         }
         if !item.comment.isEmpty { detail(L("debloat.authorSays") + " " + item.comment) }
+        if ProtectionPolicy.essentialLauncherBundleIDs.contains(item.label) { detail(L("debloat.launcherProtected")) }
         for w in item.warnings { detail("⚠︎ " + L("debloat.warn.\(w.rawValue)"), Theme.warn) }
         if item.sipOff { detail(L("debloat.sipOff"), Theme.tertiaryText) }
         if e.domain == .system, e.state == .enabled, !allowSystem { detail(L("debloat.needsSystem"), Theme.tertiaryText) }

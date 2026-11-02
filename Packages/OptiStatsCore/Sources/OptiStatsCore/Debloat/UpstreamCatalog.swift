@@ -191,6 +191,7 @@ public extension DebloatPlanner {
     }
     func manualCommand(_ item: UpstreamItem, domain: ServiceDomain, disable: Bool) -> String? {
         guard UpstreamCatalog.isValidLabel(item.label) else { return nil }
+        guard !disable || !ProtectionPolicy.essentialLauncherBundleIDs.contains(item.label) else { return nil }
         let verb = disable ? "disable" : "enable"
         return domain == .system ? "sudo launchctl \(verb) system/\(item.label)" : "launchctl \(verb) gui/\(uid)/\(item.label)"
     }
@@ -198,6 +199,7 @@ public extension DebloatPlanner {
     private func upstreamCommand(_ verb: String, _ item: UpstreamItem, _ domain: ServiceDomain,
                                  _ catalog: UpstreamCatalog, _ level: Level) -> [String]? {
         guard catalog.contains(item), UpstreamCatalog.isValidLabel(item.label) else { return nil }
+        guard verb != "disable" || !ProtectionPolicy.essentialLauncherBundleIDs.contains(item.label) else { return nil }
         switch (level, domain) {
         case (.auditOnly, _), (.user, .system): return nil
         case (.user, .user), (.system, .user): return ["launchctl", verb, "gui/\(uid)/\(item.label)"]

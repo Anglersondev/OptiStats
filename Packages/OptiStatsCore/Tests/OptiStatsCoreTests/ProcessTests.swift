@@ -135,3 +135,26 @@ final class ProcessHelperGroupingTests: XCTestCase {
         XCTAssertEqual(ProcessGrouper.childRole(of: members[0]), .main)
     }
 }
+
+final class SpotlightProtectionTests: XCTestCase {
+    func testSiriAIAndSpotlightAreHardProtectedEvenIfUserAllowsCategory() {
+        for id in ["com.apple.campo", "com.apple.Spotlight"] {
+            let group = appGroup("Localized launcher", bundle: id, footprint: GiB, path: "/System/Applications/Siri AI.app")
+            let policy = ProtectionPolicy(userUnprotectedBundleIDs: [id])
+            XCTAssertTrue(policy.verdict(for: group, context: AppRuntimeContext()).isHardBlocked)
+            XCTAssertTrue(OptimizationAdvisor(policy: policy).quitReview(groups: [group], frontmostBundleID: nil).candidates.isEmpty)
+        }
+    }
+    func testLauncherNameIsProtectedWithoutBundleID() {
+        let group = appGroup("Siri AI", footprint: GiB)
+        XCTAssertTrue(ProtectionPolicy().verdict(for: group, context: AppRuntimeContext()).isHardBlocked)
+    }
+    func testDebloatCannotDisableLauncherButCanRestoreIt() {
+        let item = UpstreamItem(label: "com.apple.campo", comment: "Cmd-Space", sipOff: false, sectionTitle: "Launcher", sectionPreset: .none)
+        let catalog = UpstreamCatalog(sections: [UpstreamSection(title: "Launcher", preset: .none, minMacOS: nil, items: [item])])
+        let planner = DebloatPlanner(uid: 501)
+        XCTAssertNil(planner.disableCommand(item, domain: .user, in: catalog, level: .system))
+        XCTAssertNil(planner.manualCommand(item, domain: .user, disable: true))
+        XCTAssertNotNil(planner.enableCommand(item, domain: .user, in: catalog, level: .system))
+    }
+}

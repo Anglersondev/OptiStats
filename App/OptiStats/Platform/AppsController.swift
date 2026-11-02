@@ -73,6 +73,7 @@ final class MacAppController: AppController, FrontmostAppProviding {
         guard liveIdentity(matching: identity) != nil else { return false }
         return onMain {
             guard let app = NSRunningApplication(processIdentifier: identity.pid), !app.isTerminated else { return false }
+            if let id = app.bundleIdentifier, ProtectionPolicy.essentialLauncherBundleIDs.contains(id) { return false }
             return app.terminate()   // pedido normal (equivale a Cmd+Q); nunca forceTerminate
         }
     }

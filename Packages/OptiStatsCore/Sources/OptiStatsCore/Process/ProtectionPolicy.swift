@@ -47,8 +47,11 @@ public struct ProtectionPolicy: Codable, Equatable {
 
     static let essentialNames: Set<String> = [
         "WindowServer", "Finder", "Dock", "loginwindow", "SystemUIServer", "launchd", "kernel_task",
-        "ControlCenter", "NotificationCenter", "coreaudiod", "Spotlight", "mds", "mds_stores"
+        "ControlCenter", "NotificationCenter", "coreaudiod", "Spotlight", "Siri AI", "mds", "mds_stores"
     ]
+
+    /// On macOS 27 the app named Siri AI hosts Cmd-Space. It is a system launcher, not an idle app.
+    public static let essentialLauncherBundleIDs: Set<String> = ["com.apple.campo", "com.apple.Spotlight"]
 
     /// Prefixos de bundle ID → categoria (verificação por prefixo).
     static let categoryPrefixes: [(prefix: String, category: ProtectedCategory)] = [
@@ -99,7 +102,10 @@ public struct ProtectionPolicy: Codable, Equatable {
         if group.members.contains(where: { $0.uid == 0 }) {
             reasons.append(.rootOwned); hard = true
         }
-        if group.members.contains(where: { Self.essentialNames.contains($0.name) }) || Self.essentialNames.contains(group.displayName) {
+        if group.members.contains(where: { Self.essentialNames.contains($0.name)
+            || $0.bundleIdentifier.map(Self.essentialLauncherBundleIDs.contains) == true })
+            || Self.essentialNames.contains(group.displayName)
+            || group.bundleIdentifier.map(Self.essentialLauncherBundleIDs.contains) == true {
             reasons.append(.essentialProcess); hard = true
         }
         if group.bundleIdentifier == ownBundleIdentifier {
