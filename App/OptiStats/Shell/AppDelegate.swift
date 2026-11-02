@@ -37,6 +37,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { false }
 
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        showPreferences()
+        return true
+    }
+
     // MARK: Janelas
 
     func showPreferences(tab: PreferencesWindowController.Tab? = nil) {
@@ -79,6 +84,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         about.target = self
         appMenu.addItem(about)
         appMenu.addItem(.separator())
+        let settings = NSMenuItem(title: L("shell.menu.preferences"), action: #selector(showPreferencesFromMenu(_:)), keyEquivalent: ",")
+        settings.target = self
+        appMenu.addItem(settings)
+        appMenu.addItem(.separator())
         appMenu.addItem(withTitle: L("shell.menu.quit"), action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
         appItem.submenu = appMenu
         main.addItem(appItem)
@@ -99,4 +108,5 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     @objc private func showAboutFromMenu(_ sender: Any?) { showAbout() }
+    @objc private func showPreferencesFromMenu(_ sender: Any?) { showPreferences() }
 }

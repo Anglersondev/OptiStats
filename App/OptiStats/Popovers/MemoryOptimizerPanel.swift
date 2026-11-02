@@ -50,7 +50,8 @@ final class MemoryOptimizerPanel: NSStackView {
 
         addFullWidth(intro)
         addArrangedSubview(NSStackView.horizontal([chooseButton, closeButton], spacing: 8))
-        addArrangedSubview(NSStackView.horizontal([analyzeButton, reviewButton, cancelButton], spacing: 8))
+        addArrangedSubview(NSStackView.horizontal([analyzeButton, reviewButton], spacing: 8))
+        addArrangedSubview(cancelButton)
         addFullWidth(selectionHint)
         addFullWidth(selectionCount)
         updateSelectionCount()
