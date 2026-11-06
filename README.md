@@ -51,7 +51,7 @@ Requires **macOS 13 or later and Apple Silicon**. Sensor availability and fan co
 
 OptiStats is an independent app inspired by [Stats by exelban](https://github.com/exelban/stats). Selected SMC, sensor, IOReport and fan-control approaches were studied or adapted with MIT attribution. OptiStats uses its own sampling architecture and adds RAM guidance, disk/cache maintenance and a Debloat interface. It is not affiliated with Stats.
 
-The focus is low overhead: demand-driven collection, shared reads, bounded history and background work away from the interface thread. **Lower CPU or RAM use than Stats has not been established in a controlled comparison.** See [performance measurement](#measure-performance) and [the implementation audit](docs/AUDITORIA-STATS.md).
+The focus is low overhead: demand-driven collection, shared reads, bounded history and background work away from the interface thread. The maintainer reports **about 50% lower CPU and RAM use than Stats in personal testing**. The readings, enabled modules and test conditions were not recorded, so this is an attributed observation, **not a reproducible benchmark or a universal performance guarantee**. See [performance measurement](#measure-performance) and [the implementation audit](docs/AUDITORIA-STATS.md).
 
 ## OptiStats and Stats
 
@@ -64,7 +64,7 @@ The table describes published features, not measured performance. [Stats](https:
 | Fan write control | Optional Automatic, Manual, 100% and Smart Boost through a privileged helper | Repository lists fan control as not maintained |
 | Review and selectively quit large idle apps | Yes, with protected-app exclusions and confirmation | Not documented as a dedicated workflow |
 | Optional macOS service/Debloat catalog | Yes, with snapshots and manual confirmation | Not documented as a dedicated workflow |
-| Independently measured lower resource use | Not established | No like-for-like benchmark in this repository |
+| CPU and RAM comparison | Maintainer reports about 50% lower use in personal testing; methodology not recorded | No like-for-like benchmark in this repository |
 
 Choose Stats if you want its broader, established monitor and widget ecosystem. Choose OptiStats if its memory review, fan workflow or optional maintenance tools meet your needs. Do not run two fan-control utilities against the same fan at the same time.
 
@@ -115,7 +115,7 @@ No. It reviews memory pressure and large background apps, protects selected apps
 
 ### Is OptiStats lighter than Stats or Activity Monitor?
 
-That has not been established by a controlled comparison. Its collectors share a scheduler and stop hidden sources, but your enabled modules and sampling profile determine actual usage. Use [the benchmark script](#measure-performance) under comparable settings.
+The maintainer reports about 50% lower CPU and RAM use in personal testing. No raw readings or comparable configuration were recorded, so results on other Macs may differ. Its collectors share a scheduler and stop hidden sources; use [the benchmark script](#measure-performance) under comparable settings to check your own Mac.
 
 ### Is the Debloat feature required for monitoring?
 
