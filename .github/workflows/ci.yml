@@ -7,12 +7,12 @@ jobs:
     runs-on: ubuntu-latest
     container: swift:5.10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - run: swift test --package-path Packages/OptiStatsCore
   macos:
-    runs-on: macos-14
+    runs-on: macos-15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - run: python3 scripts/check_localization.py
       - run: python3 scripts/generate_xcodeproj.py && git diff --exit-code OptiStats.xcodeproj || true
       - run: swift test --package-path Packages/OptiStatsCore
@@ -20,5 +20,5 @@ jobs:
       - run: xcodebuild -project OptiStats.xcodeproj -scheme OptiStats -configuration Debug -destination 'platform=macOS' build CODE_SIGNING_ALLOWED=NO
       - run: xcodebuild -project OptiStats.xcodeproj -scheme OptiStats -configuration Release -destination 'platform=macOS' -derivedDataPath build build CODE_SIGNING_ALLOWED=NO
       - run: scripts/make_dmg.sh build/Build/Products/Release/OptiStats.app OptiStats-1.0.dmg
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with: { name: OptiStats-dmg, path: OptiStats-1.0.dmg }
