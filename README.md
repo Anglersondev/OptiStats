@@ -1,8 +1,24 @@
-# OptiStats — macOS System Monitor
+# OptiStats — Apple Silicon Mac System Monitor, Fan Control and Memory Review
 
-**A native, lightweight menu bar monitor for Apple Silicon, with RAM guidance, fan controls and optional Debloat.** Built by [Anglerson](https://github.com/Anglersondev) in Swift and AppKit.
+<img src="site/assets/icon.png" alt="OptiStats app icon for the macOS menu bar system monitor" width="96" align="right">
 
-[Download 1.0](https://github.com/Anglersondev/OptiStats/releases/tag/v1.0) · [Português brasileiro](README.pt-BR.md) · [Report a bug](https://github.com/Anglersondev/OptiStats/issues)
+**A native macOS menu bar monitor for Apple Silicon.** See CPU, GPU, RAM, temperatures, fans, power, disk, network and battery; review memory-heavy apps; optionally control supported fans and macOS services. Built by [Anglerson](https://github.com/Anglersondev) in Swift and AppKit.
+
+[Download 1.0](https://github.com/Anglersondev/OptiStats/releases/tag/v1.0) · [Features](#what-it-does) · [Compare with Stats](#optistats-and-stats) · [FAQ](#frequently-asked-questions) · [Português brasileiro](README.pt-BR.md) · [Report a bug](https://github.com/Anglersondev/OptiStats/issues)
+
+[![CI](https://github.com/Anglersondev/OptiStats/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Anglersondev/OptiStats/actions/workflows/ci.yml)
+
+## Release status
+
+| Item | Current status |
+| --- | --- |
+| Published version | [1.0](https://github.com/Anglersondev/OptiStats/releases/tag/v1.0) |
+| Supported Macs | Apple Silicon; macOS 13 or later |
+| Fan speeds | Read-only by default; write control requires the optional privileged helper and supported hardware |
+| Code signing | Ad-hoc signed; not Apple notarized |
+| Validation | [CI builds and core tests](https://github.com/Anglersondev/OptiStats/actions/workflows/ci.yml); physical fan behavior still needs checking on each Mac |
+
+Sensor names, readings and fan write support depend on the model. OptiStats does not promise a temperature or fan control that the hardware does not expose.
 
 ## What it does
 
@@ -36,6 +52,21 @@ Requires **macOS 13 or later and Apple Silicon**. Sensor availability and fan co
 OptiStats is an independent app inspired by [Stats by exelban](https://github.com/exelban/stats). Selected SMC, sensor, IOReport and fan-control approaches were studied or adapted with MIT attribution. OptiStats uses its own sampling architecture and adds RAM guidance, disk/cache maintenance and a Debloat interface. It is not affiliated with Stats.
 
 The focus is low overhead: demand-driven collection, shared reads, bounded history and background work away from the interface thread. **Lower CPU or RAM use than Stats has not been established in a controlled comparison.** See [performance measurement](#measure-performance) and [the implementation audit](docs/AUDITORIA-STATS.md).
+
+## OptiStats and Stats
+
+The table describes published features, not measured performance. [Stats](https://github.com/exelban/stats) is an established open-source system monitor; OptiStats is an independent project with a different scope. Features marked “not documented” may exist in another form or change in later releases.
+
+| Need | OptiStats 1.0 | Stats |
+| --- | --- | --- |
+| Menu bar CPU, GPU, memory, disk, network, sensors and battery | Yes | Yes |
+| Fan speed display | Yes, when exposed by the Mac | Yes, when exposed by the Mac |
+| Fan write control | Optional Automatic, Manual, 100% and Smart Boost through a privileged helper | Repository lists fan control as not maintained |
+| Review and selectively quit large idle apps | Yes, with protected-app exclusions and confirmation | Not documented as a dedicated workflow |
+| Optional macOS service/Debloat catalog | Yes, with snapshots and manual confirmation | Not documented as a dedicated workflow |
+| Independently measured lower resource use | Not established | No like-for-like benchmark in this repository |
+
+Choose Stats if you want its broader, established monitor and widget ecosystem. Choose OptiStats if its memory review, fan workflow or optional maintenance tools meet your needs. Do not run two fan-control utilities against the same fan at the same time.
 
 ## Debloat: source and behavior
 
@@ -71,3 +102,21 @@ The memory review adapts ideas from [Dusty by Toprak Yagcioglu](https://github.c
 Created by **Anglerson**. [Support development ☕](https://pixgg.com/Anglerson).
 
 Third-party MIT notices are preserved in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). An overall license for OptiStats has not yet been declared; the third-party licenses apply to their respective material.
+
+## Frequently asked questions
+
+### Can OptiStats control the fans on every Apple Silicon Mac?
+
+No. Fan control depends on the model and the SMC interfaces it exposes. Monitoring is read-only by default; install the optional helper only when you need supported write controls. Check the RPM change on your own Mac after applying a setting.
+
+### Does OptiStats automatically close apps to free RAM?
+
+No. It reviews memory pressure and large background apps, protects selected apps, and requires you to choose and confirm any quit action. Healthy memory is shown as healthy.
+
+### Is OptiStats lighter than Stats or Activity Monitor?
+
+That has not been established by a controlled comparison. Its collectors share a scheduler and stop hidden sources, but your enabled modules and sampling profile determine actual usage. Use [the benchmark script](#measure-performance) under comparable settings.
+
+### Is the Debloat feature required for monitoring?
+
+No. It is optional and does not run continuously. Review each proposed service change and its possible effects before confirming it.
