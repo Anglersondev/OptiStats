@@ -4,7 +4,7 @@ on:
   pull_request:
 jobs:
   core-linux:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     container: swift:5.10
     steps:
       - uses: actions/checkout@v5
