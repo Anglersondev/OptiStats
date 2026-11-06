@@ -112,7 +112,7 @@ final class AboutWindowController: NSObject, NSWindowDelegate {
     /// Avisos de terceiros em texto fixo (notas legais não são traduzidas).
     static let licenseNotice = """
     OptiStats
-    Copyright (c) OptiStats contributors.
+    Copyright (c) 2026 Anglerson.
 
     Third-party notices
 
