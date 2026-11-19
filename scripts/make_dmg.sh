@@ -31,14 +31,12 @@ if [[ -n "$NOTARY_PROFILE" ]]; then
 fi
 # DiskImages can briefly hold a new image busy after create/sign/staple on a runner.
 # Fail the package if the final attempt still cannot verify it.
-for delay in 1 2 4; do
-  if hdiutil verify "$DMG"; then
-    verified=1
-    break
-  fi
-  sleep "$delay"
+attempt=1
+until hdiutil verify "$DMG"; do
+  if [[ "$attempt" -ge 4 ]]; then exit 1; fi
+  sleep "$attempt"
+  attempt=$((attempt + 1))
 done
-if [[ ${verified:-0} != 1 ]]; then hdiutil verify "$DMG"; fi
 mv -f "$DMG" "$OUT"
 (cd "$(dirname "$OUT")" && shasum -a 256 "$(basename "$OUT")" > "$(basename "$OUT").sha256")
 echo "Generated: $OUT"
