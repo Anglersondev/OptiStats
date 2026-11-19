@@ -29,7 +29,16 @@ if [[ -n "$NOTARY_PROFILE" ]]; then
   xcrun stapler staple "$DMG"
   xcrun stapler validate "$DMG"
 fi
-hdiutil verify "$DMG"
+# DiskImages can briefly hold a new image busy after create/sign/staple on a runner.
+# Fail the package if the final attempt still cannot verify it.
+for delay in 1 2 4; do
+  if hdiutil verify "$DMG"; then
+    verified=1
+    break
+  fi
+  sleep "$delay"
+done
+if [[ ${verified:-0} != 1 ]]; then hdiutil verify "$DMG"; fi
 mv -f "$DMG" "$OUT"
 (cd "$(dirname "$OUT")" && shasum -a 256 "$(basename "$OUT")" > "$(basename "$OUT").sha256")
 echo "Generated: $OUT"

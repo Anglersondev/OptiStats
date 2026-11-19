@@ -45,9 +45,12 @@ jobs:
         if: matrix.runner == 'macos-26'
         run: |
           mkdir -p build/dist
-          scripts/build_app.sh build/native
+          app=build/xcode/Build/Products/Release/OptiStats.app
+          codesign --force --sign - "$app/Contents/Helpers/OptiStatsHelper"
+          codesign --force --sign - --entitlements App/OptiStats/Support/OptiStats.entitlements "$app"
           release=$(python3 -c 'import json; print(json.load(open("scripts/release-version.json"))["version"])')
-          scripts/make_dmg.sh build/native/OptiStats.app "build/dist/OptiStats-$release.dmg"
+          scripts/make_dmg.sh "$app" "build/dist/OptiStats-$release.dmg"
+          (cd build/dist && shasum -a 256 -c "OptiStats-$release.dmg.sha256")
       - uses: actions/upload-artifact@v6
         if: matrix.runner == 'macos-26'
         with:
