@@ -32,7 +32,7 @@ Sensor names, readings and fan write support depend on the model. OptiStats does
 
 ## What's new in 1.2
 
-- Smart Boost returns to Automatic when CPU temperature data becomes stale or the system reports critical thermal pressure.
+- Smart Boost returns to Automatic when fan RPM data becomes stale or the system reports critical thermal pressure.
 - The fan helper detects conflicting controllers and restores its own manual targets when interrupted. It waits for requests without polling while idle.
 - Temperature, fan and power collectors share the SMC connection only while needed. Fan-only updates reuse the existing temperature aggregates and history timestamps.
 - Update the optional helper to build **5** in **Preferences → Fans** to use Manual, 100% or Smart Boost.

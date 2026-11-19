@@ -16,7 +16,7 @@
 
 ## Novidades da 1.2
 
-- O Smart Boost passa para Automático quando perde a leitura recente da CPU ou o macOS sinaliza pressão térmica crítica.
+- O Smart Boost passa para Automático quando perde a leitura recente de RPM ou o macOS sinaliza pressão térmica crítica.
 - O helper detecta conflitos com outro controlador e restaura os próprios alvos manuais em caso de interrupção. Em repouso, aguarda pedidos sem consultas periódicas.
 - Temperatura, ventoinhas e potência compartilham a conexão com o SMC por demanda. Atualizações de RPM reaproveitam os agregados de temperatura e preservam a idade das amostras.
 - Atualize o helper opcional para o build **5** em **Preferências → Ventoinhas** para usar Manual, 100% ou Smart Boost.

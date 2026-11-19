@@ -17,7 +17,7 @@ struct HelperHello: Equatable {
 
 /// Cliente do helper por socket Unix (linhas JSON). Implementa `FanActuator` do Core.
 /// - Uma conexão persistente: se o app morrer ou fechar, o helper restaura o automático sozinho.
-/// - Todas as trocas são serializadas por trava; chamadas bloqueiam com tempo limite (nunca chamar na main, exceto restauração).
+/// - Todas as trocas são serializadas por trava e executadas fora da fila principal.
 /// - Availability never claims that physical fan response was tested.
 final class HelperFanActuator: FanActuator {
     private let lock = NSLock()
@@ -27,6 +27,8 @@ final class HelperFanActuator: FanActuator {
     /// Cópia do descritor, protegida por trava própria, para `emergencyDisconnect()` não esperar uma troca em andamento.
     private let mirrorLock = NSLock()
     private var fdMirror: Int32 = -1
+    private var connectionInterrupted = false
+    private var manualControlAllowed = true
     private var nextID = 1
     private var buffer = FanHelperLineBuffer()
     private var queued: [Data] = []
@@ -127,10 +129,27 @@ final class HelperFanActuator: FanActuator {
         manualEngaged = false
     }
 
-    /// Despertar o helper para restaurar o automático sem bloquear a main no encerramento.
+    /// Wake the helper for restoration without waiting for an in-flight exchange.
     func emergencyDisconnect() {
         mirrorLock.lock(); defer { mirrorLock.unlock() }
-        if fdMirror >= 0 { shutdown(fdMirror, SHUT_RDWR) }
+        interruptConnectionLocked()
+    }
+
+    func setManualControlAllowed(_ allowed: Bool) {
+        mirrorLock.lock(); defer { mirrorLock.unlock() }
+        manualControlAllowed = allowed
+        if !allowed { interruptConnectionLocked() }
+    }
+
+    private func interruptConnectionLocked() {
+        guard fdMirror >= 0 else { return }
+        connectionInterrupted = true
+        shutdown(fdMirror, SHUT_RDWR)
+    }
+
+    private var acceptsManualCommands: Bool {
+        mirrorLock.lock(); defer { mirrorLock.unlock() }
+        return manualControlAllowed
     }
 
     // MARK: Transporte
@@ -155,6 +174,11 @@ final class HelperFanActuator: FanActuator {
     }
 
     private func connectLocked() -> FanClientFailure? {
+        mirrorLock.lock()
+        let reconnect = connectionInterrupted
+        connectionInterrupted = false
+        mirrorLock.unlock()
+        if reconnect { closeLocked() }
         if fd >= 0 { return nil }
         guard FileManager.default.fileExists(atPath: FanHelperConstants.socketPath) else { return .notInstalled }
         let s = socket(AF_UNIX, SOCK_STREAM, 0)
@@ -190,7 +214,11 @@ final class HelperFanActuator: FanActuator {
     private func exchange(_ type: FanHelperRequestType, fan: Int? = nil, rpm: Double? = nil,
                           timeout: TimeInterval) -> Result<FanHelperResponse, FanClientFailure> {
         lock.lock(); defer { lock.unlock() }
+        let manualCommand = type == .setTarget || type == .heartbeat
+        if manualCommand && !acceptsManualCommands { return .failure(.helper(.writeFailed, nil)) }
         if let failure = connectLocked() { return .failure(failure) }
+        // A pause can arrive while connect is publishing the socket.
+        if manualCommand && !acceptsManualCommands { return .failure(.helper(.writeFailed, nil)) }
         let id = nextID; nextID += 1
         guard let data = FanHelperCodec.encodeLine(FanHelperRequest(id: id, type: type, fan: fan, rpm: rpm)) else {
             return .failure(.transport("encode"))

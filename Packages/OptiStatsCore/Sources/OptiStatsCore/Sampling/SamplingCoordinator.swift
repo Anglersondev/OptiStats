@@ -17,7 +17,7 @@ public final class SamplingCoordinator {
         var startedAt: TimeInterval = 0
         var lastStart: TimeInterval?
         var stats = CollectorStats()
-        var recentRuns = RingBuffer<TimeInterval>(capacity: 240)
+        var recentRuns: [TimeInterval] = []
         init(collector: Collector, executor: WorkExecutor) { self.collector = collector; self.executor = executor }
         var visibility: Visibility { demands.values.max() ?? .hidden }
     }
@@ -83,7 +83,7 @@ public final class SamplingCoordinator {
         entry.stats.isActive = newInterval != nil
         guard let interval = newInterval else {
             entry.nextDue = nil
-            if previouslyActive { toSuspend.append(entry) }
+            if previouslyActive && !entry.running { toSuspend.append(entry) }
             return
         }
         let now = clock.now
@@ -109,7 +109,13 @@ public final class SamplingCoordinator {
         var toSuspend: [Entry] = []
         lock.lock()
         paused = true
-        for e in entries.values { e.nextDue = nil; e.interval = nil; e.stats.interval = nil; e.stats.isActive = false; toSuspend.append(e) }
+        for e in entries.values {
+            e.nextDue = nil
+            e.interval = nil
+            e.stats.interval = nil
+            e.stats.isActive = false
+            toSuspend.append(e)
+        }
         cancelWakeLocked()
         lock.unlock()
         suspend(toSuspend)
@@ -182,6 +188,7 @@ public final class SamplingCoordinator {
         e.stats.lastDuration = duration
         e.stats.lastRunAt = started
         e.recentRuns.append(started)
+        if e.recentRuns.count > 240 { e.recentRuns.removeFirst(e.recentRuns.count - 240) }
         let needsSuspend = e.interval == nil || paused
         if let interval = e.interval, !paused {
             e.nextDue = max(clock.now, (e.lastStart ?? started) + interval)
@@ -231,7 +238,7 @@ public final class SamplingCoordinator {
         for (id, e) in entries {
             var s = e.stats
             s.isStalled = e.running && now - e.startedAt > stallTimeout
-            s.readsLastMinute = e.recentRuns.elements.lazy.filter { $0 >= now - 60 }.count
+            s.readsLastMinute = e.recentRuns.lazy.filter { $0 >= now - 60 }.count
             out[id] = s
         }
         return out

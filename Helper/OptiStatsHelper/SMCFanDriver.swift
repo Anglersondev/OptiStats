@@ -11,7 +11,8 @@ final class SMCFanDriver {
     struct Failure: Error { let code: FanHelperErrorCode; let message: String }
 
     private let smc: SMCFanIO
-    private let shouldAbort: () -> Bool
+    private let systemInterrupted: () -> Bool
+    var requestInterrupted: () -> Bool = { false }
     private let delay: (UInt32) -> Void
     /// Ventoinhas que ESTE helper colocou em modo manual.
     private(set) var manualFans = Set<Int>()
@@ -24,8 +25,10 @@ final class SMCFanDriver {
 
     init(smc: SMCFanIO = SMCConnection(), delay: @escaping (UInt32) -> Void = { usleep($0) },
          shouldAbort: @escaping () -> Bool) {
-        self.smc = smc; self.delay = delay; self.shouldAbort = shouldAbort
+        self.smc = smc; self.delay = delay; self.systemInterrupted = shouldAbort
     }
+
+    func shouldAbort() -> Bool { systemInterrupted() || requestInterrupted() }
 
     /// O caminho de escrita implementado vale somente para Apple Silicon (o Stats usa outro caminho em Intel, não adotado aqui).
     var isSupportedArchitecture: Bool {
@@ -96,6 +99,7 @@ final class SMCFanDriver {
         }
 
         // 1) modo manual (com destravamento Ftst se necessário)
+        if shouldAbort() { return failAndRestore(Failure(code: .writeFailed, message: "controle interrompido")) }
         manualFans.insert(fan)   // registrar ANTES: se algo falhar, a restauração cobre esta ventoinha
         if let failure = enterManual(fan: fan) { return failAndRestore(failure) }
         if shouldAbort() { return failAndRestore(Failure(code: .internalError, message: "encerrando")) }

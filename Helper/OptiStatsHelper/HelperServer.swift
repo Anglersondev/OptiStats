@@ -4,7 +4,7 @@ import OptiStatsCore
 /// Servidor de socket Unix de um único cliente, num único thread (poll). Sem filas, sem timers, sem threads extras.
 /// Segurança:
 /// - o arquivo do socket é 0666, mas CADA conexão é validada por LOCAL_PEERCRED: só o uid do usuário de console;
-/// - watchdog: sem heartbeat por 10 s, cliente desconectado, SIGTERM/SIGINT ou início → restaura o automático.
+/// - watchdog, desconexão, sessão encerrada e SIGTERM/SIGINT devolvem o controle ao macOS.
 final class HelperServer {
     private let driver: SMCFanDriver
     private let terminationFD: Int32
@@ -22,6 +22,7 @@ final class HelperServer {
     init(driver: SMCFanDriver, terminationFD: Int32) {
         self.driver = driver
         self.terminationFD = terminationFD
+        driver.requestInterrupted = { [weak self] in self?.clientInterrupted() ?? true }
     }
 
     private var now: TimeInterval { ProcessInfo.processInfo.systemUptime }
@@ -58,6 +59,8 @@ final class HelperServer {
                 restoreNow(reason: "watchdog")
             } else if driver.restorePending {
                 restoreNow(reason: "nova tentativa")
+            } else if driver.isManualActive, driver.shouldAbort() {
+                restoreNow(reason: "controle interrompido")
             }
             guard n > 0 else { continue }
             if polledClient >= 0, clientFD == polledClient, fds[1].revents != 0 { serviceClient(fds[1].revents) }
@@ -129,6 +132,14 @@ final class HelperServer {
         clientUID = peer
         lineBuffer = FanHelperLineBuffer()
         HelperLog.write("cliente conectado")
+    }
+
+    /// Check for a peer closing the socket while the synchronous driver is in a retry delay.
+    private func clientInterrupted() -> Bool {
+        guard clientFD >= 0, clientUID == consoleUID() else { return true }
+        var byte: UInt8 = 0
+        let count = recv(clientFD, &byte, 1, MSG_PEEK | MSG_DONTWAIT)
+        return count == 0 || (count < 0 && errno != EAGAIN && errno != EINTR)
     }
 
     private func closeClient(reason: String) {

@@ -3,7 +3,7 @@
 ## 1.2
 
 - CI em Apple Silicon para macOS 26 e 27, com build, testes e validação do pacote.
-- Retorno a Automático diante de temperatura desatualizada, pressão térmica crítica ou perda do controle manual.
+- Retorno a Automático diante de leitura de RPM desatualizada, pressão térmica crítica ou perda do controle manual.
 - Detecção de outro controlador, tratamento da chave de modo por ventoinha e recuperação de interrupções durante uma escrita.
 - Helper sem consultas periódicas quando em repouso, conexão SMC compartilhada por demanda e atualização de RPM sem recalcular o histórico térmico.
 - DMG com SHA-256, preservação das assinaturas, suporte opcional à notarização e publicação do site vinculada à release estável.

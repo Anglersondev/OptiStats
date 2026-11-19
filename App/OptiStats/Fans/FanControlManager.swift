@@ -111,26 +111,28 @@ final class FanControlManager {
         fanToken?.cancel(); fanToken = nil
         _ = smartBoost.disable(reason: "encerrando o aplicativo")
         manualTargets.removeAll(); engaged = false
-        if let client { client.emergencyDisconnect() }
+        if let client { client.setManualControlAllowed(false) }
         else { _ = env.platform.fanActuator.apply(.restoreAutomatic(reason: "encerrando o aplicativo")) }
     }
 
     func systemWillSleep() {
         isSleeping = true
+        client?.setManualControlAllowed(false)
         resumeAfterPendingCommand = false
         stopSmartBoostState()
         if engaged || busy || settings?.smartBoostEnabled == true {
-            client?.emergencyDisconnect()
             restoreInBackground(message: L("fan.msg.sleepRestored"))
         }
     }
 
     func systemDidWake() {
         isSleeping = false
+        client?.setManualControlAllowed(env.powerContext.thermal != .critical)
         resumeSavedControl()
     }
 
     func thermalChanged(_ level: ThermalLevel) {
+        client?.setManualControlAllowed(!isSleeping && level != .critical)
         guard level == .critical, engaged || busy || settings?.smartBoostEnabled == true else { return }
         settings?.smartBoostEnabled = false
         stopSmartBoostState()
@@ -373,7 +375,7 @@ final class FanControlManager {
 
     private func startSmartBoost() {
         smartBoost.enable()
-        lastFanTimestamp = -.infinity
+        lastFanTimestamp = env.store.sensors?.fans.map(\.timestamp).max() ?? -.infinity
         env.setDemand(consumer: "fan.smartboost", collectors: [.fans], visibility: .bar)
         fanToken?.cancel()
         fanToken = env.store.subscribe(.sensors, queue: .main) { [weak self] in self?.smartBoostTick() }
@@ -389,13 +391,17 @@ final class FanControlManager {
     private func smartBoostTick() {
         guard !busy, let s = settings, s.smartBoostEnabled, let snapshot = env.store.sensors else { return }
         let fans = snapshot.fans
+        let now = env.clock.now
         if let measuredAt = fans.map(\.timestamp).max() {
-            guard measuredAt > lastFanTimestamp else { return }
+            guard fans.allSatisfy({ $0.rpm != nil }),
+                  measuredAt > lastFanTimestamp, now - measuredAt <= sensorTimeout else { return }
             lastFanTimestamp = measuredAt
+        } else if case .loading = env.store.state(.fans) {
+            return  // A different sensor may publish before the first fan sample.
         }
         var healthy = s.manualAllowed
         if case .unavailable = capability { healthy = false }
-        let obs = FanObservation(timestamp: env.clock.now, fans: fans, actuatorHealthy: healthy,
+        let obs = FanObservation(timestamp: now, fans: fans, actuatorHealthy: healthy,
                                  thermal: env.powerContext.thermal)
         let commands = smartBoost.step(obs, staleAfter: sensorTimeout).filter { command in
             // The dedicated timer is the only source of socket heartbeats.

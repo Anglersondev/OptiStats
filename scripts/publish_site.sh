@@ -12,7 +12,11 @@ if [[ $# != 0 ]]; then
   echo "Usage: $0 [--check]" >&2
   exit 2
 fi
-# The Pages site must never point to an unpublished or incomplete download.
+# Keep the Pages download aligned with the repository's latest stable release.
+if [[ "$(gh release view --json tagName --jq .tagName)" != "$TAG" ]]; then
+  echo "Publish $TAG as the latest release before deploying the site." >&2
+  exit 1
+fi
 gh release view "$TAG" --json isDraft,isPrerelease,assets | python3 -c '
 import json, sys
 release = json.load(sys.stdin)
