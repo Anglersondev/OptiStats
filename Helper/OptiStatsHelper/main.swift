@@ -6,7 +6,7 @@ import OptiStatsCore
 // Depende somente de Foundation, IOKit e OptiStatsCore.
 
 if CommandLine.arguments.dropFirst().first == "--version" {
-    print("OptiStatsHelper 1.0")
+    print("OptiStatsHelper build \(FanHelperConstants.helperBuild)")
     exit(0)
 }
 
@@ -15,12 +15,11 @@ guard geteuid() == 0 else {
     exit(1)
 }
 
-installTerminationHandlers()
-HelperLog.write("iniciando (1.0)")
+let terminationFD = installTerminationHandlers()
+HelperLog.write("iniciando build \(FanHelperConstants.helperBuild)")
 
-let driver = SMCFanDriver(shouldAbort: { terminateRequested != 0 })
-// Ao iniciar: restaurar automático (cobre queda anterior do helper com ventoinhas em manual).
-if driver.restoreAutomatic() == false { HelperLog.write("restauração inicial não confirmada; será repetida") }
-
-let server = HelperServer(driver: driver)
+let driver = SMCFanDriver(shouldAbort: {
+    terminateRequested != 0 || ProcessInfo.processInfo.thermalState == .critical
+})
+let server = HelperServer(driver: driver, terminationFD: terminationFD)
 exit(server.run() ? 0 : 1)

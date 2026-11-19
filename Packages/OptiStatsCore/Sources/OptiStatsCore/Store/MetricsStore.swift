@@ -100,15 +100,21 @@ public final class MetricsStore {
         mutate(.sensors) { store in
             if let new = readings { store._sensorsByOwner[owner] = new }
             if let f = fans { store._fans = f }
-            let merged = store._sensorsByOwner.keys.sorted().flatMap { key in store._sensorsByOwner[key] ?? [] }
-            let temperatureTime = merged.filter { $0.descriptor.kind == .temperature }.map(\.timestamp).max() ?? timestamp
-            let aggregates = SensorAggregator.aggregates(from: merged, at: temperatureTime)
-            store._sensors = SensorsSnapshot(timestamp: timestamp, readings: merged, aggregates: aggregates, fans: store._fans)
-            // Fan/electrical updates must not stamp old temperatures as freshly measured.
-            if readings != nil, owner == "temperatures" {
-                if let v = aggregates.first(where: { $0.descriptor.key == "avg-cpu" })?.value { store.append(.tempCPU, temperatureTime, v) }
-                if let v = aggregates.first(where: { $0.descriptor.key == "avg-gpu" })?.value { store.append(.tempGPU, temperatureTime, v) }
+            let merged: [SensorReading]
+            let aggregates: [SensorReading]
+            if readings == nil, let previous = store._sensors {
+                merged = previous.readings
+                aggregates = previous.aggregates
+            } else {
+                merged = store._sensorsByOwner.keys.sorted().flatMap { store._sensorsByOwner[$0] ?? [] }
+                let temperatureTime = merged.lazy.filter { $0.descriptor.kind == .temperature }.map(\.timestamp).max() ?? timestamp
+                aggregates = SensorAggregator.aggregates(from: merged, at: temperatureTime)
+                if owner == "temperatures" {
+                    if let v = aggregates.first(where: { $0.descriptor.key == "avg-cpu" })?.value { store.append(.tempCPU, temperatureTime, v) }
+                    if let v = aggregates.first(where: { $0.descriptor.key == "avg-gpu" })?.value { store.append(.tempGPU, temperatureTime, v) }
+                }
             }
+            store._sensors = SensorsSnapshot(timestamp: timestamp, readings: merged, aggregates: aggregates, fans: store._fans)
             for f in fans ?? [] { if let r = f.rpm { store.append(.fan(f.index), timestamp, r) } }
         }
     }

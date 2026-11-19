@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """Gera OptiStats.xcodeproj (objectVersion 60) a partir de App/OptiStats/**.
 Sem dependências externas. Rode de qualquer lugar: python3 scripts/generate_xcodeproj.py"""
-import hashlib, pathlib, re, os
+import hashlib, json, pathlib, re, os
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
+release = json.loads((ROOT / "scripts/release-version.json").read_text())
 APP = ROOT / "App" / "OptiStats"
 PROJ = ROOT / "OptiStats.xcodeproj"
 
@@ -94,7 +95,7 @@ resphase = add("ph:res", "Resources", "isa = PBXResourcesBuildPhase; buildAction
 # --- configurações -----------------------------------------------------------
 common = {
     "ALWAYS_SEARCH_USER_PATHS": "NO", "CLANG_ENABLE_MODULES": "YES", "CLANG_ENABLE_OBJC_ARC": "YES",
-    "ENABLE_STRICT_OBJC_MSGSEND": "YES", "GCC_NO_COMMON_BLOCKS": "YES", "MACOSX_DEPLOYMENT_TARGET": "13.0",
+    "ENABLE_STRICT_OBJC_MSGSEND": "YES", "GCC_NO_COMMON_BLOCKS": "YES", "MACOSX_DEPLOYMENT_TARGET": release["minimum_macos"],
     "SDKROOT": "macosx", "ARCHS": "arm64", "EXCLUDED_ARCHS": "x86_64", "SWIFT_VERSION": "5.0", "ONLY_ACTIVE_ARCH": "NO",
 }
 dbg = dict(common, **{"DEBUG_INFORMATION_FORMAT": "dwarf", "ENABLE_TESTABILITY": "YES", "GCC_OPTIMIZATION_LEVEL": "0",
@@ -102,8 +103,8 @@ dbg = dict(common, **{"DEBUG_INFORMATION_FORMAT": "dwarf", "ENABLE_TESTABILITY":
 rel_ = dict(common, **{"DEBUG_INFORMATION_FORMAT": "dwarf-with-dsym", "SWIFT_OPTIMIZATION_LEVEL": "-O",
                        "SWIFT_COMPILATION_MODE": "wholemodule", "ENABLE_NS_ASSERTIONS": "NO"})
 tgt = {
-    "PRODUCT_NAME": "OptiStats", "PRODUCT_BUNDLE_IDENTIFIER": "dev.optistats.OptiStats", "MARKETING_VERSION": "1.0",
-    "CURRENT_PROJECT_VERSION": "2", "INFOPLIST_FILE": rel(plist), "CODE_SIGN_ENTITLEMENTS": rel(ent),
+    "PRODUCT_NAME": "OptiStats", "PRODUCT_BUNDLE_IDENTIFIER": "dev.optistats.OptiStats", "MARKETING_VERSION": release["version"],
+    "CURRENT_PROJECT_VERSION": release["build"], "INFOPLIST_FILE": rel(plist), "CODE_SIGN_ENTITLEMENTS": rel(ent),
     "CODE_SIGN_IDENTITY": "-", "ENABLE_HARDENED_RUNTIME": "YES",
     "GENERATE_INFOPLIST_FILE": "NO", "COMBINE_HIDPI_IMAGES": "YES", "LD_RUNPATH_SEARCH_PATHS": "$(inherited) @executable_path/../Frameworks",
     "ASSETCATALOG_COMPILER_APPICON_NAME": "AppIcon", "SWIFT_EMIT_LOC_STRINGS": "NO",
@@ -128,13 +129,13 @@ if helper_swift:
     hpbf = add("hbfp", "OptiStatsCore in Frameworks", f"isa = PBXBuildFile; productRef = {hpkgprod};")
     hfw = add("hph:fw", "Frameworks", f"isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = ({hpbf}); runOnlyForDeploymentPostprocessing = 0;")
     hset = dict(PRODUCT_NAME="OptiStatsHelper", SKIP_INSTALL="YES", CODE_SIGN_IDENTITY="-", CODE_SIGNING_ALLOWED="YES",
-                ENABLE_HARDENED_RUNTIME="NO", GENERATE_INFOPLIST_FILE="NO", SWIFT_EMIT_LOC_STRINGS="NO")
+                ENABLE_HARDENED_RUNTIME="YES", GENERATE_INFOPLIST_FILE="NO", SWIFT_EMIT_LOC_STRINGS="NO")
     hcl = cl("hcl", [cfg("hcd", "Debug", hset), cfg("hcr", "Release", hset)])
     htarget = add("htarget", "OptiStatsHelper", f"isa = PBXNativeTarget; buildConfigurationList = {hcl}; buildPhases = ({hsrc}, {hfw}); buildRules = (); dependencies = (); name = OptiStatsHelper; packageProductDependencies = ({hpkgprod}); productName = OptiStatsHelper; productReference = {hprod}; productType = \"com.apple.product-type.tool\";")
     proxy = add("hproxy", "PBXContainerItemProxy", f"isa = PBXContainerItemProxy; containerPortal = {uid('project')}; proxyType = 1; remoteGlobalIDString = {htarget}; remoteInfo = OptiStatsHelper;")
     dep = add("hdep", "PBXTargetDependency", f"isa = PBXTargetDependency; target = {htarget}; targetProxy = {proxy};")
     cpbf = add("hcopybf", "OptiStatsHelper in Copy Helper", f"isa = PBXBuildFile; fileRef = {hprod};")
-    cpph = add("hcopy", "Embed Helper", f"isa = PBXCopyFilesBuildPhase; buildActionMask = 2147483647; dstPath = \"\"; dstSubfolderSpec = 7; files = ({cpbf}); name = \"Embed Helper\"; runOnlyForDeploymentPostprocessing = 0;")
+    cpph = add("hcopy", "Embed Helper", f"isa = PBXCopyFilesBuildPhase; buildActionMask = 2147483647; dstPath = \"Contents/Helpers\"; dstSubfolderSpec = 1; files = ({cpbf}); name = \"Embed Helper\"; runOnlyForDeploymentPostprocessing = 0;")
     app_deps = dep
     app_phases += f", {cpph}"
 

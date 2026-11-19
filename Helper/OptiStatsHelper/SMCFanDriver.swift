@@ -13,7 +13,6 @@ final class SMCFanDriver {
     private let smc: SMCFanIO
     private let shouldAbort: () -> Bool
     private let delay: (UInt32) -> Void
-    private var modeKeyIsLower: Bool?
     /// Ventoinhas que ESTE helper colocou em modo manual.
     private(set) var manualFans = Set<Int>()
     private var desiredTargets: [Int: Double] = [:]
@@ -37,21 +36,17 @@ final class SMCFanDriver {
         #endif
     }
 
-    var isSMCAvailable: Bool { smc.open() }
-
     // MARK: Leitura
 
     func fanCount() -> Int? {
-        guard let n = smc.read(FanSMCKeys.countKey)?.number, n >= 1, n <= Double(FanSMCKeys.maxFans) else { return nil }
+        guard let n = smc.read(FanSMCKeys.countKey)?.number,
+              n >= 1, n <= Double(FanSMCKeys.maxFans), n.rounded(.towardZero) == n else { return nil }
         return Int(n)
     }
 
     private func modeKey(_ i: Int) -> String {
-        if modeKeyIsLower == nil {
-            // Como no Stats: se "F0md" existe, é a variante em minúsculas (Apple Silicon recente).
-            modeKeyIsLower = smc.read(FanSMCKeys.modeLower(0)) != nil
-        }
-        return modeKeyIsLower! ? FanSMCKeys.modeLower(i) : FanSMCKeys.modeUpper(i)
+        let lower = FanSMCKeys.modeLower(i)
+        return smc.read(lower) != nil ? lower : FanSMCKeys.modeUpper(i)
     }
 
     private func rpmValue(_ key: String) -> Double? {
@@ -73,6 +68,9 @@ final class SMCFanDriver {
 
     func setTarget(fan: Int, rpm: Double) -> Result<Void, Failure> {
         guard isSupportedArchitecture else { return .failure(Failure(code: .unsupportedHardware, message: "somente Apple Silicon")) }
+        guard !restorePending, !shouldAbort() else {
+            return failAndRestore(Failure(code: .writeFailed, message: "controle indisponível até restaurar o automático"))
+        }
         guard smc.open() else { return .failure(Failure(code: .smcUnavailable, message: smc.lastError ?? "SMC indisponível")) }
         guard let n = fanCount(), FanSMCKeys.isValidFanIndex(fan), fan < n else {
             return .failure(Failure(code: .noSuchFan, message: "ventoinha inexistente"))
@@ -89,8 +87,12 @@ final class SMCFanDriver {
 
         // Não assumir uma ventoinha já posta em manual por outro controlador.
         // Nesse caso não há nada nosso para restaurar.
-        if smc.read(modeKey(fan))?.bytes.first == 1 && !manualFans.contains(fan) {
-            return .failure(Failure(code: .conflictingController, message: "ventoinha já está em manual por outro controlador"))
+        if !manualFans.contains(fan) {
+            let externalManual = smc.read(modeKey(fan))?.bytes.first == 1
+            let externalUnlock = !ftstEngaged && smc.read(FanSMCKeys.unlockKey)?.bytes.first == 1
+            if externalManual || externalUnlock {
+                return .failure(Failure(code: .conflictingController, message: "controle de ventoinhas em uso"))
+            }
         }
 
         // 1) modo manual (com destravamento Ftst se necessário)
@@ -99,7 +101,7 @@ final class SMCFanDriver {
         if shouldAbort() { return failAndRestore(Failure(code: .internalError, message: "encerrando")) }
 
         // 2) alvo
-        guard writeWithRetry(FanSMCKeys.target(fan), bytes: payload, size: target.size) else {
+        guard writeWithRetry(FanSMCKeys.target(fan), bytes: payload, size: target.size, interruptible: true) else {
             return failAndRestore(Failure(code: .writeFailed, message: "escrita do alvo recusada: \(smc.lastError ?? "?")"))
         }
 
@@ -111,10 +113,11 @@ final class SMCFanDriver {
         var confirmed = false
         for attempt in 0..<8 {
             delay(attempt == 0 ? 150_000 : 100_000)
+            if shouldAbort() { return failAndRestore(Failure(code: .writeFailed, message: "controle interrompido")) }
             modeNow = smc.read(modeKey(fan))?.bytes.first
             targetNow = smc.read(FanSMCKeys.target(fan))?.number
             if SMCFanTargetEncoding.matches(readBack: targetNow, requested: rpm) { confirmed = true; break }
-            _ = writeWithRetry(FanSMCKeys.target(fan), bytes: payload, size: target.size)
+            _ = writeWithRetry(FanSMCKeys.target(fan), bytes: payload, size: target.size, interruptible: true)
         }
         guard confirmed else {
             let detail = "alvo lido=\(targetNow.map { String(format: "%.1f", $0) } ?? "?") pedido=\(Int(rpm)) tipo=\(target.type) modo=\(modeNow.map(String.init) ?? "?") (chave \(modeKey(fan))) Ftst=\(smc.read(FanSMCKeys.unlockKey)?.bytes.first.map(String.init) ?? "?")"
@@ -130,6 +133,9 @@ final class SMCFanDriver {
     /// Firmware can return a fan to automatic during a shared Ftst hand-off.
     /// Reconcile only our active targets, using the existing heartbeat rather than another timer.
     func maintainManualTargets() -> Result<Void, Failure> {
+        guard !restorePending, !shouldAbort() else {
+            return failAndRestore(Failure(code: .writeFailed, message: "controle interrompido"))
+        }
         for (fan, rpm) in desiredTargets.sorted(by: { $0.key < $1.key }) {
             let mode = smc.read(modeKey(fan))?.bytes.first
             let target = smc.read(FanSMCKeys.target(fan))?.number
@@ -165,15 +171,14 @@ final class SMCFanDriver {
             return directAccepted ? nil : Failure(code: .unlockFailed, message: "modo manual recusado e Ftst ausente")
         }
         if ftst.bytes.first == 1 {
-            ftstEngaged = true
+            guard ftstEngaged else { return Failure(code: .conflictingController, message: "Ftst em uso por outro controlador") }
             return retryModeWrite(fan: fan, attempts: 20) ? nil : Failure(code: .unlockFailed, message: "modo manual recusado (Ftst já ativo)")
         }
         var on = ftst.bytes; on[0] = 1
         ftstEngaged = true // even an accepted-but-unconfirmed write must be covered by restoration
-        guard writeWithRetry(FanSMCKeys.unlockKey, bytes: on, size: ftst.size, attempts: 100) else {
+        guard writeWithRetry(FanSMCKeys.unlockKey, bytes: on, size: ftst.size, attempts: 100, interruptible: true) else {
             return Failure(code: .unlockFailed, message: "escrita de Ftst recusada")
         }
-        ftstEngaged = true
         // Espera o thermalmonitord ceder o controle (3 s no Stats), em fatias para poder abortar.
         for _ in 0..<30 { if shouldAbort() { return Failure(code: .internalError, message: "encerrando") }; delay(100_000) }
         return retryModeWrite(fan: fan, attempts: 300) ? nil : Failure(code: .unlockFailed, message: "modo manual recusado após Ftst")
@@ -195,8 +200,10 @@ final class SMCFanDriver {
         return false
     }
 
-    private func writeWithRetry(_ key: String, bytes: [UInt8], size: Int, attempts: Int = 10) -> Bool {
+    private func writeWithRetry(_ key: String, bytes: [UInt8], size: Int, attempts: Int = 10,
+                                interruptible: Bool = false) -> Bool {
         for attempt in 0..<attempts {
+            if interruptible && shouldAbort() { return false }
             if smc.write(key, bytes: bytes, size: size) { return true }
             if attempt < attempts - 1 { delay(50_000) }
         }

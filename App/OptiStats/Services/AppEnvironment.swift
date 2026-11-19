@@ -116,7 +116,7 @@ final class AppEnvironment {
             powerContext = platform.events.currentPowerContext()
             coordinator.setConfiguration(samplingConfiguration)
             coordinator.resume()
-            if case .didWake = event { fanControl.resumeSavedControl() }
+            if case .didWake = event { fanControl.systemDidWake() }
         case .thermalChanged(let level):
             powerContext.thermal = level
             fanControl.thermalChanged(level)

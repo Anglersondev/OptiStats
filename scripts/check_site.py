@@ -6,7 +6,11 @@ from pathlib import Path
 from urllib.parse import urlparse
 import xml.etree.ElementTree as ET
 
-ROOT = Path(__file__).resolve().parent.parent / "site"
+PROJECT = Path(__file__).resolve().parent.parent
+ROOT = PROJECT / "site"
+VERSION = json.loads((PROJECT / "scripts/release-version.json").read_text())["version"]
+RELEASE = "https://github.com/Anglersondev/OptiStats/releases"
+DOWNLOAD = f"{RELEASE}/download/v{VERSION}/OptiStats-{VERSION}.dmg"
 BASE = "https://anglersondev.github.io/OptiStats/"
 LANGUAGES = {"en": BASE, "pt-BR": BASE + "pt-br/", "x-default": BASE}
 
@@ -44,7 +48,10 @@ for lang, relative in [("en", "index.html"), ("pt-BR", "pt-br/index.html")]:
     assert next(a["href"] for a in links if a.get("rel") == "canonical") == LANGUAGES[lang]
     assert {a["hreflang"]: a["href"] for a in links if a.get("rel") == "alternate"} == LANGUAGES
     assert any(t == "meta" and a.get("name") == "description" and a.get("content") for t, a in page.tags)
-    assert page.structured[0]["softwareVersion"] == "1.0"
+    assert page.structured[0]["softwareVersion"] == VERSION
+    assert page.structured[0]["downloadUrl"] == DOWNLOAD
+    assert any(t == "a" and a.get("href") == DOWNLOAD for t, a in page.tags)
+    assert any(t == "a" and a.get("href") == f"{RELEASE}/tag/v{VERSION}" for t, a in page.tags)
     assert page.structured[0]["inLanguage"] == lang
     for tag, attrs in page.tags:
         url = attrs.get("href", attrs.get("src", ""))

@@ -136,4 +136,44 @@ do {
     expect(succeeds(d.maintainManualTargets()) && smc.writes.count == writes, "Automatic cancels heartbeat target reconciliation")
 }
 
+do {
+    let smc = FakeSMC()
+    smc.values.removeValue(forKey: "F1Md")
+    smc.byte("F1md", 0)
+    let d = driver(smc)
+    expect(succeeds(d.setTarget(fan: 0, rpm: 4000)), "first fan uses uppercase mode key")
+    expect(succeeds(d.setTarget(fan: 1, rpm: 4200)), "second fan uses lowercase mode key")
+    expect(d.restoreAutomatic(), "mixed mode keys restore successfully")
+    expect(smc.values["F0Md"]?.bytes.first == 0 && smc.values["F1md"]?.bytes.first == 0, "both fans returned to automatic")
+}
+do {
+    let smc = FakeSMC()
+    smc.byte("Ftst", 1)
+    expect(!succeeds(driver(smc).setTarget(fan: 0, rpm: 4000)), "foreign Ftst is a conflict")
+    expect(smc.writes.isEmpty, "foreign Ftst and targets untouched")
+}
+do {
+    let smc = FakeSMC()
+    smc.number("FNum", 1.5)
+    expect(!succeeds(driver(smc).setTarget(fan: 0, rpm: 4000)) && smc.writes.isEmpty, "fractional fan count rejected")
+}
+do {
+    let smc = FakeSMC()
+    let d = driver(smc) { smc.values["F0Md"]?.bytes.first == 1 }
+    expect(!succeeds(d.setTarget(fan: 0, rpm: 4000)), "interrupted acquisition rejects the command")
+    expect(!d.isManualActive && smc.values["F0Md"]?.bytes.first == 0, "interrupted acquisition returns to automatic")
+    expect(!smc.writes.contains(where: { $0.0 == "F0Tg" && $0.1.contains(where: { $0 != 0 }) }), "interrupted acquisition never sets a target")
+}
+do {
+    let smc = FakeSMC()
+    let d = driver(smc)
+    expect(succeeds(d.setTarget(fan: 0, rpm: 4000)), "heartbeat rollback setup")
+    smc.failModeReset = true
+    expect(!d.restoreAutomatic() && d.restorePending, "heartbeat rollback is pending")
+    smc.failModeReset = false
+    smc.writes.removeAll()
+    expect(!succeeds(d.maintainManualTargets()) && !d.isManualActive, "heartbeat retries pending restoration")
+    expect(smc.writes.allSatisfy { $0.1.allSatisfy { $0 == 0 } }, "heartbeat does not reassert a target while restoring")
+}
+
 print("Hardware/settings regressions: \(checks) checks passed (simulated hardware, no SMC writes).")

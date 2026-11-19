@@ -33,7 +33,8 @@ final class PowerCollector: BaseCollector {
         var readings: [PowerReading] = []
         var systemWatts: Double?
 
-        for spec in specs {
+        let hasSMC = !specs.isEmpty && smc.acquire(for: id)
+        for spec in specs where hasSMC {
             guard let raw = smc.read(spec.key) else { continue }
             guard let w = SensorValidator.validate(raw, kind: .power) else { continue }
             let d = spec.descriptor()
@@ -78,6 +79,6 @@ final class PowerCollector: BaseCollector {
     override func suspend() {
         ioReport.reset()
         integrator.markDiscontinuity()
-        smc.close()
+        smc.release(for: id)
     }
 }

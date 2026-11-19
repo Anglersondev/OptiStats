@@ -106,7 +106,7 @@ public final class SmartBoostController {
 
     // MARK: Passo
 
-    public func step(_ obs: FanObservation) -> [FanCommand] {
+    public func step(_ obs: FanObservation, staleAfter: TimeInterval? = nil) -> [FanCommand] {
         let now = obs.timestamp
         switch state {
         case .disabled, .faulted: return []
@@ -114,7 +114,7 @@ public final class SmartBoostController {
         }
         guard !obs.fans.isEmpty else { return fault(.noFans, restore: "sem ventoinhas detectadas") }
         guard obs.actuatorHealthy else { return fault(.actuatorUnhealthy, restore: "atuador indisponível") }
-        if let last = lastObservation, now - last > config.staleObservation {
+        if let last = lastObservation, now - last > (staleAfter ?? config.staleObservation) {
             return fault(.staleObservation, restore: "leituras antigas")
         }
         lastObservation = now

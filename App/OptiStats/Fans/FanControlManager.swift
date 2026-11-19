@@ -32,6 +32,8 @@ final class FanControlManager {
     /// Invalida respostas de comandos anteriores a uma restauração ou encerramento.
     private var controlGeneration = 0
     private var resumeAfterPendingCommand = false
+    private var isSleeping = false
+    private var heartbeatInFlight = false
 
     /// Chamado na main quando algo relevante para a interface mudou.
     var onChange: (() -> Void)?
@@ -52,10 +54,15 @@ final class FanControlManager {
 
     /// One asynchronous pass on launch/wake. Never waits for a heavy workload to start the fans.
     func resumeSavedControl() {
+        guard !isSleeping else { return }
         if busy { resumeAfterPendingCommand = true; return }
         guard !engaged, let s = settings, s.manualAllowed,
               env.powerContext.thermal != .critical else { return }
         if s.smartBoostEnabled {
+            guard HelperInstaller.installedMatchesBundled() == true else {
+                lastMessage = L("fan.helper.outdatedBanner")
+                return
+            }
             startSmartBoost()
             return
         }
@@ -104,14 +111,23 @@ final class FanControlManager {
         fanToken?.cancel(); fanToken = nil
         _ = smartBoost.disable(reason: "encerrando o aplicativo")
         manualTargets.removeAll(); engaged = false
-        if let client { client.restoreForShutdown() }
+        if let client { client.emergencyDisconnect() }
         else { _ = env.platform.fanActuator.apply(.restoreAutomatic(reason: "encerrando o aplicativo")) }
     }
 
     func systemWillSleep() {
+        isSleeping = true
         resumeAfterPendingCommand = false
         stopSmartBoostState()
-        if engaged || busy || settings?.smartBoostEnabled == true { restoreInBackground(message: L("fan.msg.sleepRestored")) }
+        if engaged || busy || settings?.smartBoostEnabled == true {
+            client?.emergencyDisconnect()
+            restoreInBackground(message: L("fan.msg.sleepRestored"))
+        }
+    }
+
+    func systemDidWake() {
+        isSleeping = false
+        resumeSavedControl()
     }
 
     func thermalChanged(_ level: ThermalLevel) {
@@ -279,14 +295,10 @@ final class FanControlManager {
 
     private func startHeartbeat() {
         guard heartbeatTimer == nil, let client else { return }
-        let t = DispatchSource.makeTimerSource(queue: io)
+        let t = DispatchSource.makeTimerSource(queue: .main)
         let interval = FanHelperConstants.heartbeatInterval
         t.schedule(deadline: .now() + interval, repeating: interval, leeway: .seconds(1))
-        t.setEventHandler { [weak self] in
-            if case .failure(let f) = client.heartbeat() {
-                DispatchQueue.main.async { self?.heartbeatFailed(f) }
-            }
-        }
+        t.setEventHandler { [weak self] in self?.sendHeartbeat(using: client) }
         t.resume()
         heartbeatTimer = t
     }
@@ -296,9 +308,36 @@ final class FanControlManager {
         heartbeatTimer = nil
     }
 
+    private var sensorTimeout: TimeInterval {
+        let interval = env.coordinator.effectiveInterval(for: .fans) ?? 0
+        return max(smartBoost.config.staleObservation, 2 * interval + 1)
+    }
+
+    private func sendHeartbeat(using client: HelperFanActuator) {
+        guard engaged, !busy, !heartbeatInFlight else { return }
+        if settings?.smartBoostEnabled == true, env.clock.now - lastFanTimestamp > sensorTimeout {
+            settings?.smartBoostEnabled = false
+            stopSmartBoostState()
+            restoreInBackground(message: L("fan.msg.smartBoostStopped", L("fan.fault.stale")))
+            return
+        }
+        let generation = controlGeneration
+        heartbeatInFlight = true
+        io.async { [weak self] in
+            let result = client.heartbeat()
+            DispatchQueue.main.async {
+                guard let self else { return }
+                self.heartbeatInFlight = false
+                guard generation == self.controlGeneration else { return }
+                if case .failure(let error) = result { self.heartbeatFailed(error) }
+            }
+        }
+    }
+
     private func heartbeatFailed(_ failure: FanClientFailure) {
         guard engaged else { return }
-        // Sem heartbeat o helper restaura sozinho; reflete o estado e avisa.
+        // A desconexão encerra a posse da ventoinha mesmo quando o heartbeat falha no transporte.
+        client?.emergencyDisconnect()
         stopHeartbeat()
         manualTargets.removeAll(); engaged = false
         settings?.smartBoostEnabled = false
@@ -348,14 +387,21 @@ final class FanControlManager {
     }
 
     private func smartBoostTick() {
-        guard let s = settings, s.smartBoostEnabled, let fans = env.store.sensors?.fans, !fans.isEmpty,
-              let ts = fans.map(\.timestamp).max(), ts > lastFanTimestamp else { return }
-        lastFanTimestamp = ts   // um passo por leitura nova de ventoinhas (outros coletores também publicam sensores)
+        guard !busy, let s = settings, s.smartBoostEnabled, let snapshot = env.store.sensors else { return }
+        let fans = snapshot.fans
+        if let measuredAt = fans.map(\.timestamp).max() {
+            guard measuredAt > lastFanTimestamp else { return }
+            lastFanTimestamp = measuredAt
+        }
         var healthy = s.manualAllowed
         if case .unavailable = capability { healthy = false }
         let obs = FanObservation(timestamp: env.clock.now, fans: fans, actuatorHealthy: healthy,
                                  thermal: env.powerContext.thermal)
-        let commands = smartBoost.step(obs)
+        let commands = smartBoost.step(obs, staleAfter: sensorTimeout).filter { command in
+            // The dedicated timer is the only source of socket heartbeats.
+            if case .heartbeat = command { return false }
+            return true
+        }
         if case .faulted(let fault) = smartBoost.state {
             s.smartBoostEnabled = false
             stopSmartBoostState()
@@ -364,35 +410,30 @@ final class FanControlManager {
             onChange?()
             return
         }
-        guard !commands.isEmpty, let client else { return }
+        guard let command = commands.first, let client else { return }
         let generation = controlGeneration
+        setBusy(true)
         io.async { [weak self] in
-            for command in commands {
-                let result = client.apply(command)
-                var failed = false
-                if case .restoreAutomatic = command {
-                    DispatchQueue.main.async {
-                        guard let self, generation == self.controlGeneration else { return }
-                        self.engaged = false; self.manualTargets.removeAll(); self.stopHeartbeat(); self.onChange?()
-                    }
-                } else if case .setTarget = command {
-                    if result == .ok {
-                        DispatchQueue.main.async {
-                            guard let self, generation == self.controlGeneration else { return }
-                            self.engaged = true; self.startHeartbeat(); self.onChange?()
-                        }
-                    } else { failed = true }
-                }
-                if failed {
-                    DispatchQueue.main.async {
-                        guard let self, generation == self.controlGeneration else { return }
-                        self.settings?.smartBoostEnabled = false
-                        self.stopSmartBoostState()
-                        self.lastMessage = L("fan.msg.smartBoostStopped", L("fan.err.commandRejected"))
-                        self.restoreInBackground(message: nil)
-                    }
+            let result = client.apply(command)
+            DispatchQueue.main.async {
+                guard let self, generation == self.controlGeneration else { return }
+                guard result == .ok else {
+                    self.settings?.smartBoostEnabled = false
+                    self.stopSmartBoostState()
+                    self.restoreInBackground(message: L("fan.msg.smartBoostStopped", L("fan.err.commandRejected")))
                     return
                 }
+                switch command {
+                case .restoreAutomatic:
+                    self.engaged = false
+                    self.manualTargets.removeAll()
+                    self.stopHeartbeat()
+                case .setTarget:
+                    self.engaged = true
+                    self.startHeartbeat()
+                case .heartbeat: break
+                }
+                self.setBusy(false)
             }
         }
     }

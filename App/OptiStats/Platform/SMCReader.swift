@@ -36,7 +36,13 @@ final class SMCReader {
     private var connection: io_connect_t = 0
     private var infoCache: [UInt32: (size: UInt32, type: String)] = [:]
     private var missing: Set<UInt32> = []
-    private(set) var lastError: String?
+    private var failure: String?
+    private var consumers: Set<CollectorID> = []
+
+    var lastError: String? {
+        lock.lock(); defer { lock.unlock() }
+        return failure
+    }
 
     /// A estrutura precisa ter exatamente 80 bytes (contrato do kernel). Se não, o leitor se desativa.
     private let layoutOK = MemoryLayout<Param>.stride == 80
@@ -49,21 +55,35 @@ final class SMCReader {
         closeLocked()
     }
 
+    /// A shared connection stays open until its last active collector releases it.
+    func acquire(for consumer: CollectorID) -> Bool {
+        lock.lock(); defer { lock.unlock() }
+        guard openLocked() else { return false }
+        consumers.insert(consumer)
+        return true
+    }
+
+    func release(for consumer: CollectorID) {
+        lock.lock(); defer { lock.unlock() }
+        consumers.remove(consumer)
+        if consumers.isEmpty { closeLocked() }
+    }
+
     private func closeLocked() {
         if connection != 0 { IOServiceClose(connection); connection = 0 }
     }
 
     private func openLocked() -> Bool {
         if connection != 0 { return true }
-        guard layoutOK else { lastError = "layout SMC inesperado"; return false }
+        guard layoutOK else { failure = "layout SMC inesperado"; return false }
         let service = IOServiceGetMatchingService(kIOMainPortDefault, IOServiceMatching("AppleSMC"))
-        guard service != 0 else { lastError = "AppleSMC ausente"; return false }
+        guard service != 0 else { failure = "AppleSMC ausente"; return false }
         defer { IOObjectRelease(service) }
         var conn: io_connect_t = 0
         let r = IOServiceOpen(service, mach_task_self_, 0, &conn)
-        guard r == KERN_SUCCESS, conn != 0 else { lastError = String(format: "IOServiceOpen 0x%x", r); return false }
+        guard r == KERN_SUCCESS, conn != 0 else { failure = String(format: "IOServiceOpen 0x%x", r); return false }
         connection = conn
-        lastError = nil
+        failure = nil
         return true
     }
 
@@ -71,7 +91,12 @@ final class SMCReader {
         var outSize = MemoryLayout<Param>.stride
         let r = IOConnectCallStructMethod(connection, Self.handleYPCEvent,
                                           &input, MemoryLayout<Param>.stride, &output, &outSize)
-        return r == KERN_SUCCESS && output.result == 0
+        if r == kIOReturnNotOpen || r == kIOReturnNoDevice {
+            closeLocked()
+            infoCache.removeAll()
+            missing.removeAll()
+        }
+        return r == KERN_SUCCESS && outSize == MemoryLayout<Param>.stride && output.result == 0
     }
 
     private func typeString(_ t: UInt32) -> String {

@@ -178,6 +178,20 @@ final class SamplingCoordinatorTests: XCTestCase {
         XCTAssertFalse(coord.refreshNow(.fans))                                // não registrado
     }
 
+    func testManualRefreshReleasesHiddenCollectorWithoutSchedulingPolling() {
+        let exec = ManualExecutor()
+        let (coord, sched, _) = makeCoordinator(executor: { _ in exec })
+        let sensors = FakeCollector(.sensorList)
+        coord.register(sensors)
+
+        XCTAssertTrue(coord.refreshNow(.sensorList))
+        exec.runAll()
+
+        XCTAssertEqual(sensors.collectCount, 1)
+        XCTAssertEqual(sensors.suspendCount, 1)
+        XCTAssertNil(sched.pendingDeadline)
+    }
+
     func testProfileChangeAppliesImmediatelyWithSingleTimer() {
         let (coord, sched, clock) = makeCoordinator()
         let t = FakeCollector(.temperatures); coord.register(t)

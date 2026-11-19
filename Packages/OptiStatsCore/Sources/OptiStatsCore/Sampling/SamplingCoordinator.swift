@@ -17,7 +17,7 @@ public final class SamplingCoordinator {
         var startedAt: TimeInterval = 0
         var lastStart: TimeInterval?
         var stats = CollectorStats()
-        var recentRuns: [TimeInterval] = []
+        var recentRuns = RingBuffer<TimeInterval>(capacity: 240)
         init(collector: Collector, executor: WorkExecutor) { self.collector = collector; self.executor = executor }
         var visibility: Visibility { demands.values.max() ?? .hidden }
     }
@@ -31,6 +31,7 @@ public final class SamplingCoordinator {
     private var config = SamplingConfiguration()
     private var paused = false
     private var scheduledDeadline: TimeInterval?
+    private var wakeGeneration = 0
     private var wakeups = 0
 
     /// Distância mínima entre uma leitura e uma leitura "imediata" disparada por abertura de painel/atualização manual.
@@ -109,7 +110,7 @@ public final class SamplingCoordinator {
         lock.lock()
         paused = true
         for e in entries.values { e.nextDue = nil; e.interval = nil; e.stats.interval = nil; e.stats.isActive = false; toSuspend.append(e) }
-        scheduler.cancel(); scheduledDeadline = nil
+        cancelWakeLocked()
         lock.unlock()
         suspend(toSuspend)
     }
@@ -144,9 +145,10 @@ public final class SamplingCoordinator {
 
     // MARK: Despertar
 
-    private func onWake() {
+    private func onWake(generation: Int) {
         var toRun: [Entry] = []
         lock.lock()
+        guard generation == wakeGeneration, scheduledDeadline != nil else { lock.unlock(); return }
         scheduledDeadline = nil
         wakeups += 1
         let now = clock.now
@@ -180,7 +182,7 @@ public final class SamplingCoordinator {
         e.stats.lastDuration = duration
         e.stats.lastRunAt = started
         e.recentRuns.append(started)
-        if e.recentRuns.count > 240 { e.recentRuns.removeFirst(e.recentRuns.count - 240) }
+        let needsSuspend = e.interval == nil || paused
         if let interval = e.interval, !paused {
             e.nextDue = max(clock.now, (e.lastStart ?? started) + interval)
         } else {
@@ -188,19 +190,30 @@ public final class SamplingCoordinator {
         }
         rescheduleLocked()
         lock.unlock()
+        // finish is already on this collector's executor. A hidden one-shot refresh must release its resources.
+        if needsSuspend { e.collector.suspend() }
+    }
+
+    private func cancelWakeLocked() {
+        guard scheduledDeadline != nil else { return }
+        wakeGeneration += 1
+        scheduledDeadline = nil
+        scheduler.cancel()
     }
 
     private func rescheduleLocked() {
         let next = entries.values.compactMap { $0.nextDue }.min()
         guard let deadline = next, !paused else {
-            if scheduledDeadline != nil { scheduler.cancel(); scheduledDeadline = nil }
+            cancelWakeLocked()
             return
         }
         if let s = scheduledDeadline, abs(s - deadline) < 0.001 { return }
         scheduledDeadline = deadline
+        wakeGeneration += 1
+        let generation = wakeGeneration
         let interval = entries.values.filter { $0.nextDue == deadline }.compactMap { $0.interval }.min() ?? 5
         let leeway = min(1.0, max(0.05, interval * 0.1))
-        scheduler.schedule(deadline: deadline, leeway: leeway) { [weak self] in self?.onWake() }
+        scheduler.schedule(deadline: deadline, leeway: leeway) { [weak self] in self?.onWake(generation: generation) }
     }
 
     private func suspend(_ list: [Entry]) {
@@ -218,7 +231,7 @@ public final class SamplingCoordinator {
         for (id, e) in entries {
             var s = e.stats
             s.isStalled = e.running && now - e.startedAt > stallTimeout
-            s.readsLastMinute = e.recentRuns.filter { $0 >= now - 60 }.count
+            s.readsLastMinute = e.recentRuns.elements.lazy.filter { $0 >= now - 60 }.count
             out[id] = s
         }
         return out

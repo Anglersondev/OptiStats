@@ -25,7 +25,12 @@ final class HIDTemperatureSensors {
     private var client: UnsafeMutableRawPointer?
     /// Serviços e nomes de produto em cache: a lista de sensores não muda entre leituras, só os valores.
     private var cachedServices: CFArray?
-    private var cachedProducts: [String] = []
+    private struct Service {
+        let index: Int
+        let product: String
+        let role: (role: SensorRole, label: String)
+    }
+    private var matchingServices: [Service] = []
 
     init() {
         let handle = dlopen("/System/Library/Frameworks/IOKit.framework/IOKit", RTLD_NOW)
@@ -50,7 +55,7 @@ final class HIDTemperatureSensors {
 
     /// Libera o cliente HID (recurso caro). Recriado na próxima leitura.
     func release() {
-        cachedServices = nil; cachedProducts = []
+        cachedServices = nil; matchingServices = []
         if let c = client { Unmanaged<AnyObject>.fromOpaque(c).release(); client = nil }
     }
 
@@ -64,26 +69,31 @@ final class HIDTemperatureSensors {
     }
 
     /// Lê (nome do produto, °C) de todos os sensores de temperatura HID. Vazio se indisponível.
-    func readTemperatures() -> [(product: String, celsius: Double)] {
+    func readTemperatures() -> [(product: String, celsius: Double, role: (role: SensorRole, label: String))] {
         guard let copyServices, let copyProperty, let copyEvent, let floatValue, let c = ensureClient() else { return [] }
         if cachedServices == nil {
             guard let rawArray = copyServices(c) else { return [] }
             let services = Unmanaged<CFArray>.fromOpaque(rawArray).takeRetainedValue()
-            cachedProducts = (0..<CFArrayGetCount(services)).map { i in
-                guard let sp = CFArrayGetValueAtIndex(services, i),
-                      let rawName = copyProperty(UnsafeMutableRawPointer(mutating: sp), "Product" as CFString) else { return "" }
-                return (Unmanaged<AnyObject>.fromOpaque(rawName).takeRetainedValue() as? String) ?? ""
+            matchingServices = (0..<CFArrayGetCount(services)).compactMap { index in
+                guard let service = CFArrayGetValueAtIndex(services, index),
+                      let rawName = copyProperty(UnsafeMutableRawPointer(mutating: service), "Product" as CFString),
+                      let name = Unmanaged<AnyObject>.fromOpaque(rawName).takeRetainedValue() as? String,
+                      let role = SMCCatalog.hidRole(forProductName: name) else { return nil }
+                return Service(index: index, product: name, role: role)
             }
+            // Service discovery can return an empty list during startup or wake.
+            guard !matchingServices.isEmpty else { return [] }
             cachedServices = services
         }
         guard let services = cachedServices else { return [] }
-        var out: [(String, Double)] = []
-        for i in 0..<CFArrayGetCount(services) where i < cachedProducts.count && SMCCatalog.hidRole(forProductName: cachedProducts[i]) != nil {
-            guard let sp = CFArrayGetValueAtIndex(services, i),
+        var out: [(String, Double, (role: SensorRole, label: String))] = []
+        out.reserveCapacity(matchingServices.count)
+        for match in matchingServices {
+            guard let sp = CFArrayGetValueAtIndex(services, match.index),
                   let rawEvent = copyEvent(UnsafeMutableRawPointer(mutating: sp), Self.eventTypeTemperature, 0, 0) else { continue }
             let value = floatValue(rawEvent, Self.fieldTemperatureLevel)
             Unmanaged<AnyObject>.fromOpaque(rawEvent).release()
-            out.append((cachedProducts[i], value))
+            out.append((match.product, value, match.role))
         }
         return out
     }

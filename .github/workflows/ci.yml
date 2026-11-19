@@ -2,6 +2,10 @@ name: CI
 on:
   push:
   pull_request:
+
+permissions:
+  contents: read
+
 jobs:
   core-linux:
     runs-on: ubuntu-24.04
@@ -9,16 +13,79 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - run: swift test --package-path Packages/OptiStatsCore
+
   macos:
-    runs-on: macos-15
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [macos-26, xcode-27]
+    runs-on: ${{ matrix.runner }}
     steps:
       - uses: actions/checkout@v5
-      - run: python3 scripts/check_localization.py
-      - run: python3 scripts/generate_xcodeproj.py && git diff --exit-code OptiStats.xcodeproj || true
+      - name: Report macOS and SDK
+        run: |
+          sw_vers
+          xcodebuild -version
+          xcrun --sdk macosx --show-sdk-version
+      - name: Check localization, website and project
+        run: |
+          python3 scripts/check_localization.py
+          python3 scripts/check_site.py
+          python3 scripts/generate_xcodeproj.py
+          git diff --exit-code -- OptiStats.xcodeproj/project.pbxproj
       - run: swift test --package-path Packages/OptiStatsCore
-      - run: xcodebuild -list -project OptiStats.xcodeproj
-      - run: xcodebuild -project OptiStats.xcodeproj -scheme OptiStats -configuration Debug -destination 'platform=macOS' build CODE_SIGNING_ALLOWED=NO
-      - run: xcodebuild -project OptiStats.xcodeproj -scheme OptiStats -configuration Release -destination 'platform=macOS' -derivedDataPath build build CODE_SIGNING_ALLOWED=NO
-      - run: scripts/make_dmg.sh build/Build/Products/Release/OptiStats.app OptiStats-1.0.dmg
+      - run: scripts/check_hardware_regressions.sh
+      - name: Build the Xcode project
+        run: |
+          xcodebuild -project OptiStats.xcodeproj -scheme OptiStats -configuration Release \
+            -destination 'platform=macOS,arch=arm64' -derivedDataPath build/xcode \
+            build CODE_SIGNING_ALLOWED=NO
+          test -x build/xcode/Build/Products/Release/OptiStats.app/Contents/Helpers/OptiStatsHelper
+      - name: Build and package the local installation
+        if: matrix.runner == 'macos-26'
+        run: |
+          mkdir -p build/dist
+          scripts/build_app.sh build/native
+          release=$(python3 -c 'import json; print(json.load(open("scripts/release-version.json"))["version"])')
+          scripts/make_dmg.sh build/native/OptiStats.app "build/dist/OptiStats-$release.dmg"
       - uses: actions/upload-artifact@v6
-        with: { name: OptiStats-dmg, path: OptiStats-1.0.dmg }
+        if: matrix.runner == 'macos-26'
+        with:
+          name: OptiStats-dmg
+          path: build/dist/
+          if-no-files-found: error
+
+  release-draft:
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    needs: [core-linux, macos]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/download-artifact@v7
+        with:
+          name: OptiStats-dmg
+          path: dist
+      - name: Prepare GitHub release draft
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          release=$(jq -er .version scripts/release-version.json)
+          [[ "$GITHUB_REF_NAME" == "v$release" ]]
+          [[ "$(git rev-parse HEAD)" == "$(git rev-parse "$GITHUB_REF_NAME^{commit}")" ]]
+          (cd dist && sha256sum -c "OptiStats-$release.dmg.sha256")
+          if ! gh release view "$GITHUB_REF_NAME" --json isDraft,assets > release.json 2>/dev/null; then
+            gh release create "$GITHUB_REF_NAME" --verify-tag --draft --title "OptiStats $release" \
+              --notes-file "docs/RELEASE-$release.md"
+            gh release view "$GITHUB_REF_NAME" --json isDraft,assets > release.json
+          fi
+          if [[ "$(jq -r .isDraft release.json)" != "true" ]]; then
+            echo "The published release was preserved."
+            exit 0
+          fi
+          for file in "OptiStats-$release.dmg" "OptiStats-$release.dmg.sha256"; do
+            if ! jq -e --arg file "$file" '.assets | any(.name == $file)' release.json >/dev/null; then
+              gh release upload "$GITHUB_REF_NAME" "dist/$file"
+            fi
+          done

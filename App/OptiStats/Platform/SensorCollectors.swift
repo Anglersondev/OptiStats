@@ -2,11 +2,11 @@ import Foundation
 import OptiStatsCore
 
 /// Temperaturas: zonas do catálogo SMC (somente as chaves que existem neste Mac e dão valor plausível) + sensores HID.
-/// Para não enviesar médias, sensores HID de CPU/GPU só entram quando o SMC não deu nenhuma zona do mesmo grupo.
+/// O agregador seleciona uma fonte por tipo de zona, mantendo os sensores individuais disponíveis.
 final class TemperatureCollector: BaseCollector {
     private let smc: SMCReader
     private let specs: [SMCSensorSpec]
-    private let hid = HIDTemperatureSensors()
+    private var hid: HIDTemperatureSensors?
 
     init(store: MetricsStore, clock: MonotonicClock, smc: SMCReader, chip: ChipFamily?) {
         self.smc = smc
@@ -16,18 +16,23 @@ final class TemperatureCollector: BaseCollector {
 
     override func collect() {
         let t = clock.now
-        guard smc.isAvailable || hid.isAvailable else {
-            markFailed(L("platform.reason.smcOpenFailed", smc.lastError ?? "—")); return
+        let hid = self.hid ?? HIDTemperatureSensors()
+        self.hid = hid
+        let smcAvailable = smc.acquire(for: id)
+        guard smcAvailable || hid.isAvailable else {
+            markFailed(L("platform.reason.smcOpenFailed", smc.lastError ?? "—"))
+            store.updateSensors(timestamp: t, owner: "temperatures", readings: [])
+            return
         }
         var readings: [SensorReading] = []
-        for spec in specs {
+        for spec in specs where smcAvailable {
             guard let raw = smc.read(spec.key) else { continue }   // chave ausente neste Mac
             let r = SensorValidator.reading(spec.descriptor(), raw: raw, at: t)
             if r.value != nil { readings.append(r) }
         }
         var seenKeys: [String: Int] = [:]
         for item in hid.readTemperatures() {
-            guard let info = SMCCatalog.hidRole(forProductName: item.product) else { continue }
+            let info = item.role
             let n = seenKeys[item.product, default: 0]; seenKeys[item.product] = n + 1
             let key = n == 0 ? item.product : "\(item.product)#\(n)"
             let d = SensorDescriptor(key: key, name: n == 0 ? info.label : "\(info.label) (\(n + 1))",
@@ -45,7 +50,7 @@ final class TemperatureCollector: BaseCollector {
         markAvailable()
     }
 
-    override func suspend() { hid.release(); smc.close() }
+    override func suspend() { hid?.release(); smc.release(for: id) }
 }
 
 /// Ventoinhas: leitura (FNum, F{i}Ac/Mn/Mx, F{i}Md). Nenhuma escrita.
@@ -59,8 +64,13 @@ final class FanCollector: BaseCollector {
 
     override func collect() {
         let t = clock.now
-        guard smc.isAvailable else { markFailed(L("platform.reason.smcOpenFailed", smc.lastError ?? "—")); return }
-        guard let n = smc.read("FNum"), n >= 1, n <= 8 else {
+        guard smc.acquire(for: id) else {
+            markFailed(L("platform.reason.smcOpenFailed", smc.lastError ?? "—"))
+            store.updateSensors(timestamp: t, owner: "fans", fans: [])
+            return
+        }
+        guard let n = smc.read(FanSMCKeys.countKey), n >= 1, n <= Double(FanSMCKeys.maxFans),
+              n.rounded(.towardZero) == n else {
             markUnsupported("platform.reason.noFans")
             store.updateSensors(timestamp: t, owner: "fans", fans: [])
             return
@@ -82,7 +92,7 @@ final class FanCollector: BaseCollector {
         markAvailable()
     }
 
-    override func suspend() { smc.close() }
+    override func suspend() { smc.release(for: id) }
 }
 
 /// Lista elétrica (tensão, corrente, potência) do catálogo SMC. Domínios de potência se sobrepõem: nunca somar.
@@ -98,7 +108,11 @@ final class SensorListCollector: BaseCollector {
 
     override func collect() {
         let t = clock.now
-        guard smc.isAvailable else { markFailed(L("platform.reason.smcOpenFailed", smc.lastError ?? "—")); return }
+        guard smc.acquire(for: id) else {
+            markFailed(L("platform.reason.smcOpenFailed", smc.lastError ?? "—"))
+            store.updateSensors(timestamp: t, owner: "electrical", readings: [])
+            return
+        }
         var readings: [SensorReading] = []
         for spec in specs {
             guard let raw = smc.read(spec.key) else { continue }
@@ -109,5 +123,5 @@ final class SensorListCollector: BaseCollector {
         if readings.isEmpty { markUnsupported("platform.reason.noElectrical") } else { markAvailable() }
     }
 
-    override func suspend() { smc.close() }
+    override func suspend() { smc.release(for: id) }
 }

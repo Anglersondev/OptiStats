@@ -7,6 +7,8 @@ import OptiStatsCore
 /// - watchdog: sem heartbeat por 10 s, cliente desconectado, SIGTERM/SIGINT ou início → restaura o automático.
 final class HelperServer {
     private let driver: SMCFanDriver
+    private let terminationFD: Int32
+    private var clientUID: uid_t?
     private var listenFD: Int32 = -1
     private var clientFD: Int32 = -1
     private var lineBuffer = FanHelperLineBuffer()
@@ -17,7 +19,10 @@ final class HelperServer {
     private static let localPeerCred: Int32 = 0x001
     private static let xucredVersion: UInt32 = 0
 
-    init(driver: SMCFanDriver) { self.driver = driver }
+    init(driver: SMCFanDriver, terminationFD: Int32) {
+        self.driver = driver
+        self.terminationFD = terminationFD
+    }
 
     private var now: TimeInterval { ProcessInfo.processInfo.systemUptime }
 
@@ -26,18 +31,27 @@ final class HelperServer {
     /// Bloqueia até receber SIGTERM/SIGINT. Retorna depois de restaurar o automático e remover o socket.
     func run() -> Bool {
         guard openListener() else { return false }
-        HelperLog.write("helper 1.0 escutando")
+        HelperLog.write("helper build \(FanHelperConstants.helperBuild) escutando")
         while terminateRequested == 0 {
-            var fds = [pollfd(fd: listenFD, events: Int16(POLLIN), revents: 0)]
-            if clientFD >= 0 { fds.append(pollfd(fd: clientFD, events: Int16(POLLIN), revents: 0)) }
-            // Acorda no máximo a cada 1 s (e antes, se o watchdog estiver perto de expirar).
-            var timeoutMs: Int32 = 1000
-            if let rem = watchdog.remaining(at: now) { timeoutMs = min(timeoutMs, Int32(rem * 1000) + 20) }
+            let polledClient = clientFD
+            var fds = [pollfd(fd: listenFD, events: Int16(POLLIN), revents: 0),
+                       pollfd(fd: polledClient, events: Int16(POLLIN), revents: 0),
+                       pollfd(fd: terminationFD, events: Int16(POLLIN), revents: 0)]
+            // No idle wakeups when the signal pipe is available. Manual control retains a safety check each second.
+            var timeoutMs: Int32 = (terminationFD < 0 || driver.isManualActive) ? 1000 : -1
+            if let rem = watchdog.remaining(at: now), !driver.restorePending {
+                let untilDeadline = Int32((rem * 1000).rounded(.up))
+                timeoutMs = timeoutMs < 0 ? untilDeadline : min(timeoutMs, untilDeadline)
+            }
             let n = poll(&fds, nfds_t(fds.count), timeoutMs)
+            if terminateRequested != 0 { break }
             if n < 0 {
                 if errno == EINTR { continue }
                 HelperLog.write("poll falhou: errno \(errno)")
                 break
+            }
+            if polledClient >= 0, (driver.isManualActive || fds[1].revents != 0), clientUID != consoleUID() {
+                closeClient(reason: "sessão de console mudou")
             }
             if watchdog.isExpired(at: now) {
                 HelperLog.write("watchdog: sem heartbeat; restaurando automático")
@@ -46,8 +60,8 @@ final class HelperServer {
                 restoreNow(reason: "nova tentativa")
             }
             guard n > 0 else { continue }
+            if polledClient >= 0, clientFD == polledClient, fds[1].revents != 0 { serviceClient(fds[1].revents) }
             if fds[0].revents & Int16(POLLIN) != 0 { acceptClient() }
-            if fds.count > 1, fds[1].revents != 0 { serviceClient(fds[1].revents) }
         }
         HelperLog.write("encerrando; restaurando automático")
         closeClient(reason: "encerramento")
@@ -112,6 +126,7 @@ final class HelperServer {
         var tv = timeval(tv_sec: 2, tv_usec: 0)   // escrita de respostas nunca bloqueia por muito tempo
         setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO, &tv, socklen_t(MemoryLayout<timeval>.size))
         clientFD = fd
+        clientUID = peer
         lineBuffer = FanHelperLineBuffer()
         HelperLog.write("cliente conectado")
     }
@@ -120,6 +135,7 @@ final class HelperServer {
         guard clientFD >= 0 else { return }
         close(clientFD)
         clientFD = -1
+        clientUID = nil
         lineBuffer = FanHelperLineBuffer()
         HelperLog.write("cliente desconectado (\(reason))")
         restoreNow(reason: "cliente desconectou")
@@ -178,7 +194,7 @@ final class HelperServer {
         switch request.type {
         case .hello:
             send(FanHelperResponse(id: request.id, ok: true, helperBuild: FanHelperConstants.helperBuild,
-                                   supported: driver.isSupportedArchitecture && driver.isSMCAvailable,
+                                   supported: driver.isSupportedArchitecture && driver.fanCount() != nil,
                                    manualActive: driver.isManualActive))
         case .readFans:
             send(FanHelperResponse(id: request.id, ok: true, fans: driver.readFans(), manualActive: driver.isManualActive))

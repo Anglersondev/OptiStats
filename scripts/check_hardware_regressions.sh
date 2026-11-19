@@ -20,3 +20,14 @@ swiftc -O -swift-version 5 -I "$BUILD" -L "$BUILD" -lOptiStatsCore \
   "$ROOT/App/OptiStats/Fans/FanControlSettings.swift" \
   "$ROOT/Tests/HardwareRegression/main.swift" -o "$BUILD/hardware-regressions"
 "$BUILD/hardware-regressions"
+shift $(( $# > 0 ? 1 : 0 ))
+swiftc -O -swift-version 5 -I "$BUILD" -L "$BUILD" -lOptiStatsCore \
+  "$ROOT/App/OptiStats/Platform/PlatformSupport.swift" \
+  "$ROOT/App/OptiStats/Platform/HIDTemperatureSensors.swift" \
+  "$ROOT/App/OptiStats/Platform/SMCReader.swift" \
+  "$ROOT/App/OptiStats/Platform/SensorCollectors.swift" \
+  "$ROOT/App/OptiStats/Platform/PowerCollector.swift" \
+  "$ROOT/App/OptiStats/Platform/IOReportEnergy.swift" \
+  "$ROOT/App/OptiStats/UI/Kit/Localizer.swift" \
+  "$ROOT/Tests/HardwareRegression/TelemetrySmoke.swift" -o "$BUILD/telemetry-smoke"
+"$BUILD/telemetry-smoke" "$@"

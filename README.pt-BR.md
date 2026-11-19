@@ -2,7 +2,7 @@
 
 **Monitor nativo e leve para a barra de menus do Apple Silicon, com orientação de RAM, controle de ventoinhas e Debloat opcional.** Criado por [Anglerson](https://github.com/Anglersondev) em Swift e AppKit.
 
-[Baixar 1.0](https://github.com/Anglersondev/OptiStats/releases/tag/v1.0) · [English](README.md) · [Relatar um bug](https://github.com/Anglersondev/OptiStats/issues)
+[Baixar versão estável](https://github.com/Anglersondev/OptiStats/releases/latest) · [English](README.md) · [Relatar um bug](https://github.com/Anglersondev/OptiStats/issues)
 
 ## Recursos
 
@@ -10,16 +10,17 @@
 - Gráficos de histórico, sensores e processos agrupados por aplicativo.
 - Perfis Econômico, Equilibrado, Tempo Real e Personalizado. Fontes ocultas param de ser consultadas; os coletores compartilham um agendador.
 - Análise da pressão de memória e revisão de apps grandes que ficaram uma hora em segundo plano. Inspirado no Dusty: footprint agrupado, apps protegidos, encerramento normal e resultado medido.
-- Leitura de ventoinhas por padrão. Automático, Manual, **100%** e Smart Boost opcionais usam o helper privilegiado. As escolhas manuais são lembradas e reaplicadas ao abrir e despertar, mesmo com o Mac frio. Sem etapa de teste beta.
+- Leitura de ventoinhas por padrão. Automático, Manual, **100%** e Smart Boost opcionais usam o helper privilegiado. As escolhas manuais são lembradas e reaplicadas ao abrir e despertar, mesmo com o Mac frio.
 - Ferramentas de disco/cache e gerenciamento opcional de serviços do macOS pelo Debloat.
 - Inglês e português brasileiro com troca em tempo de execução. Versão, créditos e doação em **Preferências → Sobre**.
 
-## Novidades da 1.0: ventoinhas, temperaturas e memória
+## Novidades da 1.2
 
-- O controle tenta o destravamento `Ftst` quando a escrita direta é aceita sem assumir o controle. A restauração zera explicitamente modos e alvos das ventoinhas controladas pelo OptiStats.
-- A temperatura da CPU prioriza a média e a máxima do firmware (`TCMb` / `TCMz`), descarta valores implausíveis e usa HID por classe de zona. Leituras de ventoinhas deixam de atualizar a idade de temperaturas antigas.
-- A revisão de RAM acompanha notificações de atividade dos apps, sem outro loop de consulta nem dependência do Dusty. Nenhum app fecha sozinho; memória saudável continua identificada como saudável.
-- Continua na versão **1.0**, helper build **4**. Quem já usa deve atualizar o helper uma vez em **Preferências → Ventoinhas**. Ative **Geral → Iniciar no login** para retomar a escolha após entrar na sessão. Automático apaga os alvos salvos.
+- O Smart Boost passa para Automático quando perde a leitura recente da CPU ou o macOS sinaliza pressão térmica crítica.
+- O helper detecta conflitos com outro controlador e restaura os próprios alvos manuais em caso de interrupção. Em repouso, aguarda pedidos sem consultas periódicas.
+- Temperatura, ventoinhas e potência compartilham a conexão com o SMC por demanda. Atualizações de RPM reaproveitam os agregados de temperatura e preservam a idade das amostras.
+- Atualize o helper opcional para o build **5** em **Preferências → Ventoinhas** para usar Manual, 100% ou Smart Boost.
+- CI em Apple Silicon no macOS 26 e 27. A instalação continua com alvo mínimo no macOS 13.
 
 ## Interface e seleção manual de apps
 
@@ -27,7 +28,7 @@ Painéis com seções visuais, cabeçalhos mais claros e títulos fixos nas pref
 
 ## Download e requisitos
 
-[Baixar OptiStats 1.0 para macOS](https://github.com/Anglersondev/OptiStats/releases/download/v1.0/OptiStats-1.0.dmg). Abra o DMG e arraste o app para Aplicativos.
+[Baixar a versão estável mais recente](https://github.com/Anglersondev/OptiStats/releases/latest). Abra o DMG e arraste o app para Aplicativos.
 
 Requer **macOS 13 ou posterior e Apple Silicon**. Sensores e controle das ventoinhas dependem do Mac. A versão usa assinatura ad-hoc e não é notarizada pela Apple; o macOS pode exigir aprovação em Ajustes do Sistema → Privacidade e Segurança. O helper é opcional, necessário apenas para controlar as ventoinhas.
 
@@ -49,7 +50,7 @@ A revisão de memória adapta ideias do [Dusty, de Toprak Yagcioglu](https://git
 
 ## Compilar e validar
 
-Com somente Command Line Tools, use `scripts/build_app.sh`. Para regressões de SMC simulado e preferências, use `scripts/check_hardware_regressions.sh` (sem privilégios de administrador nem escrita física nas ventoinhas).
+Com somente Command Line Tools, use `scripts/build_app.sh`. Use `scripts/check_hardware_regressions.sh` para simular escritas no SMC e ler a telemetria do Mac atual, sem privilégios de administrador. As [notas da 1.2](docs/RELEASE-1.2.md) incluem o fluxo de publicação e atualização do site.
 
 No macOS com Xcode 15 ou posterior:
 

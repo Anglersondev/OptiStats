@@ -115,7 +115,9 @@ final class HelperFanActuator: FanActuator {
     }
 
     func heartbeat() -> Result<Void, FanClientFailure> {
-        exchange(.heartbeat, timeout: 55).map { _ in () }
+        exchange(.heartbeat, timeout: 55).flatMap { response in
+            response.manualActive == true ? .success(()) : .failure(.helper(.verifyFailed, nil))
+        }
     }
 
     /// Fecha a conexão. O helper restaura o automático ao ver a desconexão.
@@ -125,20 +127,10 @@ final class HelperFanActuator: FanActuator {
         manualEngaged = false
     }
 
-    /// Encerramento do app: tenta restaurar de forma educada (se não houver troca em andamento) e, de qualquer jeito,
-    /// derruba a conexão (`shutdown`), o que acorda leituras bloqueadas e faz o helper restaurar o automático.
-    func restoreForShutdown() {
-        if lock.try() {
-            let engaged = manualEngaged || fd >= 0
-            lock.unlock()
-            if engaged { _ = restoreAutomatic() }
-        }
-        emergencyDisconnect()
-    }
-
+    /// Despertar o helper para restaurar o automático sem bloquear a main no encerramento.
     func emergencyDisconnect() {
-        mirrorLock.lock(); let f = fdMirror; mirrorLock.unlock()
-        if f >= 0 { shutdown(f, SHUT_RDWR) }
+        mirrorLock.lock(); defer { mirrorLock.unlock() }
+        if fdMirror >= 0 { shutdown(fdMirror, SHUT_RDWR) }
     }
 
     // MARK: Transporte
@@ -155,7 +147,9 @@ final class HelperFanActuator: FanActuator {
     }
 
     private func closeLocked() {
-        if fd >= 0 { close(fd); fd = -1 }
+        let previous = fd
+        fd = -1
+        if previous >= 0 { close(previous) }
         buffer = FanHelperLineBuffer()
         queued.removeAll()
     }

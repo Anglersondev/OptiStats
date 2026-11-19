@@ -23,16 +23,18 @@ enum HelperInstaller {
         return fm.fileExists(atPath: socketPath) ? .running : .installed
     }
 
-    /// Binário embutido: OptiStats.app/Contents/Resources/OptiStatsHelper.
-    /// O helper instalado é idêntico ao embutido neste app? (compara o conteúdo, não um número de versão:
-    /// qualquer mudança no helper é detectada mesmo com a versão sempre 1.0). nil se não der para comparar.
+    /// Compara o binário instalado com o desta build, inclusive quando o protocolo é compatível.
     static func installedMatchesBundled() -> Bool? {
         guard let bundled = bundledHelperURL else { return nil }
         guard FileManager.default.fileExists(atPath: helperPath) else { return nil }
         return FileManager.default.contentsEqual(atPath: bundled.path, andPath: helperPath)
     }
 
-    static var bundledHelperURL: URL? { Bundle.main.url(forResource: "OptiStatsHelper", withExtension: nil) }
+    static var bundledHelperURL: URL? {
+        let url = Bundle.main.bundleURL.appendingPathComponent("Contents/Helpers/OptiStatsHelper")
+        if FileManager.default.isExecutableFile(atPath: url.path) { return url }
+        return Bundle.main.url(forResource: "OptiStatsHelper", withExtension: nil)
+    }
 
     // Script constante (sh). $1 = caminho do binário embutido.
     private static let installScript = """

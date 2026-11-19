@@ -4,7 +4,7 @@
 
 **A native macOS menu bar monitor for Apple Silicon.** See CPU, GPU, RAM, temperatures, fans, power, disk, network and battery; review memory-heavy apps; optionally control supported fans and macOS services. Built by [Anglerson](https://github.com/Anglersondev) in Swift and AppKit.
 
-[Download 1.0](https://github.com/Anglersondev/OptiStats/releases/tag/v1.0) · [Features](#what-it-does) · [Compare with Stats](#optistats-and-stats) · [FAQ](#frequently-asked-questions) · [Português brasileiro](README.pt-BR.md) · [Report a bug](https://github.com/Anglersondev/OptiStats/issues)
+[Download latest](https://github.com/Anglersondev/OptiStats/releases/latest) · [Features](#what-it-does) · [Compare with Stats](#optistats-and-stats) · [FAQ](#frequently-asked-questions) · [Português brasileiro](README.pt-BR.md) · [Report a bug](https://github.com/Anglersondev/OptiStats/issues)
 
 [![CI](https://github.com/Anglersondev/OptiStats/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Anglersondev/OptiStats/actions/workflows/ci.yml)
 
@@ -12,8 +12,8 @@
 
 | Item | Current status |
 | --- | --- |
-| Published version | [1.0](https://github.com/Anglersondev/OptiStats/releases/tag/v1.0) |
-| Supported Macs | Apple Silicon; macOS 13 or later |
+| Release notes | [OptiStats 1.2](docs/RELEASE-1.2.md) |
+| Supported Macs | Apple Silicon; minimum deployment target macOS 13; CI on macOS 26 and 27 |
 | Fan speeds | Read-only by default; write control requires the optional privileged helper and supported hardware |
 | Code signing | Ad-hoc signed; not Apple notarized |
 | Validation | [CI builds and core tests](https://github.com/Anglersondev/OptiStats/actions/workflows/ci.yml); physical fan behavior still needs checking on each Mac |
@@ -26,16 +26,16 @@ Sensor names, readings and fan write support depend on the model. OptiStats does
 - Open history charts, sensor readings and processes grouped by application.
 - Choose Economy, Balanced, Real-time or Custom sampling. Hidden sources stop sampling; collectors share one scheduler.
 - Analyze memory pressure and review large apps that have stayed in the background for an hour. Inspired by Dusty: grouped physical footprints, protected apps, normal quit requests and measured results.
-- Read fan speeds by default. Optional Automatic, Manual, **100%** and Smart Boost controls use the privileged helper. Manual targets are remembered and reapplied on launch and wake, even with a cold Mac. No beta test step.
+- Read fan speeds by default. Optional Automatic, Manual, **100%** and Smart Boost controls use the privileged helper. Manual targets are remembered and reapplied on launch and wake, even with a cold Mac.
 - Manage disk/cache maintenance and selected macOS services with optional Debloat tools.
 - Switch between English and Brazilian Portuguese at runtime. Find the version, credits and donation link in **Preferences → About**.
 
-## Updated 1.0: fans, temperatures and memory
+## What's new in 1.2
 
-- Fan acquisition now falls back to `Ftst` when a direct mode write is accepted without taking effect. Automatic explicitly resets every mode and target owned by OptiStats.
-- CPU temperatures prefer the firmware die average/maximum (`TCMb` / `TCMz`); implausible CPU/GPU readings are discarded and HID fallback is selected per zone class. Fan updates no longer refresh old temperature timestamps.
-- RAM reviews use workspace activity notifications, with no extra polling loop or Dusty runtime dependency. No app is closed automatically; healthy memory stays labelled healthy.
-- Version remains **1.0**, helper build **4**. Existing installations must update the helper once in **Preferences → Fans**. Enable **General → Launch at login** to resume saved fan targets after signing in. Choosing Automatic clears them.
+- Smart Boost returns to Automatic when CPU temperature data becomes stale or the system reports critical thermal pressure.
+- The fan helper detects conflicting controllers and restores its own manual targets when interrupted. It waits for requests without polling while idle.
+- Temperature, fan and power collectors share the SMC connection only while needed. Fan-only updates reuse the existing temperature aggregates and history timestamps.
+- Update the optional helper to build **5** in **Preferences → Fans** to use Manual, 100% or Smart Boost.
 
 ## Interface and manual app selection
 
@@ -43,7 +43,7 @@ Native grouped panels, clearer headers and a fixed title for each preferences pa
 
 ## Download and requirements
 
-[Download OptiStats 1.0 for macOS](https://github.com/Anglersondev/OptiStats/releases/download/v1.0/OptiStats-1.0.dmg). Open the DMG and drag OptiStats to Applications.
+[Download the latest OptiStats release](https://github.com/Anglersondev/OptiStats/releases/latest). Open the DMG and drag OptiStats to Applications.
 
 Requires **macOS 13 or later and Apple Silicon**. Sensor availability and fan control depend on the Mac. The release is ad-hoc signed, not Apple notarized; macOS may require approval in System Settings → Privacy & Security. Install the optional fan helper only if you want write control.
 
@@ -57,7 +57,7 @@ The focus is low overhead: demand-driven collection, shared reads, bounded histo
 
 The table describes published features, not measured performance. [Stats](https://github.com/exelban/stats) is an established open-source system monitor; OptiStats is an independent project with a different scope. Features marked “not documented” may exist in another form or change in later releases.
 
-| Need | OptiStats 1.0 | Stats |
+| Need | OptiStats | Stats |
 | --- | --- | --- |
 | Menu bar CPU, GPU, memory, disk, network, sensors and battery | Yes | Yes |
 | Fan speed display | Yes, when exposed by the Mac | Yes, when exposed by the Mac |
@@ -87,7 +87,7 @@ swift test --package-path Packages/OptiStatsCore
 python3 scripts/check_localization.py
 ```
 
-For a Command Line Tools-only build, run `scripts/build_app.sh`. Simulated SMC and preference regressions run with `scripts/check_hardware_regressions.sh` without administrator privileges or physical SMC writes.
+For a Command Line Tools-only build, run `scripts/build_app.sh`. Run `scripts/check_hardware_regressions.sh` for simulated SMC writes and read-only telemetry on the current Mac. See the [release workflow](docs/RELEASE-1.2.md#maintainer-release-workflow) for packaging and GitHub Pages.
 
 The pure Swift core is tested on Linux and macOS in CI; CI also builds the macOS app and DMG. Automated checks do not validate physical fan response. Fan behavior and resource usage must be checked on the target Mac. The app is not sandboxed because its monitoring and optional control use macOS system interfaces.
 
