@@ -5,6 +5,7 @@ public struct MenuBarLabels: Equatable {
     public var ram = "RAM", cpu = "CPU", gpu = "GPU", temperature = "T", fan = "FAN", power = "W"
     public var disk = "DISK", net = "NET", battery = "BAT"
     public var systemTotal = "SYS", batteryPower = "BAT", dcIn = "DC", cpuPower = "CPU", gpuPower = "GPU"
+    public var lastTemperatureReading = "Last reading"
     public var efficiency = "E", performance = "P", superCores = "S"
     public init() {}
 }
@@ -40,14 +41,14 @@ public enum MenuBarFormatter {
             return make(labels.ram, v, "RAM")
         case .cpu:
             let v = store.cpu.map { ByteFormat.percent($0.load.total, decimals: d, locale: locale) }
-            return withTemperature(make(labels.cpu, v, "CPU"), config: config, source: .cpuAverage, store: store, prefs: prefs, locale: locale)
+            return withTemperature(make(labels.cpu, v, "CPU"), config: config, source: .cpuAverage, store: store, prefs: prefs, labels: labels, locale: locale)
         case .gpu:
             let v = store.gpu?.utilization.map { ByteFormat.percent($0, decimals: d, locale: locale) }
-            return withTemperature(make(labels.gpu, v, "GPU"), config: config, source: .gpuAverage, store: store, prefs: prefs, locale: locale)
+            return withTemperature(make(labels.gpu, v, "GPU"), config: config, source: .gpuAverage, store: store, prefs: prefs, labels: labels, locale: locale)
         case .temperature:
-            let (value, name) = temperature(prefs.menuBar.temperatureSource, store: store)
-            let text = value.map { formatTemperature($0, unit: prefs.temperatureUnit, decimals: d, locale: locale) }
-            return make(labels.temperature, text, name)
+            let (value, name) = temperature(prefs.menuBar.temperatureSource, store: store,
+                                            unit: prefs.temperatureUnit, decimals: d, labels: labels, locale: locale)
+            return make(labels.temperature, value, name)
         case .fan:
             let rpms = (store.sensors?.fans ?? []).compactMap(\.rpm)
             let v = rpms.max().map { ByteFormat.decimal($0, decimals: 0, locale: locale) + " RPM" }
@@ -87,10 +88,10 @@ public enum MenuBarFormatter {
 
     /// Aplica `config.content` ao texto de carga já calculado: só carga, só temperatura, ou "carga temperatura".
     static func withTemperature(_ load: MenuBarText, config: WidgetConfig, source: TemperatureSource, store: MetricsStore,
-                                prefs: Preferences, locale: Locale) -> MenuBarText {
+                                prefs: Preferences, labels: MenuBarLabels, locale: Locale) -> MenuBarText {
         guard config.content != .load else { return load }
-        let (value, name) = temperature(source, store: store)
-        let temp = value.map { formatTemperature($0, unit: prefs.temperatureUnit, decimals: config.decimals, locale: locale) }
+        let (temp, name) = temperature(source, store: store, unit: prefs.temperatureUnit,
+                                       decimals: config.decimals, labels: labels, locale: locale)
         var out = load
         if config.content == .temperature {
             out.value = temp ?? unavailable; out.isAvailable = temp != nil
@@ -111,20 +112,22 @@ public enum MenuBarFormatter {
         }
     }
 
-    static func temperature(_ source: TemperatureSource, store: MetricsStore) -> (Double?, String) {
-        guard let s = store.sensors else { return (nil, "Temperature") }
-        func aggregate(_ key: String, _ name: String) -> (Double?, String) {
-            (s.aggregates.first { $0.descriptor.key == key }?.value, name)
-        }
+    private static func temperature(_ source: TemperatureSource, store: MetricsStore, unit: TemperatureUnit,
+                                    decimals: Int, labels: MenuBarLabels, locale: Locale) -> (String?, String) {
+        let id: String
+        let name: String
         switch source {
-        case .cpuAverage: return aggregate("avg-cpu", "Average CPU (thermal zones)")
-        case .cpuHottest: return aggregate("max-cpu", "Hottest CPU zone")
-        case .gpuAverage: return aggregate("avg-gpu", "Average GPU (thermal zones)")
-        case .gpuHottest: return aggregate("max-gpu", "Hottest GPU zone")
-        case .sensor(let id):
-            let r = s.readings.first { $0.descriptor.id == id }
-            return (r?.value, r?.descriptor.name ?? id)
+        case .cpuAverage: (id, name) = ("derived:avg-cpu", "Average CPU (thermal zones)")
+        case .cpuHottest: (id, name) = ("derived:max-cpu", "Hottest CPU zone")
+        case .gpuAverage: (id, name) = ("derived:avg-gpu", "Average GPU (thermal zones)")
+        case .gpuHottest: (id, name) = ("derived:max-gpu", "Hottest GPU zone")
+        case .sensor(let sensorID): (id, name) = (sensorID, sensorID)
         }
+        guard let sample = store.displayTemperature(id: id), let celsius = sample.reading.value else { return (nil, name) }
+        let title: String
+        if case .sensor = source { title = sample.reading.descriptor.name } else { title = name }
+        let value = formatTemperature(celsius, unit: unit, decimals: decimals, locale: locale)
+        return sample.held ? (value + "*", title + " · " + labels.lastTemperatureReading) : (value, title)
     }
 
     static func power(_ scope: PowerScopeChoice, store: MetricsStore, labels: MenuBarLabels) -> (Double?, String) {

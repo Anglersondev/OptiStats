@@ -41,6 +41,8 @@ public final class MetricsStore {
     private var _processes: ProcessListSnapshot?
     private var _sensors: SensorsSnapshot?
     private var _sensorsByOwner: [String: [SensorReading]] = [:]
+    private var recentTemperatures: [String: SensorReading] = [:]
+    private static let temperatureHold: TimeInterval = 60
     private var _fans: [FanReading] = []
     private var _power: PowerSnapshot?
     private var _disk: DiskSnapshot?
@@ -66,6 +68,21 @@ public final class MetricsStore {
     public var memory: MemorySnapshot? { locked { _memory } }
     public var processes: ProcessListSnapshot? { locked { _processes } }
     public var sensors: SensorsSnapshot? { locked { _sensors } }
+    /// The bar can hold a recent value through a missed sample. History and sensor panels use the raw snapshot.
+    public func displayTemperature(id: String) -> (reading: SensorReading, held: Bool)? {
+        locked {
+            guard let snapshot = _sensors else { return nil }
+            let current = id.hasPrefix("derived:") ? snapshot.aggregates : snapshot.readings
+            if let reading = current.first(where: { $0.descriptor.id == id && $0.descriptor.kind == .temperature }),
+               reading.value != nil {
+                return (reading, false)
+            }
+            guard let previous = recentTemperatures[id],
+                  clock.now - previous.timestamp <= Self.temperatureHold else { return nil }
+            return (previous, true)
+        }
+    }
+
     public var power: PowerSnapshot? { locked { _power } }
     public var disk: DiskSnapshot? { locked { _disk } }
     public var network: NetworkSnapshot? { locked { _network } }
@@ -110,6 +127,11 @@ public final class MetricsStore {
                 let temperatureTime = merged.lazy.filter { $0.descriptor.kind == .temperature }.map(\.timestamp).max() ?? timestamp
                 aggregates = SensorAggregator.aggregates(from: merged, at: temperatureTime)
                 if owner == "temperatures" {
+                    store.recentTemperatures = store.recentTemperatures.filter { timestamp - $0.value.timestamp <= Self.temperatureHold }
+                    for reading in (readings ?? []).lazy.filter({ $0.descriptor.kind == .temperature && $0.value != nil }) {
+                        store.recentTemperatures[reading.descriptor.id] = reading
+                    }
+                    for aggregate in aggregates { store.recentTemperatures[aggregate.descriptor.id] = aggregate }
                     if let v = aggregates.first(where: { $0.descriptor.key == "avg-cpu" })?.value { store.append(.tempCPU, temperatureTime, v) }
                     if let v = aggregates.first(where: { $0.descriptor.key == "avg-gpu" })?.value { store.append(.tempGPU, temperatureTime, v) }
                 }
@@ -179,7 +201,7 @@ public final class MetricsStore {
         }
     }
 
-    static func kind(for id: CollectorID) -> MetricKind {
+    public static func kind(for id: CollectorID) -> MetricKind {
         switch id {
         case .cpu: return .cpu
         case .gpu: return .gpu

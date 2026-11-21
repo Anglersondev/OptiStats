@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.2.1
+
+- Corrigida a atualização das temperaturas da CPU e GPU quando aparecem juntas em um indicador empilhado.
+- A barra mantém a última temperatura medida, marcada com asterisco, por até um minuto se uma amostra falhar.
+- Indicadores configurados só para temperatura deixam de consultar a utilização de CPU ou GPU em segundo plano.
+
 ## 1.2
 
 - CI em Apple Silicon para macOS 26 e 27, com build, testes e validação do pacote.

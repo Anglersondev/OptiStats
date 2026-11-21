@@ -1,5 +1,5 @@
 {
-  "version": "1.2",
-  "build": "3",
+  "version": "1.2.1",
+  "build": "4",
   "minimum_macos": "13.0"
 }

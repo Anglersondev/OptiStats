@@ -69,6 +69,11 @@ public struct WidgetConfig: Codable, Equatable {
     }
     /// CPU e GPU podem mostrar temperatura; os demais indicadores têm conteúdo único.
     public var showsTemperatureInline: Bool { (kind == .cpu || kind == .gpu) && content != .load }
+
+    public var collectors: [CollectorID] {
+        guard showsTemperatureInline else { return kind.collectors }
+        return content == .temperature ? [.temperatures] : kind.collectors + [.temperatures]
+    }
 }
 
 /// Como a barra desenha cada item: texto em uma linha ou duas linhas empilhadas (rótulo/valor ou carga/temperatura).
@@ -217,18 +222,42 @@ public struct Preferences: Codable, Equatable {
         menuBar.widgets.filter { $0.enabled && (monitoringMode == .full || $0.kind.isEssential) }
     }
 
-    /// Tipos exibidos na barra agora (modo compacto usa `combinedKinds`). Determina quais coletores recebem demanda.
-    public func visibleKinds() -> [WidgetKind] {
+    /// Each group represents one status item, including a secondary widget that is disabled on its own.
+    public func menuBarGroups() -> [[WidgetConfig]] {
         let allowed: (WidgetKind) -> Bool = { self.monitoringMode == .full || $0.isEssential }
-        if menuBar.combined { return menuBar.combinedKinds.filter(allowed) }
-        var kinds = activeWidgets().map(\.kind)
-        // CPU/GPU com temperatura embutida precisam do coletor de temperaturas (só em modo Completo).
-        if monitoringMode == .full, activeWidgets().contains(where: \.showsTemperatureInline), !kinds.contains(.temperature) {
-            kinds.append(.temperature)
+        if menuBar.combined {
+            let configs = menuBar.combinedKinds.filter(allowed).map {
+                WidgetConfig(kind: $0, enabled: true, label: menuBar.combinedLabel)
+            }
+            return configs.isEmpty ? [] : [configs]
         }
-        // Indicadores empilhados sob outro também precisam de coletor.
-        for w in activeWidgets() {
-            if let s = w.stackWith, s != w.kind, allowed(s), !kinds.contains(s) { kinds.append(s) }
+
+        var pairs = Set<Set<WidgetKind>>()
+        return activeWidgets().map { configured in
+            var primary = configured
+            if monitoringMode == .essential && primary.showsTemperatureInline { primary.content = .load }
+            if let other = primary.stackWith, other != primary.kind, allowed(other),
+               let configuredSecondary = menuBar.widgets.first(where: { $0.kind == other }),
+               pairs.insert([primary.kind, other]).inserted {
+                var secondary = configuredSecondary
+                if monitoringMode == .essential && secondary.showsTemperatureInline { secondary.content = .load }
+                return [primary, secondary]
+            }
+            return [primary]
+        }
+    }
+
+    public func menuBarCollectors() -> Set<CollectorID> {
+        Set(menuBarGroups().flatMap { $0.flatMap(\.collectors) })
+    }
+
+    /// Widget kinds and the implicit temperature dependency used by inline displays.
+    public func visibleKinds() -> [WidgetKind] {
+        let widgets = menuBarGroups().flatMap { $0 }
+        var seen = Set<WidgetKind>()
+        var kinds = widgets.map(\.kind).filter { seen.insert($0).inserted }
+        if widgets.contains(where: \.showsTemperatureInline), seen.insert(.temperature).inserted {
+            kinds.append(.temperature)
         }
         return kinds
     }

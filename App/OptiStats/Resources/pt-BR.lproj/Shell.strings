@@ -13,6 +13,7 @@
 "shell.label.cpu" = "CPU";
 "shell.label.gpu" = "GPU";
 "shell.label.temperature" = "T";
+"shell.label.lastTemperatureReading" = "Última leitura";
 "shell.label.fan" = "VENT";
 "shell.label.power" = "W";
 "shell.label.disk" = "DISCO";

@@ -97,12 +97,10 @@ final class AppEnvironment {
         }
         coordinator.setConfiguration(samplingConfiguration)
 
-        let visible = Set(p.visibleKinds())
-        for kind in WidgetKind.allCases {
-            for collector in kind.collectors {
-                coordinator.setDemand(consumer: "widget.\(kind.rawValue)", collector: collector,
-                                      visibility: visible.contains(kind) ? .bar : nil)
-            }
+        let collectors = p.menuBarCollectors()
+        for collector in CollectorID.allCases {
+            coordinator.setDemand(consumer: "menuBar", collector: collector,
+                                  visibility: collectors.contains(collector) ? .bar : nil)
         }
         onPreferencesApplied?()
     }

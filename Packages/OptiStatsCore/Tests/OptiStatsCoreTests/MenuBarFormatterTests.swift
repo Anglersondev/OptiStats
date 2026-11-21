@@ -110,6 +110,53 @@ final class WidgetContentTests: XCTestCase {
         let w = try JSONDecoder().decode(WidgetConfig.self, from: json)
         XCTAssertEqual(w.content, .load)
     }
+    func testStackedTemperatureStartsSensorCollectionWithoutGpuUtilization() {
+        var prefs = Preferences()
+        prefs.monitoringMode = .full
+        prefs.menuBar.widgets = [
+            WidgetConfig(kind: .cpu, enabled: true, stackWith: .gpu),
+            WidgetConfig(kind: .gpu, enabled: false, content: .temperature)
+        ]
+
+        XCTAssertEqual(prefs.menuBarGroups().map { $0.map(\.kind) }, [[.cpu, .gpu]])
+        XCTAssertEqual(prefs.menuBarCollectors(), [.cpu, .temperatures])
+        prefs.menuBar.widgets[0].content = .temperature
+        XCTAssertEqual(prefs.menuBarCollectors(), [.temperatures])
+        prefs.menuBar.widgets[1].content = .both
+        XCTAssertEqual(prefs.menuBarCollectors(), [.temperatures, .gpu])
+
+        prefs.monitoringMode = .essential
+        XCTAssertEqual(prefs.menuBarGroups().map { $0.map(\.content) }, [[.load]])
+        XCTAssertEqual(prefs.menuBarCollectors(), [.cpu])
+    }
+
+    func testMissingGpuTemperatureShowsLastReadingBrieflyWithoutInventingHistory() {
+        let clock = ManualClock(start: 100)
+        let store = MetricsStore(clock: clock)
+        let gpu = SensorDescriptor(key: "Tg1U", name: "GPU zone", kind: .temperature, role: .gpuZone, source: .smc)
+        let config = WidgetConfig(kind: .gpu, enabled: true, content: .temperature)
+        func text() -> MenuBarText {
+            MenuBarFormatter.text(kind: .gpu, config: config, store: store, prefs: Preferences(), locale: Locale(identifier: "en_US"))
+        }
+
+        store.updateSensors(timestamp: clock.now, owner: "temperatures",
+                            readings: [SensorValidator.reading(gpu, raw: 42, at: clock.now)])
+        XCTAssertEqual(text().value, "42°")
+
+        clock.advance(by: 20)
+        store.updateSensors(timestamp: clock.now, owner: "temperatures", readings: [])
+        XCTAssertEqual(text().value, "42°*")
+        XCTAssertTrue(text().detail.contains("Last reading"))
+        XCTAssertTrue(store.sensors?.aggregates.isEmpty == true)
+        XCTAssertEqual(store.series(.tempGPU).count, 1)
+
+        clock.advance(by: 41)
+        XCTAssertEqual(text().value, MenuBarFormatter.unavailable)
+        store.updateSensors(timestamp: clock.now, owner: "temperatures",
+                            readings: [SensorValidator.reading(gpu, raw: 43, at: clock.now)])
+        XCTAssertEqual(text().value, "43°")
+    }
+
     func testInlineTemperatureAddsCollector() {
         var p = Preferences()
         p.monitoringMode = .full

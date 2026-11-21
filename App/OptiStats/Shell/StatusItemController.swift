@@ -63,28 +63,12 @@ final class StatusItemController: NSObject {
     }
 
     private func desiredEntries(_ prefs: Preferences) -> [(signature: String, configs: [WidgetConfig])] {
-        let layout = prefs.menuBar.layout
-        if prefs.menuBar.combined {
-            let kinds = prefs.visibleKinds()
-            guard !kinds.isEmpty else { return [] }
-            let configs = kinds.map { WidgetConfig(kind: $0, enabled: true, label: prefs.menuBar.combinedLabel, decimals: 0) }
-            return [(signature: "combined|\(layout.rawValue)|\(prefs.menuBar.combinedLabel.rawValue)|" + kinds.map { $0.rawValue }.joined(separator: ","), configs: configs)]
+        let layout = prefs.menuBar.layout.rawValue
+        return prefs.menuBarGroups().map { configs in
+            let itemType = prefs.menuBar.combined ? "combined" : (configs.count > 1 ? "pair" : "single")
+            let fields = configs.map { "\($0.kind.rawValue)|\($0.label.rawValue)|\($0.decimals)|\($0.content.rawValue)" }
+            return (signature: ([itemType, layout] + fields).joined(separator: "|"), configs: configs)
         }
-        // Indicador com "empilhar" vira um item de dois indicadores (no lugar do item sozinho). O indicador de baixo
-        // continua disponível sozinho: basta ligá-lo na lista. O mesmo par não é criado duas vezes.
-        var out: [(signature: String, configs: [WidgetConfig])] = []
-        var pairs = Set<Set<WidgetKind>>()
-        let allowed: (WidgetKind) -> Bool = { prefs.monitoringMode == .full || $0.isEssential }
-        for w in prefs.activeWidgets() {
-            if let other = w.stackWith, other != w.kind, allowed(other), pairs.insert([w.kind, other]).inserted {
-                let second = prefs.menuBar.widgets.first { $0.kind == other } ?? WidgetConfig(kind: other, enabled: true)
-                let sig = "pair|\(w.kind.rawValue)|\(w.label.rawValue)|\(w.decimals)|\(w.content.rawValue)|\(other.rawValue)|\(second.label.rawValue)|\(second.decimals)|\(second.content.rawValue)"
-                out.append((signature: sig, configs: [w, second]))
-                continue   // empilhado substitui o item sozinho; o de baixo só aparece sozinho se estiver ligado na lista
-            }
-            out.append((signature: "\(w.kind.rawValue)|\(layout.rawValue)|\(w.label.rawValue)|\(w.decimals)|\(w.content.rawValue)", configs: [w]))
-        }
-        return out
     }
 
     private func rebuild(_ desired: [(signature: String, configs: [WidgetConfig])]) {
@@ -111,8 +95,7 @@ final class StatusItemController: NSObject {
             entries.append(entry)
         }
 
-        var metricKinds = Set<MetricKind>()
-        for e in entries { for c in e.configs { metricKinds.insert(Self.metricKind(for: c.kind)) } }
+        let metricKinds = Set(entries.flatMap { $0.configs.flatMap(\.collectors) }.map(MetricsStore.kind(for:)))
         for mk in metricKinds {
             // O handler pode rodar em qualquer fila: volta para a main e coalesce.
             tokens.append(env.store.subscribe(mk) { [weak self] in self?.scheduleRefresh() })
@@ -263,10 +246,7 @@ final class StatusItemController: NSObject {
     }
 
     @objc private func menuRefresh() {
-        let kinds = env.preferences.current.visibleKinds()
-        var collectors: [CollectorID] = []
-        for k in kinds { for c in k.collectors where !collectors.contains(c) { collectors.append(c) } }
-        env.refreshNow(collectors)
+        env.refreshNow(CollectorID.allCases.filter(env.preferences.current.menuBarCollectors().contains))
     }
     @objc private func menuPreferences() { onOpenPreferences?() }
     @objc private func menuAbout() { onOpenAbout?() }
@@ -354,6 +334,7 @@ final class StatusItemController: NSObject {
     private func makeLabels() -> MenuBarLabels {
         var l = MenuBarLabels()
         l.ram = L("shell.label.ram"); l.cpu = L("shell.label.cpu"); l.gpu = L("shell.label.gpu")
+        l.lastTemperatureReading = L("shell.label.lastTemperatureReading")
         l.temperature = L("shell.label.temperature"); l.fan = L("shell.label.fan"); l.power = L("shell.label.power")
         l.disk = L("shell.label.disk"); l.net = L("shell.label.network"); l.battery = L("shell.label.battery")
         l.systemTotal = L("shell.label.systemTotal"); l.batteryPower = L("shell.label.batteryPower")
@@ -361,19 +342,6 @@ final class StatusItemController: NSObject {
         l.efficiency = L("shell.label.efficiency"); l.performance = L("shell.label.performance")
         l.superCores = L("shell.label.superCores")
         return l
-    }
-
-    static func metricKind(for kind: WidgetKind) -> MetricKind {
-        switch kind {
-        case .ram: return .memory
-        case .cpu, .coreGroups: return .cpu
-        case .gpu: return .gpu
-        case .temperature, .fan: return .sensors
-        case .power: return .power
-        case .disk: return .disk
-        case .network: return .network
-        case .battery: return .battery
-        }
     }
 
     static func symbol(for kind: WidgetKind) -> NSImage? {
