@@ -1,5 +1,11 @@
 # OptiStats 1.2
 
+## Temperature update (build 2)
+
+- Stacked CPU and GPU temperature indicators request sensor data even when the secondary indicator is disabled on its own. Sensor updates refresh the menu bar directly.
+- During a brief dropout, the menu bar can show a recent temperature with an asterisk marking the last measured value. The history records only new measurements.
+- Temperature-only indicators suspend CPU and GPU utilization sampling while their detailed panels are closed.
+
 ## Português brasileiro
 
 - Compatibilidade em Apple Silicon com macOS 26 e 27. O alvo mínimo de instalação é macOS 13.

@@ -12,7 +12,7 @@
 
 | Item | Current status |
 | --- | --- |
-| Release notes | [OptiStats 1.2.1](docs/RELEASE-1.2.1.md) |
+| Release notes | [OptiStats 1.2](docs/RELEASE-1.2.md) |
 | Supported Macs | Apple Silicon; minimum deployment target macOS 13; CI on macOS 26 and 27 |
 | Fan speeds | Read-only by default; write control requires the optional privileged helper and supported hardware |
 | Code signing | Ad-hoc signed; not Apple notarized |

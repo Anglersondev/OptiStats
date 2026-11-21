@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.2.1
+## 1.2 — atualização de temperatura (build 2)
 
 - Corrigida a atualização das temperaturas da CPU e GPU quando aparecem juntas em um indicador empilhado.
 - A barra mantém a última temperatura medida, marcada com asterisco, por até um minuto se uma amostra falhar.
